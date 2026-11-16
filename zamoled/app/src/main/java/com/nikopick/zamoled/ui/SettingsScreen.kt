@@ -237,7 +237,7 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
                 Text(
                     "How it works: every wallpaper you heart counts as kept, and that is Zamoled's number in the Cat Club. " +
                         "Purrcast adds its day streak and Maps and Cats its cats caught; each app shows the others' numbers when installed. " +
-                        "Nothing is uploaded. Rewards today are just the numbers; there are no unlocks yet.",
+                        "Nothing is uploaded. Every 10 days of your Purrcast streak earns a special Cat Club wallpaper here: Purrcast tells you when one is ready.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

@@ -42,6 +42,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="zamoled" android:host="w" />
                 <data android:scheme="zamoled" android:host="weather" />
+                <data android:scheme="zamoled" android:host="reward" />
             </intent-filter>
         </activity>
         <receiver android:name=".data.InstallReceiver" android:exported="false" />

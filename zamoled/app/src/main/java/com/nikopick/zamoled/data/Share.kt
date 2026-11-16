@@ -23,6 +23,8 @@ object ShareLink {
             val uri = runCatching { Uri.parse(link) }.getOrNull() ?: return null
             // zamoled://weather?mood=rain: a wallpaper for the weather, sent by Purrcast
             if (uri.host == "weather") return weatherSpec(uri.getQueryParameter("mood"))
+            // zamoled://reward?day=10: the special wallpaper for a 10-day streak step in Purrcast
+            if (uri.host == "reward") return rewardSpec(uri.getQueryParameter("day")?.toIntOrNull())
             val key = uri.getQueryParameter("k")
             return key?.let { WallpaperSpec.fromKey(it) }?.takeIf { known(it) }
         }
@@ -42,6 +44,15 @@ object ShareLink {
             else -> return null
         }
         return WallpaperSpec(style, System.currentTimeMillis() and 0xFFFFFFL, palette, black = 0.25f, zone = 2).takeIf { known(it) }
+    }
+
+    private val rewardPalettes = listOf("gold", "sakura", "aurora", "candy", "cyber", "sunset", "violet", "ocean")
+
+    /** The Cat Club wallpaper for a streak milestone. The same day always gives the same picture, a new colour set each step. */
+    fun rewardSpec(day: Int?): WallpaperSpec? {
+        if (day == null || day < 10 || day % 10 != 0 || day > 3650) return null
+        val palette = rewardPalettes[(day / 10 - 1) % rewardPalettes.size]
+        return WallpaperSpec("gatti", day * 7919L, palette, black = 0.25f, zone = 2).takeIf { known(it) }
     }
 
     private fun known(spec: WallpaperSpec): Boolean = spec.style.id == spec.styleId

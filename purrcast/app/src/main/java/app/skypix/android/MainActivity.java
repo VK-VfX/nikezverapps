@@ -282,6 +282,15 @@ public class MainActivity extends Activity {
             @Override public void onClick(View v) { showCatClubHelp(); }
         });
         content.addView(streakCard, lp(-1, -2, 16));
+        final int ready = Store.rewardReady(this);
+        if (ready > 0) {
+            TextView note = Ui.text(this, "\ud83c\udf81 A special Zamoled wallpaper for your day " + ready + " streak is ready. Tap to claim it.", 14.5f, 500, Ui.primary(this));
+            note.setPadding(Ui.dp(this, 6), Ui.dp(this, 4), Ui.dp(this, 6), Ui.dp(this, 4));
+            note.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { claimStreakReward(); }
+            });
+            content.addView(note, lp(-1, -2, 10));
+        }
 
         addBanners();
 
@@ -939,6 +948,14 @@ public class MainActivity extends Activity {
             @Override public void onClick(View v) { showCatClubHelp(); }
         });
         row(trio, "Cat Club", club.toString(), how);
+        final int rd = Store.rewardReady(this);
+        Ui.Btn claim = new Ui.Btn(this, rd > 0 ? "Claim" : "Info", rd > 0);
+        claim.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { if (Store.rewardReady(MainActivity.this) > 0) claimStreakReward(); else showCatClubHelp(); }
+        });
+        int nextDay = Store.rewardNext(this), toGo = nextDay - Store.bestStreak(this);
+        row(trio, "Streak wallpaper", rd > 0 ? "Day " + rd + " wallpaper is ready in Zamoled"
+                : "A special Zamoled wallpaper every " + Store.REWARD_EVERY + " days. Next at day " + nextDay + " (" + Math.max(0, toGo) + " to go)", claim);
         trioRow(trio, "Zamoled", "AMOLED wallpapers that make room for your widgets", Trio.ZAMOLED, "zamoled",
                 Trio.REPO + "/releases");
         trioRow(trio, "Maps and Cats", "Maps, navigation and cats to catch", Trio.MAPS, "mapsandcats",
@@ -954,6 +971,20 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Opens the special wallpaper in Zamoled and marks it claimed; without Zamoled it opens its download page and keeps it waiting. */
+    private void claimStreakReward() {
+        int day = Store.rewardReady(this);
+        if (day <= 0) return;
+        if (!Trio.installed(this, Trio.ZAMOLED)) {
+            android.widget.Toast.makeText(this, "Install Zamoled to claim it. It will keep waiting.", android.widget.Toast.LENGTH_LONG).show();
+            open(Trio.REPO + "/releases");
+            return;
+        }
+        Store.rewardClaimed(this);
+        Trio.open(this, "zamoled://reward?day=" + day, Trio.REPO + "/releases");
+        rebuild();
+    }
+
     /** What the streak and the Cat Club really do, in plain words. */
     private void showCatClubHelp() {
         String msg = "STREAK\n"
@@ -966,7 +997,9 @@ public class MainActivity extends Activity {
                 + "Purrcast counts days, Maps and Cats counts cats caught on walks, and Zamoled counts wallpapers you have kept. "
                 + "Each app shows the others' numbers when they are installed. Nothing is uploaded; the apps only read each other's counts on your phone.\n\n"
                 + "REWARDS\n"
-                + "For now they are the cat's moods and cheers here, and levels in Maps and Cats. There are no prizes or unlocks yet.";
+                + "Every 10 days of streak (10, 20, 30 ...) earns a special wallpaper in Zamoled. It appears here when it is ready; "
+                + "tap Claim and Zamoled opens it, ready to save. Your best streak counts, so a missed day never takes a reward away. "
+                + "Besides that there are the cat's moods and cheers here, and levels in Maps and Cats.";
         new android.app.AlertDialog.Builder(this).setTitle("How the Cat Club works").setMessage(msg)
                 .setPositiveButton("Got it", null).show();
     }

@@ -7,7 +7,7 @@ data moves only when you tap something, or as tiny read-only counts.
 | App | Package | Cat Club provider (read-only) | Deep link it receives |
 |---|---|---|---|
 | Purrcast | `app.skypix.weather` | `content://app.skypix.weather.catclub/stats` → `value`, `label` (day streak) | `purrcast://weather?lat=&lon=&name=` saves that place and fetches its forecast |
-| Zamoled | `com.nikopick.zamoled` | `content://com.nikopick.zamoled.catclub/stats` (wallpapers kept) | `zamoled://w?k=<recipe>` a shared wallpaper; `zamoled://weather?mood=rain\|storm\|cloudy\|clear\|night\|snow\|fog` a wallpaper for the weather, with Purrcast's quiet zones |
+| Zamoled | `com.nikopick.zamoled` | `content://com.nikopick.zamoled.catclub/stats` (wallpapers kept) | `zamoled://w?k=<recipe>` a shared wallpaper; `zamoled://reward?day=10` the streak wallpaper; `zamoled://weather?mood=rain\|storm\|cloudy\|clear\|night\|snow\|fog` a wallpaper for the weather, with Purrcast's quiet zones |
 | Maps and Cats | `app.mapsandcats` | `content://app.mapsandcats.catclub/stats` (cats caught) | `mapsandcats://place?lat=&lon=&name=` shows that place and offers a route |
 
 ## What you see
@@ -29,4 +29,7 @@ data moves only when you tap something, or as tiny read-only counts.
   The streak-card cat is a cloud cat at 1-2 days, partly sunny at 3, sunny at 7, sunglasses at 14+. Cheers at 3, 7, 14, 30, 100 days.
 - **Maps and Cats**: cats caught (Quest). A catch is 10-90 XP by rarity, walking is 1 XP per 25 m, level = 1 + floor(sqrt(XP / 60)).
 - **Zamoled**: wallpapers kept (hearted favourites).
-- **Rewards**: cosmetic only (cat moods, cheers, levels). No prizes or unlocks. Anything new must be added here and in each app's help text.
+- **Rewards**: cat moods, cheers, levels, and one real unlock: **every 10 days of Purrcast streak earns a special Zamoled wallpaper**.
+  Counted from the *best* streak (a missed day never takes a reward back); Purrcast tracks which ones were claimed.
+  Link: `zamoled://reward?day=10` (day must be a multiple of 10). It opens the Cat Club ("gatti") style, one fixed picture per day number,
+  with a new colour set each step and Purrcast's quiet zones. Anything new must be added here and in each app's help text.

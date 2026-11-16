@@ -108,7 +108,7 @@ final class Store {
         return (now + java.util.TimeZone.getDefault().getOffset(now)) / 86400000L;
     }
 
-    /** Call when the app comes to the front. Keeps a 64-day bit history (bit 0 = today). */
+    /** Call when the app comes to the front. Keeps a 64-day bit history (bit 0 = today) and an unlimited day count. */
     static synchronized void touchStreak(Context c) {
         SharedPreferences p = sp(c);
         long today = dayNumber();
@@ -120,16 +120,34 @@ final class Store {
         mask |= 1L;
         int run = 0;
         while (run < 64 && ((mask >>> run) & 1L) != 0) run++;
-        int best = Math.max(run, p.getInt("streak_best", 0));
-        p.edit().putLong("streak_last", today).putLong("streak_mask", mask).putInt("streak_best", best).apply();
+        // the real count has no 64-day ceiling; older installs start from what the history showed
+        int count = p.getInt("streak_count", -1);
+        if (count < 0) count = run;
+        else count = (last != 0 && today - last == 1) ? count + 1 : 1;
+        int best = Math.max(count, p.getInt("streak_best", 0));
+        p.edit().putLong("streak_last", today).putLong("streak_mask", mask).putInt("streak_count", count).putInt("streak_best", best).apply();
     }
 
     static int streak(Context c) {
-        long mask = sp(c).getLong("streak_mask", 0);
+        SharedPreferences p = sp(c);
+        int n = p.getInt("streak_count", -1);
+        if (n >= 0) return n;
+        long mask = p.getLong("streak_mask", 0);
         int run = 0;
         while (run < 64 && ((mask >>> run) & 1L) != 0) run++;
         return run;
     }
+
+    // ---- streak rewards: a special Zamoled wallpaper for every 10 days of best streak ----
+    static final int REWARD_EVERY = 10;
+    /** Day number of the next wallpaper that is ready to claim, or 0 when none is waiting. */
+    static int rewardReady(Context c) {
+        int earned = bestStreak(c) / REWARD_EVERY, claimed = sp(c).getInt("reward_claimed", 0);
+        return claimed < earned ? (claimed + 1) * REWARD_EVERY : 0;
+    }
+    /** The streak day that earns the next wallpaper after the ones already claimed. */
+    static int rewardNext(Context c) { return (sp(c).getInt("reward_claimed", 0) + 1) * REWARD_EVERY; }
+    static void rewardClaimed(Context c) { sp(c).edit().putInt("reward_claimed", sp(c).getInt("reward_claimed", 0) + 1).apply(); }
 
     static int bestStreak(Context c) { return sp(c).getInt("streak_best", 0); }
     static long streakMask(Context c) { return sp(c).getLong("streak_mask", 0); }
