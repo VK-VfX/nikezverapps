@@ -7,9 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Bump both for every release; the in-app updater compares VERSION_CODE (it must always go up).
-VERSION_CODE=17
-VERSION_NAME=1.0.16
-RELEASE_NOTES="The trio: Cat Club, place and wallpaper links with Zamoled and Maps and Cats, and a special Zamoled wallpaper every 10 days of streak."
+VERSION_CODE=18
+VERSION_NAME=1.0.17
+RELEASE_NOTES="Weather refresh now retries when the weather service is briefly busy (503), instead of giving up."
 UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist
 
 DEPS=build/deps

@@ -1,7 +1,7 @@
 {
-  "versionCode": 17,
-  "versionName": "1.0.16",
+  "versionCode": 18,
+  "versionName": "1.0.17",
   "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
-  "sha256": "a0c372836bb3d9e4da2a282ec3d0c4eb9b936504856ae5f910aa02375a100eaa",
-  "notes": "The trio: Cat Club, place and wallpaper links with Zamoled and Maps and Cats, and a special Zamoled wallpaper every 10 days of streak."
+  "sha256": "53be5baff92e2eb8af69355c68af57373e40405f4e25aca5ea2f2004180bcf3c",
+  "notes": "Weather refresh now retries when the weather service is briefly busy (503), instead of giving up."
 }
