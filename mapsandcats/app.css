@@ -296,3 +296,6 @@ body.navigating #overviewBtn { display: grid; }
 .result-pin.on { width: 34px; height: 34px; background: #ff4d4f; color: #fff; z-index: 5; }
 body.has-results #fabs { bottom: calc(246px + var(--sab)); }
 body.navigating #resultStrip { display: none; }
+/* Quest mode has its own panel at the bottom, so the result cards sit above it */
+body.hud-on #resultStrip { bottom: calc(184px + var(--sab)); }
+body.hud-on.has-results #fabs { bottom: calc(344px + var(--sab)); }

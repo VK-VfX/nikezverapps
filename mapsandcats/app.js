@@ -977,7 +977,7 @@ function showOnMap(items, text, fromWeb) {
   });
   const b = new maplibregl.LngLatBounds(); resList.forEach(r => b.extend([r.lon, r.lat])); if (me) b.extend([me.lon, me.lat]);
   following = false; $('#locateBtn').classList.remove('on'); $('#sheet').classList.add('collapsed');
-  setTimeout(() => { if (!resList.length) return; map.fitBounds(b, { padding: { top: 120, bottom: 250, left: 50, right: 50 }, maxZoom: 16, pitch: 0, bearing: 0, duration: 900 }); }, 300);
+  setTimeout(() => { if (!resList.length) return; map.fitBounds(b, { padding: { top: 120, bottom: document.body.classList.contains('hud-on') ? 350 : 250, left: 50, right: 50 }, maxZoom: 16, pitch: 0, bearing: 0, duration: 900 }); }, 300);
   selectResult(0, false);
 }
 $('#resultStrip').addEventListener('click', e => {
