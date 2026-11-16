@@ -4,7 +4,7 @@ An Android wallpaper app that **generates** pitch-black AMOLED wallpapers on you
 
 ## Features
 
-- **71 wallpapers across 10 worlds**, each with its own art direction
+- **74 wallpapers across 11 worlds**, each with its own art direction
   | World     | Styles |
   |-----------|--------|
   | Doodle    | Sticker Bomb, Gouache, Chalk, Space Doodles and Cat Club (twelve breeds, from tabby and British Shorthair to Bengal, Siamese, calico, Sphynx, Maine Coon and Scottish Fold, each with its own markings and a different mood) |
@@ -17,6 +17,7 @@ An Android wallpaper app that **generates** pitch-black AMOLED wallpapers on you
   | Glitch    | Data Rain, Wet Street (a rainy cyberpunk street), and eight code looks: Source Code, Diff Glitch, Kernel Panic, Hex Dump, Code Fall, Big Code, Corrupted, Build Log |
   | Pixel Bits | Pixel Castle, Pixel Quest, Pixel Sunset, Pixel Galaxy, Pixel Lighthouse |
   | Light     | Lanterns, Candlelight, Jellyfish, Fireflies |
+  | Space     | Ascent (a shuttle climbing away from the planet's edge), Lone Satellite, Comet |
 
   Older styles that were retired from browsing (for example Halo, Silk, Aurora, Pixel City) still open if you saved them as a favourite.
 - **True black backgrounds.** Every wallpaper starts from `#000000`, and the editor shows a live **Pitch black %**: the share of pixels your OLED screen can switch off completely.

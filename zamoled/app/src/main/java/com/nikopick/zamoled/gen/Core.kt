@@ -79,6 +79,7 @@ enum class Category(val label: String) {
     PIXEL("Pixel Bits"),
     LIGHT("Light"),
     GOTHIC("Gothic"),
+    SPACE("Space"),
 }
 
 data class WallpaperSpec(
@@ -449,7 +450,7 @@ object Styles {
         DataRain,
         PixelCastle, PixelQuest, PixelSunset, PixelGalaxy, PixelLighthouse,
         LanternFestival, Candles, Jellyfish, Fireflies,
-    ) + NatureWorld.styles + GlitchWorld.styles + LabWorld.styles + WordsWorld.styles
+    ) + NatureWorld.styles + GlitchWorld.styles + LabWorld.styles + WordsWorld.styles + SpaceWorld.styles
 
     /** Retired styles: hidden from browsing but still able to open saved favourites. */
     private val retired: List<Style> = listOf(

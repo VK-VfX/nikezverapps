@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.Church
+import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material.icons.rounded.FormatQuote
@@ -74,6 +75,7 @@ val Category.icon: ImageVector
         Category.PIXEL -> Icons.Rounded.GridOn
         Category.LIGHT -> Icons.Rounded.Lightbulb
         Category.GOTHIC -> Icons.Rounded.Church
+        Category.SPACE -> Icons.Rounded.RocketLaunch
     }
 
 /** Each category gets its own expressive shape, in the style of Material 3's shape library. */
@@ -90,6 +92,7 @@ fun Category.polygon(): RoundedPolygon = when (this) {
     Category.PIXEL -> RoundedPolygon(4, rounding = CornerRounding(0.06f))
     Category.LIGHT -> RoundedPolygon.star(10, radius = 1f, innerRadius = 0.62f, rounding = CornerRounding(0.1f))
     Category.GOTHIC -> RoundedPolygon.star(5, radius = 1f, innerRadius = 0.7f, rounding = CornerRounding(0.05f))
+    Category.SPACE -> RoundedPolygon.star(12, radius = 1f, innerRadius = 0.78f, rounding = CornerRounding(0.2f))
 }.normalized()
 
 private val Blob: RoundedPolygon = RoundedPolygon.star(4, radius = 1f, innerRadius = 0.9f, rounding = CornerRounding(0.5f)).normalized()
