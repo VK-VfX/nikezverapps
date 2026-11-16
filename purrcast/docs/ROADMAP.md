@@ -1,0 +1,87 @@
+# Purrcast roadmap and ideas (kept on purpose, do not lose)
+
+## Cat Club: the collection game (idea approved by the owner; only the streak counter is built so far)
+
+The owner lives in **Malaysia** (Shah Alam), so the collection must never require weather that doesn't happen there.
+Snow / true freezing must stay out of reach of the normal set. Keep this design when building the rest.
+
+### Cats and how to unlock them
+Tropical-first set (all achievable in Malaysia):
+- Sunny (smile), partly cloudy (grin), cloudy (plain), rain (sad), umbrella cat (sad under an umbrella),
+  thunderstorm (weary + bolt), monsoon cat (very heavy rain, about 20 mm/h or more), hot (sweaty), heatwave (feels like 40 or more),
+  UV (sunglasses), haze (mask, AQI 100 or more), rainbow cat (sun and rain within a couple of hours),
+  sunrise, sunset, night (black cat), sleepy (calm).
+Cold cats with realistic triggers:
+- Scarf cat unlocks at cool temperatures (about 20 C or lower), so Cameron / Genting Highlands count.
+- Snow, true freezing and strong wind become **legendary** so everything else can be completed first.
+Ways to unlock without local weather:
+- **World tour postcards**: a built-in list of about 30 cities (Tokyo, Oslo, Reykjavik ...). When it is snowing in one right now
+  (real Open-Meteo data, only city coordinates sent) the user can "send a postcard" and unlock that cat.
+- **Streaks and habits**: open the app 7 days in a row, read the morning briefing, find the secret taps (7 taps on the title) -> costumes
+  and accessories (Santa hat ...).
+- **Cat of the day**: a daily surprise cat, can also be a widget.
+
+### Collection book
+Locked cats show as silhouettes with a hint ("Somewhere it's snowing..."), a progress percentage, and common / rare / legendary tiers.
+
+### Phases
+1. Streak counter (DONE, v1.0.8). Next: collection book with tropical + highland unlocks, streak rewards, cat of the day.
+2. World tour postcards (saved places and geocoding now exist, so this is mostly a city list plus unlock logic).
+
+## Built so far (v1.0.8, uncommitted-to-release until built)
+- Streak counter (app card: days in a row, last 7 days, cat that gets cooler as the streak grows).
+- Rain in minutes (Nowcast from Open-Meteo minutely_15; note: outside Europe/N. America/Japan the 15-minute data is interpolated from hourly, so approximate) + "Rain soon" widget (2x2, 4x2) + "Rain in ~N min: grab the umbrella" alert.
+- Official warnings: MET Malaysia open data (api.data.gov.my/weather/warning) matched against the user's city/state. Parser is defensive because the feed could not be tested from the build sandbox. "Danger/flood" wording uses the loud emergency channel.
+- Saved places (search via Open-Meteo geocoding, or "save where I am"), and a per-widget place chooser that shows when a widget is added and on long-press reconfigure.
+- Material You colours (Android 12+, opt-in in Settings): app palette and widget backgrounds follow the wallpaper.
+
+## Clock widgets (decided by the owner)
+Included as widgets: Clock (big thin time + weather), Day clock (cat walking along the day), Sky clock (live sky, sun/moon, stars),
+Cat schedule (time + what the cat is doing), Flip clock (redesigned: glossy tiles, bevelled hinge with pins, colon dots, cat peeking over the minutes).
+They tick every minute through ACTION_TIME_TICK in the foreground service (no exact-alarm permission needed); the service now also runs when any clock widget exists.
+Rejected / archived designs (code still in git history, commits 4ada700 .. 61fee6e): analogue cat clock, rings, word, dot-matrix, pill, neon, poster, LCD, world clock.
+
+## Widgets are now one resizable widget per design (v1.0.10)
+- 18 resizable widgets (see UNIFIED in scripts/gen_widgets.py) with min/max sizes decided by a size stress test (`java -Dkinds=NOW,... Preview sizes <dir>`).
+- The old fixed-size widgets are kept as hidden "legacy" providers (widgetCategory=keyguard) so widgets already on home screens keep working; the in-app picker skips them (Variants.LEGACY).
+- Touch and hold a widget -> "Widget settings" (reconfigurable config activity PlaceConfigActivity): per-widget background Solid / Glass / Clear with a live preview, plus the place it shows. The Settings screen background choice is only the default.
+
+## Purrcast x Zamoled (owner's idea: the weather app and the wallpaper app work together)
+Zamoled = github.com/VK-VfX/nikopickzamoledz (Kotlin/Compose, package com.nikopick.zamoled, default branch claude/hopeful-noether-lcc0fj,
+a push to that branch publishes a release, so use a feature branch). It makes seeded AMOLED wallpapers, has a daily-wallpaper worker (AutoWallpaper.kt),
+a Material You palette, a "widget-safe" toggle, a Cat Club (12 breeds) and the deep link zamoled://w?k=<recipe>. It only talks to GitHub and has no location.
+Plan, in phases:
+1. Define a tiny "mood" contract: CLEAR_DAY, CLEAR_NIGHT, DAWN, DUSK, CLOUDY, RAIN, HEAVY_RAIN, STORM, HAZE/FOG, HOT. Only these buckets cross between the apps, never location.
+2. Simplest link: Purrcast opens a new Zamoled deep link such as zamoled://weather?mood=RAIN&day=0 (Zamoled picks style + palette, the user taps Apply). Add an action
+   "Wallpaper for today" to the morning briefing notification. No permissions between the apps.
+3. Automatic: Zamoled "Follow the weather" source for its daily worker, reading a read-only Purrcast ContentProvider (mood only), changing the wallpaper only when the
+   mood changes and at most a few times a day.
+4. Cat Club link: Purrcast streak / unlocked cats unlock matching Zamoled cat wallpapers (fits the Cat Club collection idea above).
+5. "Purrcast x Zamoled look" preset: pitch-black wallpaper + Purrcast Clear widgets + Material You colours.
+Refinement (owner, from their real home screen: Zamoled Data Rain wallpaper + Purrcast clear widgets): a dedicated **Purrcast section in Zamoled**.
+- "Make room for Purrcast": generalise Zamoled's widget-safe (Core.kt Renderer, SAFE_TOP = 0.2, option letter 's' in the recipe key) from one top band to quiet zones
+  (dim the art to about 15% inside rectangles instead of blanking it), so any style, including Data Rain, stays readable behind clear widgets. New option letters keep old keys valid.
+- "Match my home screen": in Zamoled's preview, drag boxes showing the real Purrcast widgets (their preview images) to where they sit; the zones are saved with the recipe.
+  Owner's layout for reference: clock 4x2 on top (y 8-30%), icon 2x2 mid-left (y 37-50%), heads-up mid-right (y 32-54%).
+- Purrcast palettes (cat orange, Google blue, amber) and cat scenes placed to peek over the clock widget.
+- Purrcast side: a soft text shadow in Clear/Glass widgets for legibility over busy wallpapers.
+Zamoled is Gradle/Compose and may not build in the sandbox: use a feature branch and let its CI compile it.
+Rules: no snow-only dependencies (owner is in Malaysia: rain, thunder, haze, heat, night, sunrise/sunset are the common moods); do not add install permissions
+(Zamoled was flagged by Play Protect for that); only change wallpapers on a mood change to protect battery.
+
+## Other ideas not built yet
+- Commute alerts (user sets leaving times; "rain at 5:30, leave early").
+- Pollen / allergy levels, UV "safe sun time" timeline, moon phase widget.
+- History graph of past temperatures and a weekly recap.
+- Ongoing notification or lock-screen line, Quick Settings tile.
+- Mascot widget that reacts (asleep at night, awake at sunrise, purrs when petted), seasonal costumes, shareable weather card.
+- "What should I wear?" with a cat outfit suggestion.
+- OTA polish: changelog screen, Wi-Fi only installs, rollback. Translations, settings backup/restore.
+- Philippine (PAGASA) official warnings: no stable open API found yet.
+
+## The trinity: Purrcast, Zamoled, Maps and Cats
+Three apps by the same owner that open each other. Done: each app has a "The trio" list that opens the others when installed
+(package ids `app.skypix.weather`, `com.nikopick.zamoled`, `app.mapsandcats`, declared in `<queries>`) or falls back to their GitHub page.
+Maps and Cats side is NOT done yet: it needs push access to `VK-VfX/Not-An-Ordinary-Alarm-Clock` (a web app packaged with Capacitor, `android/` module, `app.js`).
+Ideas: Maps and Cats gets a weather chip and cat from Purrcast; Zamoled wallpapers from Maps and Cats trips; shared cat set across all three;
+deep links (`zamoled://w?k=...`, a future `purrcast://`, `mapsandcats://`).
