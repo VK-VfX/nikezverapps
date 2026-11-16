@@ -212,6 +212,18 @@ function updateScale() {
 
 /* --- the trio: Cat Club numbers, and hand-offs to Purrcast and Zamoled (docs/TRIO.md) --- */
 const TRIO = window.AndroidTrio || null;
+/* Keep the screen on while navigating or on a Quest walk (native flag in the app, Screen Wake Lock in a browser). */
+let wakeLock = null;
+async function keepAwake(on) {
+  try { if (TRIO && TRIO.keepAwake) TRIO.keepAwake(!!on); } catch {}
+  try {
+    if ('wakeLock' in navigator) {
+      if (on && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+      else if (!on && wakeLock) { const w = wakeLock; wakeLock = null; await w.release(); }
+    }
+  } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (nav.active || quest.on)) keepAwake(true); });
 function syncCats() { try { TRIO && TRIO.setCats(S.caught | 0); } catch {} }
 const REPO_URL = 'https://github.com/VK-VfX/nikezverapps';
 async function refreshTrio() {
@@ -740,7 +752,7 @@ function clearRoute() {
 /* ---- turn-by-turn ---- */
 $('#startNav').addEventListener('click', () => {
   if (!nav.routes[nav.sel] || !me) return toast('Waiting for a route…');
-  nav.active = true; nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
+  nav.active = true; keepAwake(true); nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
   document.body.classList.add('navigating'); $('#navBanner').hidden = false; resEl.hidden = true; syncPanels(); syncMute();
   S.trips = [{ name: nav.dest.name, ts: Date.now(), mode: nav.mode, dist: nav.routes[nav.sel].distance }, ...S.trips].slice(0, 20); save(); renderSaved();
   navCamera(800);
@@ -749,7 +761,7 @@ $('#startNav').addEventListener('click', () => {
 });
 // End = leave navigation and return to the map. Hide the UI first so a failure elsewhere can never leave you stuck.
 function endNavigation() {
-  document.body.classList.remove('navigating'); $('#navBanner').hidden = true; nav.active = false;
+  document.body.classList.remove('navigating'); $('#navBanner').hidden = true; nav.active = false; keepAwake(quest.on);
   try { resetCamera(); } catch {}
   try { stopSpeech(); } catch {}
   try { clearRoute(); } catch (e) { try { syncPanels(); } catch {} }
@@ -757,7 +769,7 @@ function endNavigation() {
 }
 $('#navStop').addEventListener('click', endNavigation);
 function stopNav(silent) {
-  if (!nav.active && silent) return; nav.active = false;
+  if (!nav.active && silent) return; nav.active = false; keepAwake(quest.on);
   try { resetCamera(); } catch {}
   document.body.classList.remove('navigating'); $('#navBanner').hidden = true;
   try { stopSpeech(); } catch {}
@@ -966,7 +978,7 @@ function questTick(prev, cur) {
   renderHud();
 }
 function setQuest(on) {
-  quest.on = on; document.body.classList.toggle('quest-on', on); clearInterval(quest.timer); clearInterval(quest.wobble);
+  quest.on = on; keepAwake(on || nav.active); document.body.classList.toggle('quest-on', on); clearInterval(quest.timer); clearInterval(quest.wobble);
   if (on) {
     Object.assign(session, { dist: 0, cats: 0, xpRem: 0, anchor: null }); renderHud();
     if (nav.dest && nav.mode === 'car') { nav.mode = 'foot'; syncModeSeg(); fetchRoute(); }

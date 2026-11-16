@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.view.WindowManager;
 import android.media.AudioAttributes;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
@@ -128,6 +129,13 @@ public class MainActivity extends Activity {
     private class TrioBridge {
         @JavascriptInterface public void setCats(int n) {
             getSharedPreferences(CatClubProvider.PREFS, MODE_PRIVATE).edit().putInt("cats", n).apply();
+        }
+        /** Keeps the screen on while navigating or on a Quest walk. */
+        @JavascriptInterface public void keepAwake(boolean on) {
+            runOnUiThread(() -> {
+                if (on) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
         }
         @JavascriptInterface public String takePlace() { String p = pendingPlace; pendingPlace = ""; return p; }
         /** {"purrcast":{"installed":true,"version":"1.0.15","stat":"5 day streak"}, ...} */
