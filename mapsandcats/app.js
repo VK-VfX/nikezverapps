@@ -11,13 +11,13 @@ const KL = [3.139, 101.687]; // [lat, lon] fallback view until we get a fix
 /* ================= state ================= */
 const KEY = 'mapsandcats.v1', RKEY = 'mapsandcats.routes';
 const S = Object.assign({
-  theme: 'dark', traffic: false, trafficProv: 'tomtom', trafficKey: '', gkey: '', weight: 65, sim: false, xp: 0, caught: 0, avoidHw: false,
+  theme: 'dark', gkey: '', weight: 65, sim: false, xp: 0, caught: 0, avoidHw: false,
   voice: { on: true, name: '' },
-  servers: { photon: '', nominatim: '', osrm: '', traffic: '' },
+  servers: { photon: '', nominatim: '', osrm: '' },
   saved: { home: null, work: null, favs: [] }, recents: [], trips: [], country: null,
 }, (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })());
 S.voice = Object.assign({ on: true, name: '' }, S.voice);
-S.servers = Object.assign({ photon: '', nominatim: '', osrm: '', traffic: '' }, S.servers);
+S.servers = Object.assign({ photon: '', nominatim: '', osrm: '' }, S.servers); delete S.servers.traffic; delete S.traffic; delete S.trafficKey; delete S.trafficProv;
 S.saved = Object.assign({ home: null, work: null, favs: [] }, S.saved);
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
 
@@ -120,27 +120,10 @@ function onStyleLoad() {
   map.addLayer({ id: 'route-alt', type: 'line', source: 'routes', filter: ['==', ['get', 'sel'], 0], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#7b8190', 'line-width': 5, 'line-opacity': .85 } }, before);
   map.addLayer({ id: 'route-glow', type: 'line', source: 'routes', filter: ['==', ['get', 'sel'], 1], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': acc, 'line-width': 14, 'line-opacity': .25, 'line-blur': 3 } }, before);
   map.addLayer({ id: 'route-main', type: 'line', source: 'routes', filter: ['==', ['get', 'sel'], 1], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': acc, 'line-width': 6 } }, before);
-  applyTraffic();
-}
-// Traffic: no free keyless source exists, so Maps and Cats supports TomTom's free-tier flow tiles (your own key) or any XYZ tile URL.
-function trafficTpl() {
-  if ((S.trafficProv || 'tomtom') === 'tomtom') return S.trafficKey ? `https://api.tomtom.com/traffic/map/4/tile/flow/relative/{z}/{x}/{y}.png?key=${encodeURIComponent(S.trafficKey)}&tileSize=256` : '';
-  return (S.servers.traffic || '').trim();
-}
-function trafficOK() { const t = trafficTpl(); return ['{z}', '{x}', '{y}'].every(k => t.includes(k)); }
-function applyTraffic() {
-  if (!map?.isStyleLoaded()) return;
-  const want = S.traffic && S.theme !== 'quest' && trafficOK(); syncTrafficBtn();
-  if (map.getLayer('traffic')) map.removeLayer('traffic');
-  if (map.getSource('traffic')) map.removeSource('traffic');
-  if (want) {
-    map.addSource('traffic', { type: 'raster', tiles: [trafficTpl()], tileSize: 256 });
-    map.addLayer({ id: 'traffic', type: 'raster', source: 'traffic', paint: { 'raster-opacity': .85 } }, map.getLayer('route-alt') ? 'route-alt' : undefined);
-  }
 }
 async function reloadStyle() {
   const kind = S.theme === 'light' ? 'light' : 'dark';
-  if (kind === mapStyleKind) { recolorRoute(); applyTraffic(); return; }
+  if (kind === mapStyleKind) { recolorRoute(); return; }
   mapStyleKind = kind; map.setStyle(await buildStyle());
 }
 function recolorRoute() {
@@ -937,12 +920,8 @@ function applyTheme(t) {
 function syncUI() {
   $$('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.theme === S.theme));
   $('#themeHint').textContent = { dark: 'Pitch-black AMOLED. Easy on the eyes and battery.', light: 'Bright and clean for daylight.', quest: 'Walking only. Cats spawn on the map — tap or stroll past them for XP.' }[S.theme];
-  const tt = $('#trafficToggle'); tt.checked = S.traffic && S.theme !== 'quest' && trafficOK(); tt.disabled = S.theme === 'quest';
-  $('#trafficHint').textContent = S.theme === 'quest' ? 'Off in Quest mode — you’re on foot.' : trafficOK() ? 'Live traffic on the map (green = flowing, red = slow).' : 'No free keyless traffic data exists. Add a free TomTom key below to turn it on.';
-  $('#trafficProv').value = S.trafficProv || 'tomtom'; $('#trafficKey').value = S.trafficKey || ''; $('#trafficKeyRow').hidden = (S.trafficProv || 'tomtom') !== 'tomtom'; $('#trafficCustomHint').hidden = (S.trafficProv || 'tomtom') !== 'custom';
-  syncTrafficBtn();
   $('#gkey').value = S.gkey; $('#gUsage').textContent = S.gkey ? `Google searches this month: ${gUsage().n} / ${G_LIMIT}. Used only on Enter or when open results look weak.` : ''; $('#weight').value = S.weight; $('#simToggle').checked = S.sim; $('#verLabel').textContent = 'v' + APP_VERSION; $('#aboutVer').textContent = 'Version ' + APP_VERSION;
-  $('#srvPhoton').value = S.servers.photon; $('#srvNominatim').value = S.servers.nominatim; $('#srvOsrm').value = S.servers.osrm; $('#srvTraffic').value = S.servers.traffic;
+  $('#srvPhoton').value = S.servers.photon; $('#srvNominatim').value = S.servers.nominatim; $('#srvOsrm').value = S.servers.osrm;
   syncMute();
 }
 function openDrawer(o) { $('#drawer').classList.toggle('open', o); $('#drawer').setAttribute('aria-hidden', String(!o)); $('#scrim').hidden = !o; }
@@ -958,23 +937,13 @@ for (const b of document.querySelectorAll('[data-pkg]')) {
 $('#scrim').addEventListener('click', () => openDrawer(false));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') openDrawer(false); });
 $('#themeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) applyTheme(b.dataset.theme); });
-function setTraffic(on) {
-  if (on && !trafficOK()) { S.traffic = false; save(); syncUI(); needTrafficSetup(); return; }
-  S.traffic = on; save(); applyTraffic(); syncUI(); if (on) toast('Traffic on 🚦');
-}
-function needTrafficSetup() { renderSaved(); openDrawer(true); $('#trafficCfg').scrollIntoView({ block: 'center' }); toast('Add a free TomTom key to see live traffic', 3200); }
-function syncTrafficBtn() { const b = $('#trafficBtn'); if (!b) return; b.classList.toggle('on', !!S.traffic && trafficOK() && S.theme !== 'quest'); b.hidden = S.theme === 'quest'; }
-$('#trafficToggle').addEventListener('change', e => setTraffic(e.target.checked));
-$('#trafficBtn').addEventListener('click', () => setTraffic(!(S.traffic && trafficOK())));
-$('#trafficProv').addEventListener('change', e => { S.trafficProv = e.target.value; save(); syncUI(); applyTraffic(); });
-$('#trafficSave').addEventListener('click', () => { S.trafficKey = $('#trafficKey').value.trim(); if (S.trafficKey) S.traffic = true; save(); syncUI(); applyTraffic(); toast(S.trafficKey ? 'Traffic key saved — traffic on 🚦' : 'Traffic key removed'); });
 $('#saveKey').addEventListener('click', () => { S.gkey = $('#gkey').value.trim(); save(); toast(S.gkey ? 'Google search enabled' : 'Google search off'); });
 $('#srvToggle').addEventListener('click', () => { $('#srvBox').hidden = !$('#srvBox').hidden; });
 $('#srvSave').addEventListener('click', () => {
-  S.servers = { photon: trim($('#srvPhoton').value), nominatim: trim($('#srvNominatim').value), osrm: trim($('#srvOsrm').value), traffic: $('#srvTraffic').value.trim() };
-  if (!trafficOK()) S.traffic = false; save(); syncUI(); applyTraffic(); toast('Servers saved');
+  S.servers = { photon: trim($('#srvPhoton').value), nominatim: trim($('#srvNominatim').value), osrm: trim($('#srvOsrm').value) };
+  save(); syncUI(); toast('Servers saved');
 });
-$('#srvReset').addEventListener('click', () => { S.servers = { photon: '', nominatim: '', osrm: '', traffic: '' }; S.traffic = false; save(); syncUI(); applyTraffic(); toast('Using public servers'); });
+$('#srvReset').addEventListener('click', () => { S.servers = { photon: '', nominatim: '', osrm: '' }; save(); syncUI(); toast('Using public servers'); });
 $('#weight').addEventListener('change', e => { S.weight = Math.min(250, Math.max(30, +e.target.value || 65)); e.target.value = S.weight; save(); renderHud(); });
 $('#simToggle').addEventListener('change', e => { setSim(e.target.checked); toast(e.target.checked ? 'Simulating a stroll 🚶' : 'Simulation off'); });
 

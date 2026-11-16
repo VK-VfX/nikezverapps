@@ -39,9 +39,6 @@ Walking only. Cats (Google Noto emoji artwork — the Gboard set) spawn around y
 ## Personalization
 Home / Work / up to 5 favorites, recent searches, last 20 trips — plain `localStorage`.
 
-## Traffic
-There is no free keyless traffic data. The toggle works with any XYZ raster traffic tile URL you provide under Custom servers.
-
 ## Install & updates (not via Google Play)
 - **PWA:** host the folder statically (HTTPS), open in Chrome → ⋮ → Install app. OTA: installed copies check for a new version on launch/every 30 min; **Settings → Check for updates**. Ship one with `./bump-version.sh 1.1.0 "notes"`.
 - **APK:** `android/` is a small WebView wrapper bundling the app. Built entirely in GitHub Actions (`.github/workflows/apk.yml`, run **Build APK**) — no local Android SDK needed. Debug-signed, sideloadable.
