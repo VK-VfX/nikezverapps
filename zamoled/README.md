@@ -4,52 +4,50 @@ An Android wallpaper app that **generates** pitch-black AMOLED wallpapers on you
 
 ## Features
 
-- **76 wallpapers across 15 worlds**, each with its own art direction
+- **71 wallpapers across 10 worlds**, each with its own art direction
   | World     | Styles |
   |-----------|--------|
-  | Doodle    | Sticker Bomb, Gouache, Chalk, Space Doodles, and two cat styles: Cat Club (twelve breeds, from tabby and British Shorthair to Bengal, Siamese, calico, Sphynx, Maine Coon and Scottish Fold, each with its own markings and a different mood) and Cat Faces (big comic faces) |
-  | Lab       | Science emoji as stickers, gouache or chalk: Physics, Maths, Chemistry, Biology, Psychology, Philosophy, History, Space, Spirals & Radiation, and Everything (about 55 icons) |
-  | Words     | Your own words on black, typed in the editor: Bold, Quiet, Quote, Echo |
-  | For Pixel | Material 3 Expressive on pure black, in your phone's own Material You colours. Shapes (Bloom, Cookies, Blobs), Flow (Waves, Flow), Pattern (Pills, Arches), Interface (Components: switches, sliders, chips, FAB and cards), Glow (Aura, Overlap) |
+  | Doodle    | Sticker Bomb, Gouache, Chalk, Space Doodles and Cat Club (twelve breeds, from tabby and British Shorthair to Bengal, Siamese, calico, Sphynx, Maine Coon and Scottish Fold, each with its own markings and a different mood) |
+  | Lab       | Science emoji as stickers, gouache or chalk: Physics, Maths, Chemistry, Biology, Psychology, Philosophy, History, Space, Spirals & Radiation, and Everything |
+  | Words     | Your own words on black, typed in the editor: Bold, Quiet, Quote, Echo, Marker |
+  | For Pixel | Material 3 Expressive on pure black, in your phone's own Material You colours: Bloom, Cookies, Blobs, Waves, Flow, Pills, Arches, Components (switches, sliders, chips, FAB and cards), Aura, Overlap |
   | Minimal   | Ink (Lone Tree, Koi Pond, Moon Fisher), Lines (Constellation, One Line, Contours, Orbits: a few hairlines on black) and Always-on (Glance: one small dim mark, over 99% of pixels off) |
-  | Geometric | Crystal Cave, Art Deco (tower poster), Floating Isle (isometric island with a cottage and waterfall) |
-  | Space     | Astronaut over Earth, Ringed World from a cratered moon, Black Hole, Eclipse |
-  | Nature    | Northern Lights (curtains of rays over a lake), Moonlit Peaks (layered ranges), Starry Pines (Milky Way over a pine forest), Moon Path (the moon on open water) |
-  | Abstract  | Starry Swirl (a Van Gogh homage), Liquid Marble, Ink Smoke |
-  | Neon      | Neon Tunnel (rings rushing to a point), Neon Ribbons (twisting strands of light), Neon Storm (branching lightning), Neon Sign, Synthwave |
-  | Mystic    | Arcane Circle (runes, star polygon, sigil), Zodiac Wheel (astrolabe of twelve constellations), Tarot (The Moon, The Star, The Sun in gold line), Crystal Cluster, Lunar Cycle |
-  | City      | Rooftops (water tower, string lights, a cat on the ledge), Skyline |
-  | Glitch    | Data Rain (six looks: kana, binary, hex, depth, pixel snow, cascade), Neon Dystopia (a cyberpunk city with failing billboards, a HUD and scanlines) |
-  | Pixel Bits | Pixel Bits: Pixel Castle, Pixel Quest (hero, enemies, power-ups, underground), Pixel Space (dithered nebula, ringed planet, ships), Pixel City, Pixel Peaks |
-  | Light     | Lantern Festival, Candlelight, Jellyfish, Fireflies |
+  | Nature    | Sky and land (Northern Lights, Moonlit Peaks, Starry Pines, Moon Path), Fire (Campfire, Embers, Inferno, Volcano, Flame) and Storm (Lightning Strike, Storm Cell) |
+  | City      | Rooftops, Skyline, Night Highway |
+  | Glitch    | Data Rain, Wet Street (a rainy cyberpunk street), and eight code looks: Source Code, Diff Glitch, Kernel Panic, Hex Dump, Code Fall, Big Code, Corrupted, Build Log |
+  | Pixel Bits | Pixel Castle, Pixel Quest, Pixel Sunset, Pixel Galaxy, Pixel Lighthouse |
+  | Light     | Lanterns, Candlelight, Jellyfish, Fireflies |
+
+  Older styles that were retired from browsing (for example Halo, Silk, Aurora, Pixel City) still open if you saved them as a favourite.
 - **True black backgrounds.** Every wallpaper starts from `#000000`, and the editor shows a live **Pitch black %**: the share of pixels your OLED screen can switch off completely.
 - **Material 3 / Material You.** It uses the dynamic colour theme (Android 12+) with surfaces forced to true black. There's also a **Material You palette** that tints wallpapers with your system colours.
-- **14 palettes** (Mono, Neon Cyan, Sunset, Aurora, Sakura, Lava, Ocean, Acid, Violet, Gold, Candy, Graffiti, Hue Shift, Material You), or Auto, which picks palettes that suit each style.
-- **Sub-categories.** Each world is split into sub-categories, shown as a second row of chips once you pick one, so you narrow the feed instead of scrolling it. Doodle breaks into Classic, Comic, Cats and Space; elsewhere each style is its own.
+- **16 palettes plus Material You** (Mono, Neon Cyan, Sunset, Aurora, Sakura, Lava, Ocean, Acid, Violet, Gold, Candy, Graffiti, Hue Shift, Fire, Storm, Cyberpunk), or Auto, which picks palettes that suit each style.
+- **Sub-categories.** Each world is split into sub-categories, shown as a second row of chips once you pick one, so you narrow the feed instead of scrolling it.
 - **Daily wallpaper.** Turn it on from the clock icon on Explore and a fresh wallpaper is set about once a day in the background, from everything, your favourites or one world.
 - **Black level.** A slider that crushes dim glow and haze to pure `#000000` on any wallpaper, for a darker, more battery-friendly result.
+- **Widget-safe and Purrcast quiet zones.** Lay the picture out below your launcher clock and weather widgets, or dim soft zones where Purrcast's widgets sit.
 - **Clock preview.** See the wallpaper under a lock-screen clock or a home screen with icons before you apply it.
 - **Matching pair.** One tap sets this wallpaper on home and a sibling in the same style and colours on lock.
 - **Swipe to compare.** In the preview, swipe left for a new variation and right to go back.
 - **Share.** A wallpaper is a short recipe, so a shared link (or the code pasted into search) draws the identical wallpaper on another phone.
 - **Search, style pages and history.** Search styles and worlds, open a page of one style's variations with "More like this", and find what you opened lately under "Recently viewed".
-- **Detail slider.** Turn the density of stars, doodles, lines, windows and falling code up or down. It works on every wallpaper except Tarot, a fixed composition, where it is hidden.
-- **Arrangements (Doodle world).** Lay the doodles out as a Grid, Rings, Spiral, Wave, Mosaic, Burst, Diagonal, Frame (a border that leaves the middle clear for the clock), Shape (packed into a heart, star, moon or circle) or a loose Scatter. Auto picks one from the seed.
+- **Detail slider.** Turn the density of stars, doodles, lines, windows and falling code up or down on the styles that have it.
+- **Arrangements (Doodle world).** Lay the doodles out as a Grid, Rings, Spiral, Wave, Mosaic, Burst, Diagonal, Frame, Shape or a loose Scatter. Auto picks one from the seed.
 - **Save** as a lossless PNG at screen size, QHD+ (1440×3200) or 4K (2160×3840). Files go to `Pictures/Zamoled`, and no storage permission is needed.
 - **Apply** to the home screen, lock screen or both.
-- **Update banner:** the app checks this repo's latest release and offers a one-tap download when a newer version is out.
+- **In-app updates.** The app checks this repo's releases and downloads and installs a newer version from inside the app.
+- **The trio.** Zamoled opens Purrcast and Maps and Cats, shows their Cat Club numbers, and every 10 days of your Purrcast streak earns a special Cat Club wallpaper (see `docs/TRIO.md` at the repo root).
 - **Favorites**, **Shuffle** (new seed) and **Surprise me**. The feed is a finite batch of 24, with a Shuffle button at the end, so there is nothing to scroll forever.
 - **Expressive Material 3 UI:** a bottom navigation bar with Explore, Categories and Favorites; a "Today's picks" carousel; category icons in their own morphing shapes; shared-element transitions from thumbnail to full screen; a floating editing toolbar; and spring motion throughout.
 
 ## Get the APK
 
-Every push runs the **Build APK** workflow (`.github/workflows/build.yml`):
+Zamoled updates itself from inside the app. For a first install, or to build your own:
 
-1. Open the repo's **Actions** tab, then the latest *Build APK* run.
-2. Download the `zamoled-apk` artifact. It holds `zamoled-release.apk` (small, optimised) and `zamoled-debug.apk`.
-3. Install it on your phone. You may need to allow installs from your browser or file manager.
+1. Open this repo's **Releases** and download the newest `zamoled-v<version>` release (`.github/workflows/zamoled-build.yml` builds it).
+2. Install it on your phone. You may need to allow installs from your browser or file manager.
 
-Each push to the release branch also publishes both APKs as the GitHub Release `v<versionName>` (bump `versionName` in `app/build.gradle.kts` for a new release). Pushing a tag like `v1.0.1` works too.
+Every push that touches `zamoled/` runs the build as a check. A push to `main` also publishes the release `zamoled-v<versionName>` (bump `versionName` in `app/build.gradle.kts` for a new release), and the in-app updater picks up the newest `zamoled-v*` release.
 
 ### Signing (so updates install over the old app)
 
