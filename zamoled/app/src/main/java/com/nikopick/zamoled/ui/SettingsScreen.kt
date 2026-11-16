@@ -233,6 +233,14 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
                     mapStat?.let { "${it.value} ${it.label}" },
                 )
                 Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "How it works: every wallpaper you heart counts as kept, and that is Zamoled's number in the Cat Club. " +
+                        "Purrcast adds its day streak and Maps and Cats its cats caught; each app shows the others' numbers when installed. " +
+                        "Nothing is uploaded. Rewards today are just the numbers; there are no unlocks yet.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
         Spacer(Modifier.height(12.dp))

@@ -23,3 +23,10 @@ data moves only when you tap something, or as tiny read-only counts.
 2. Pass only what the other app needs (a place, a mood); never an identifier or anything personal.
 3. Counts only through the Cat Club provider, one row, columns `value` (int) and `label` (short text).
 4. Write the link in this file first.
+
+## Streaks and rewards (what is real today)
+- **Purrcast streak**: opening the app counts as that day's visit. Consecutive days grow it, a missed day resets it to 1, the best is kept (64-day history).
+  The streak-card cat is a cloud cat at 1-2 days, partly sunny at 3, sunny at 7, sunglasses at 14+. Cheers at 3, 7, 14, 30, 100 days.
+- **Maps and Cats**: cats caught (Quest). A catch is 10-90 XP by rarity, walking is 1 XP per 25 m, level = 1 + floor(sqrt(XP / 60)).
+- **Zamoled**: wallpapers kept (hearted favourites).
+- **Rewards**: cosmetic only (cat moods, cheers, levels). No prizes or unlocks. Anything new must be added here and in each app's help text.

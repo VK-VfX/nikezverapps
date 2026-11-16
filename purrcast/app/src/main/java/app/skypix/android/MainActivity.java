@@ -276,7 +276,12 @@ public class MainActivity extends Activity {
         head.addView(refresh, new LinearLayout.LayoutParams(-2, -2));
         content.addView(head, lp(-1, -2, 0));
 
-        content.addView(new Ui.StreakCard(this, Store.streak(this), Store.bestStreak(this), Store.streakMask(this)), lp(-1, -2, 16));
+        Ui.StreakCard streakCard = new Ui.StreakCard(this, Store.streak(this), Store.bestStreak(this), Store.streakMask(this));
+        streakCard.setClickable(true);
+        streakCard.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { showCatClubHelp(); }
+        });
+        content.addView(streakCard, lp(-1, -2, 16));
 
         addBanners();
 
@@ -929,7 +934,11 @@ public class MainActivity extends Activity {
         StringBuilder club = new StringBuilder(Store.streak(this) + " day streak");
         if (zStat != null) club.append(" \u00b7 ").append(zStat);
         if (mStat != null) club.append(" \u00b7 ").append(mStat);
-        row(trio, "Cat Club", club.toString(), null);
+        Ui.Btn how = new Ui.Btn(this, "How it works", false);
+        how.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { showCatClubHelp(); }
+        });
+        row(trio, "Cat Club", club.toString(), how);
         trioRow(trio, "Zamoled", "AMOLED wallpapers that make room for your widgets", Trio.ZAMOLED, "zamoled",
                 Trio.REPO + "/releases");
         trioRow(trio, "Maps and Cats", "Maps, navigation and cats to catch", Trio.MAPS, "mapsandcats",
@@ -943,6 +952,23 @@ public class MainActivity extends Activity {
             });
             row(trio, "Wallpaper for this weather", "Opens Zamoled with a " + currentMood() + " wallpaper, ready to save", wp);
         }
+    }
+
+    /** What the streak and the Cat Club really do, in plain words. */
+    private void showCatClubHelp() {
+        String msg = "STREAK\n"
+                + "Opening Purrcast counts as your visit for the day. Visit on consecutive days and the streak grows. "
+                + "Miss a whole day and it starts again at 1; your best streak is kept.\n\n"
+                + "THE CAT ON YOUR STREAK CARD\n"
+                + "1\u20132 days: a cloud cat \u00b7 3 days: a partly sunny cat \u00b7 7 days: a sunny cat \u00b7 14+ days: a cat in sunglasses. "
+                + "You also get a cheer at 3, 7, 14, 30 and 100 days.\n\n"
+                + "THE CAT CLUB\n"
+                + "Purrcast counts days, Maps and Cats counts cats caught on walks, and Zamoled counts wallpapers you have kept. "
+                + "Each app shows the others' numbers when they are installed. Nothing is uploaded; the apps only read each other's counts on your phone.\n\n"
+                + "REWARDS\n"
+                + "For now they are the cat's moods and cheers here, and levels in Maps and Cats. There are no prizes or unlocks yet.";
+        new android.app.AlertDialog.Builder(this).setTitle("How the Cat Club works").setMessage(msg)
+                .setPositiveButton("Got it", null).show();
     }
 
     /** One word for the weather right now, which Zamoled turns into a matching wallpaper. */
