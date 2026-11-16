@@ -14,7 +14,25 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    buildTypes { release { isMinifyEnabled = false } }
+    // Release signing key comes from outside the repo (private nikezverapps-keys, via CI secrets). Without it, no release APK is built.
+    val ksPath = System.getenv("MAPSANDCATS_KEYSTORE_PATH")
+    val ksPass = System.getenv("MAPSANDCATS_KEY_PASSWORD")
+    signingConfigs {
+        if (ksPath != null && ksPass != null) {
+            create("release") {
+                storeFile = file(ksPath)
+                storePassword = ksPass
+                keyAlias = "mapsandcats"
+                keyPassword = ksPass
+            }
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfigs.findByName("release")?.let { signingConfig = it }
+        }
+    }
     sourceSets["main"].assets.srcDir(layout.buildDirectory.dir("web"))
 }
 

@@ -21,23 +21,40 @@ jobs:
           SDKM=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)
           yes | "$SDKM" --licenses > /dev/null || true
           "$SDKM" "platforms;android-34" "build-tools;34.0.0"
-      - name: Build debug APK
+      # Signing: the same key every time, or Android refuses to install a build over the previous one.
+      - name: Use the release signing key
+        id: key
+        env:
+          KEYSTORE_B64: ${{ secrets.MAPSANDCATS_KEYSTORE_BASE64 }}
+          KEY_PASSWORD: ${{ secrets.MAPSANDCATS_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEY_PASSWORD" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/mapsandcats.jks"
+            echo "::add-mask::$KEY_PASSWORD"
+            echo "MAPSANDCATS_KEYSTORE_PATH=$RUNNER_TEMP/mapsandcats.jks" >> "$GITHUB_ENV"
+            echo "MAPSANDCATS_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::MAPSANDCATS_KEYSTORE_BASE64 / MAPSANDCATS_KEY_PASSWORD not set: building a debug APK, nothing is published."
+          fi
+      - name: Build APK
         working-directory: mapsandcats/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          if [ "${{ steps.key.outputs.release }}" = "true" ]; then ./gradlew assembleRelease --stacktrace; else ./gradlew assembleDebug --stacktrace; fi
       - name: Name the APK
         id: v
         run: |
           VER=$(python3 -c "import json;print(json.load(open('mapsandcats/version.json'))['version'])")
-          cp mapsandcats/android/app/build/outputs/apk/debug/app-debug.apk "MapsAndCats-v${VER}.apk"
+          if [ "${{ steps.key.outputs.release }}" = "true" ]; then SRC=mapsandcats/android/app/build/outputs/apk/release/app-release.apk; else SRC=mapsandcats/android/app/build/outputs/apk/debug/app-debug.apk; fi
+          cp "$SRC" "MapsAndCats-v${VER}.apk"
           echo "version=$VER" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
-          name: MapsAndCats-debug-apk
+          name: MapsAndCats-apk
           path: MapsAndCats-v${{ steps.v.outputs.version }}.apk
       - name: Publish GitHub Release
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && steps.key.outputs.release == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: mapsandcats-v${{ steps.v.outputs.version }}
