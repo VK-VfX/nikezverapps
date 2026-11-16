@@ -219,12 +219,13 @@ let vehiclePreviewUntil = 0;
 function arrow3dFC() {
   if (!me || !(nav.active || Date.now() < vehiclePreviewUntil)) return emptyFC;
   const v = VEHICLES[S.vehicle] || VEHICLES.arrow;
-  const mpp = 78271.517 * Math.cos(rad(me.lat)) / 2 ** map.getZoom(), L = v.px * mpp, br = rad(nav.active ? heading : 0), acc = getAccent();
+  const pose = nav.active ? vehiclePose() : null, plat = pose ? pose.lat : me.lat, plon = pose ? pose.lon : me.lon;
+  const mpp = 78271.517 * Math.cos(rad(plat)) / 2 ** map.getZoom(), L = v.px * mpp, br = rad(pose ? pose.h : nav.active ? heading : 0), acc = getAccent();
   return { type: 'FeatureCollection', features: v.parts.map(part => ({
     type: 'Feature', properties: { b: part.b * L, h: part.t * L, c: part.c === 'a' ? acc : VCOLOR[part.c] },
     geometry: { type: 'Polygon', coordinates: [[...part.p, part.p[0]].map(([x, y]) => {
       const dx = x * L, dy = y * L, east = dx * Math.cos(br) + dy * Math.sin(br), north = -dx * Math.sin(br) + dy * Math.cos(br);
-      return [me.lon + deg(east / (R * Math.cos(rad(me.lat)))), me.lat + deg(north / R)];
+      return [plon + deg(east / (R * Math.cos(rad(plat)))), plat + deg(north / R)];
     })] },
   })) };
 }
@@ -250,7 +251,7 @@ async function initMap() {
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
   map.on('style.load', onStyleLoad);
   map.on('zoom', update3dArrow);
-  map.on('dragstart', () => { following = false; $('#locateBtn').classList.remove('on'); });
+  map.on('dragstart', () => { following = false; $('#locateBtn').classList.remove('on'); if (nav.active) scheduleRecenter(); });
   map.on('move', updateScale);
   map.on('moveend', () => { updateClusters(); });
   map.on('idle', () => { updateClusters(); maybeNearbyFromTiles(); });
@@ -503,6 +504,62 @@ async function destWeather() {
   } catch { el.textContent = ''; }
 }
 
+/* ================= navigation that behaves like Waze / Google Maps =================
+   Your position is snapped to the route line (so the arrow rides the road, not the GPS noise), the arrow moves smoothly between fixes,
+   the heading follows the road, distances are measured along the route, the travelled part of the line disappears, voice prompts
+   come earlier the faster you drive, the camera zooms in for turns, and it re-centres by itself after you look around. */
+function prepRoute() {
+  const r = nav.routes[nav.sel]; if (!r) return false; if (nav._prep === r && nav.cum) return true;
+  const line = r.geometry.coordinates, cum = [0];
+  for (let i = 1; i < line.length; i++) cum.push(cum[i - 1] + dist([line[i - 1][1], line[i - 1][0]], [line[i][1], line[i][0]]));
+  nav.cum = cum; nav._prep = r; nav.snap = null; nav.routeLen = cum[cum.length - 1] || r.distance || 1;
+  const sum = nav.steps.reduce((a, st) => a + (st.distance || 0), 0) || nav.routeLen, k = nav.routeLen / sum; let a = 0;
+  nav.stepAt = nav.steps.map(st => { const v = a * k; a += st.distance || 0; return v; }); // metres along the route where each step begins
+  return true;
+}
+function snapToRoute() {
+  if (!me || !prepRoute()) return null;
+  const line = nav.routes[nav.sel].geometry.coordinates, n = line.length; if (n < 2) return null;
+  const from = nav.snap ? Math.max(0, nav.snap.idx - 3) : 0, to = nav.snap ? Math.min(n - 2, nav.snap.idx + 60) : n - 2;
+  const k = Math.cos(rad(me.lat)) * 111320, m = 110540; let best = null;
+  for (let i = from; i <= to; i++) {
+    const a = line[i], b = line[i + 1], px = (me.lon - a[0]) * k, py = (me.lat - a[1]) * m, bx = (b[0] - a[0]) * k, by = (b[1] - a[1]) * m, L = bx * bx + by * by;
+    const t = L ? Math.max(0, Math.min(1, (px * bx + py * by) / L)) : 0, d = Math.hypot(px - t * bx, py - t * by);
+    if (!best || d < best.d) best = { idx: i, t, d, lat: a[1] + (b[1] - a[1]) * t, lon: a[0] + (b[0] - a[0]) * t, along: nav.cum[i] + (nav.cum[i + 1] - nav.cum[i]) * t };
+  }
+  if (!best || best.d > Math.max(30, (me.acc || 0) * 1.3)) { nav.snap = null; return null; } // off the road: raw position, rerouting takes over
+  if (nav.snap && best.along < nav.snap.along) best.along = nav.snap.along; // never slide backwards along the route
+  nav.snap = best; return best;
+}
+function roadHeading(sn) { // the direction of the road a few metres ahead, so the arrow does not wobble with GPS
+  const line = nav.routes[nav.sel].geometry.coordinates; let j = sn.idx + 1;
+  while (j < line.length - 1 && nav.cum[j] < sn.along + 14) j++;
+  return bearingDeg({ lat: sn.lat, lon: sn.lon }, { lat: line[j][1], lon: line[j][0] });
+}
+function lerpAngle(a, b, t) { return (a + angDiff(a, b) * t + 360) % 360; }
+function vehiclePose() { // the arrow glides from where it was to where it is
+  const p = nav.pose; if (!p) return null;
+  const t = Math.min(1, (performance.now() - p.t0) / 1000);
+  return { lat: p.from.lat + (p.to.lat - p.from.lat) * t, lon: p.from.lon + (p.to.lon - p.from.lon) * t, h: lerpAngle(p.from.h, p.to.h, t) };
+}
+function setPoseTarget(to) { const cur = vehiclePose(); nav.pose = { from: cur || to, to, t0: performance.now() }; heading = to.h; }
+function trimTravelled(sn) { // draw only the route still ahead
+  try { const line = nav.routes[nav.sel].geometry.coordinates;
+    map.getSource('routes')?.setData({ type: 'FeatureCollection', features: [{ type: 'Feature', properties: { i: nav.sel, sel: 1 }, geometry: { type: 'LineString', coordinates: [[sn.lon, sn.lat], ...line.slice(sn.idx + 1)] } }] }); } catch {}
+}
+let recenterT = null;
+function scheduleRecenter(ms = 8000) {
+  clearTimeout(recenterT);
+  recenterT = setTimeout(() => { if (!nav.active) return; following = true; $('#locateBtn').classList.add('on'); navCamera(700); }, ms);
+}
+function routeOverview() {
+  if (!nav.active || !nav.routes[nav.sel]) return; following = false; $('#locateBtn').classList.remove('on');
+  const b = new maplibregl.LngLatBounds(); nav.routes[nav.sel].geometry.coordinates.slice(nav.snap?.idx || 0).forEach(c => b.extend(c));
+  map.fitBounds(b, { padding: { top: 170, bottom: 150, left: 40, right: 40 }, pitch: 0, bearing: 0, maxZoom: 17, duration: 800 });
+  scheduleRecenter(9000);
+}
+setInterval(() => { if (nav.active && nav.pose) update3dArrow(); }, 70);
+
 /* Speedometer, and a meow when you reach your chosen speed (80 km/h unless you change it in settings). */
 let speedMs = 0, meowArmed = true;
 function updateSpeed(prev, cur, spd) {
@@ -551,20 +608,22 @@ function updateHeading(prev, cur) {
 }
 const NO_PAD = { top: 0, bottom: 0, left: 0, right: 0 };
 // the faster you go, the further the camera pulls back so you see the road ahead
-const navZoom = () => 17.4 - Math.min(1.6, speedMs * 3.6 / 70);
+const navZoom = () => Math.min(18.2, 17.4 - Math.min(1.6, speedMs * 3.6 / 70) + (nav.dNext < 200 ? (1 - nav.dNext / 200) * 0.8 : 0));
 // while navigating, hide the shop dots and names so the road, the route and the next turn stand out
 function navDeclutter(on) {
   for (const id of ['poi-dots', 'poi-labels']) { try { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'none' : 'visible'); } catch {} }
 }
 function navCamera(duration = 900) {
   if (!map || !me) return;
-  if (view3d) map.easeTo({ center: [me.lon, me.lat], bearing: heading, pitch: 60, zoom: navZoom(), padding: { top: Math.round(innerHeight * .38), bottom: 0, left: 0, right: 0 }, duration, easing: t => t });
-  else map.easeTo({ center: [me.lon, me.lat], bearing: 0, pitch: 0, zoom: 17, padding: NO_PAD, duration });
+  const c = nav.pose ? nav.pose.to : me;
+  if (view3d) map.easeTo({ center: [c.lon, c.lat], bearing: heading, pitch: 60, zoom: navZoom(), padding: { top: Math.round(innerHeight * .38), bottom: 0, left: 0, right: 0 }, duration, easing: t => t });
+  else map.easeTo({ center: [c.lon, c.lat], bearing: 0, pitch: 0, zoom: 17, padding: NO_PAD, duration });
 }
 function resetCamera() { map.easeTo({ pitch: 0, bearing: 0, padding: NO_PAD, duration: 600 }); }
 function onPos(lat, lon, acc, ts = Date.now(), spd) {
   const prev = me; me = { lat, lon, acc, ts };
   updateHeading(prev, me); updateSpeed(prev, me, spd);
+  if (nav.active) { const sn = snapToRoute(); setPoseTarget(sn ? { lat: sn.lat, lon: sn.lon, h: roadHeading(sn) } : { lat: me.lat, lon: me.lon, h: heading }); }
   if (!map) return;
   if (!meMarker) {
     const el = document.createElement('div'); el.className = 'me';
@@ -901,7 +960,7 @@ async function reroute() {
   try {
     const { routes } = await routesWithFallback(routeCoords(), ac.signal);
     if (!nav.active || !routes?.length) return;
-    nav.routes = routes.slice(0, 1); nav.sel = 0; nav.idx = 0; nav.off = 0; nav.said.clear();
+    nav.routes = routes.slice(0, 1); nav.sel = 0; nav.idx = 0; nav.off = 0; nav.said.clear(); nav._prep = null; nav.snap = null; nav.t0 = null;
     drawRoutes(false); nav.steps = nav.routes[0].legs.flatMap(l => l.steps); haptic(30); speak('Rerouting.');
   } catch {} finally { clearTimeout(t); nav.rerouting = false; }
 }
@@ -964,7 +1023,7 @@ function clearRoute() {
 $('#startNav').addEventListener('click', () => {
   if (!nav.routes[nav.sel] || !me) return toast('Waiting for a route…');
   try { (purr.ac || (purr.ac = new (window.AudioContext || window.webkitAudioContext)())).resume(); } catch {}
-  nav.active = true; keepAwake(true); renderSpeedo(); navDeclutter(true); update3dArrow(); nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
+  nav.active = true; nav.snap = null; nav.pose = null; nav._prep = null; nav.t0 = null; nav.a0 = null; nav.dNext = Infinity; keepAwake(true); renderSpeedo(); navDeclutter(true); update3dArrow(); nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
   document.body.classList.add('navigating'); $('#navBanner').hidden = false; $('#tripBar').hidden = false; resEl.hidden = true; syncPanels(); syncMute();
   S.trips = [{ name: nav.dest.name, ts: Date.now(), mode: nav.mode, dist: nav.routes[nav.sel].distance }, ...S.trips].slice(0, 20); save(); renderSaved();
   navCamera(800);
@@ -991,25 +1050,41 @@ function stopNav(silent) {
 }
 function navTick() {
   const steps = nav.steps; if (!steps.length || !me) return; const here = [me.lat, me.lon];
-  while (nav.idx + 1 < steps.length) { const m = steps[nav.idx + 1].maneuver.location; if (dist(here, [m[1], m[0]]) < 25) nav.idx++; else break; }
-  const next = steps[Math.min(nav.idx + 1, steps.length - 1)], nl = next.maneuver.location, dNext = dist(here, [nl[1], nl[0]]);
+  const sn = nav.snap && prepRoute() ? nav.snap : null; let dNext, rest;
+  if (sn) { // measured along the route itself
+    while (nav.idx + 1 < steps.length && sn.along >= nav.stepAt[nav.idx + 1] - 12) nav.idx++;
+    dNext = Math.max(0, nav.stepAt[Math.min(nav.idx + 1, steps.length - 1)] - sn.along); rest = Math.max(0, nav.routeLen - sn.along);
+  } else {
+    while (nav.idx + 1 < steps.length) { const m = steps[nav.idx + 1].maneuver.location; if (dist(here, [m[1], m[0]]) < 25) nav.idx++; else break; }
+    const nl0 = steps[Math.min(nav.idx + 1, steps.length - 1)].maneuver.location; dNext = dist(here, [nl0[1], nl0[0]]);
+    rest = steps.slice(nav.idx + 2).reduce((a, s) => a + s.distance, 0) + dNext;
+  }
+  nav.dNext = dNext;
+  const next = steps[Math.min(nav.idx + 1, steps.length - 1)], nl = next.maneuver.location;
   if (next.maneuver.type === 'arrive' && dNext < 25) {
     haptic(80); setTimeout(() => haptic(80), 200); speak(catSay('arrive')); toast('🎉 You have arrived!', 3500); clearRoute(); return;
   }
   $('#navArrow').textContent = arrow(next); $('#navDist').textContent = fmtDist(dNext);
-  const rest = steps.slice(nav.idx + 2).reduce((a, s) => a + s.distance, 0) + dNext;
   $('#navText').textContent = instr(next);
   // "then ..." preview of the turn after this one, when it is close
-  const after = steps[nav.idx + 2], dThen = after ? dist([nl[1], nl[0]], [after.maneuver.location[1], after.maneuver.location[0]]) : Infinity;
+  const after = steps[nav.idx + 2], dThen = after ? (sn ? nav.stepAt[nav.idx + 2] - nav.stepAt[nav.idx + 1] : dist([nl[1], nl[0]], [after.maneuver.location[1], after.maneuver.location[0]])) : Infinity;
   $('#navThen').textContent = after && after.maneuver.type !== 'arrive' && dThen < 400 ? `Then ${arrow(after)} ${instr(after)}` : '';
-  // trip bar: arrival clock time, time left and distance left
-  const r = nav.routes[nav.sel], total = r.distance || 1, secs = (r.duration || 0) * Math.min(1, rest / total);
+  // trip bar: arrival time from the route, nudged by how fast you have really been going
+  const r = nav.routes[nav.sel], routeAvg = (r.distance || 1) / Math.max(1, r.duration || 1); let secs = rest / routeAvg;
+  if (sn) {
+    if (nav.t0 == null) { nav.t0 = Date.now(); nav.a0 = sn.along; }
+    const el = (Date.now() - nav.t0) / 1000, done = sn.along - nav.a0;
+    if (el > 90 && done > 300) { const ratio = Math.max(0.6, Math.min(1.4, (done / el) / routeAvg)); secs = secs / (0.6 * ratio + 0.4); }
+    trimTravelled(sn);
+  }
   $('#tripEta').textContent = new Date(Date.now() + secs * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   $('#tripLeft').textContent = fmtTime(secs); $('#tripDist').textContent = fmtDist(rest);
   refreshLimit();
   // voice: one heads-up, one "now"
-  const far = nav.mode === 'foot' ? 80 : 400, near = nav.mode === 'foot' ? 25 : 80;
-  const kf = `${nav.idx}f`, kn = `${nav.idx}n`;
+  const foot = nav.mode === 'foot', v = speedMs;
+  const far = foot ? 80 : Math.max(200, Math.min(1000, v * 20)), near = foot ? 25 : Math.max(50, Math.min(140, v * 5)), early = !foot && v > 20 ? 2000 : 0;
+  const kf = `${nav.idx}f`, kn = `${nav.idx}n`, ke = `${nav.idx}e`;
+  if (early && dNext < early && dNext > far + 300 && !nav.said.has(ke)) { nav.said.add(ke); speak(catSay('far', `In ${fmtDist(dNext).replace(' m', ' metres').replace(' km', ' kilometres')}, ${instr(next)}`)); }
   if (dNext < near && !nav.said.has(kn)) { nav.said.add(kn); nav.said.add(kf); speak(catSay('now', instr(next))); haptic(30); }
   else if (dNext < far && !nav.said.has(kf)) { nav.said.add(kf); speak(catSay('far', `In ${fmtDist(dNext).replace(' m', ' metres').replace(' km', ' kilometres')}, ${instr(next)}`)); }
   // off-route: farther than max(60 m, 1.5× GPS accuracy) from the line for 3 consecutive good fixes (jitter and bad fixes are ignored)
@@ -1257,6 +1332,7 @@ $('#vehicleSel').addEventListener('change', e => {
   S.vehicle = e.target.value; save(); update3dArrow();
   toast(`${(VEHICLES[S.vehicle] || VEHICLES.arrow).name} chosen. You will see it when you start navigating.`, 2800);
 });
+$('#overviewBtn').addEventListener('click', routeOverview);
 $('#alongBtn').addEventListener('click', () => { const a = $('#along'); if (a.hidden) openAlong('fuel'); else a.hidden = true; });
 $('#alongChip').addEventListener('click', () => openAlong('fuel'));
 $('#alongClose').addEventListener('click', () => { $('#along').hidden = true; });

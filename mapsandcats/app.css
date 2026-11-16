@@ -276,3 +276,5 @@ body:not(.navigating) #along { bottom: calc(var(--sheet-h, 260px) + 10px + var(-
 #tripBar b { white-space: nowrap; }
 #tripBar:has(.wx.wet) b { font-size: 15px; }
 #tripBar:has(.wx.wet) { padding: 8px 8px; }
+#overviewBtn { display: none; font-size: 19px; }
+body.navigating #overviewBtn { display: grid; }
