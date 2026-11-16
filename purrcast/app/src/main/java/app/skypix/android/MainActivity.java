@@ -876,15 +876,15 @@ public class MainActivity extends Activity {
         row(box, "Telegram", "@xnzvix", t);
         Ui.Btn g = new Ui.Btn(this, "Open", false);
         g.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { open("https://github.com/VK-VfX/Sam-s-Signal-Stabilizer"); }
+            @Override public void onClick(View v) { open("https://github.com/VK-VfX/nikezverapps/tree/main/purrcast"); }
         });
         row(box, "Source and releases", "GitHub", g);
 
         LinearLayout trio = section("The trio", 0);
         trioRow(trio, "Zamoled", "AMOLED wallpapers that make room for your widgets", "com.nikopick.zamoled",
-                "https://github.com/VK-VfX/nikopickzamoledz/releases");
+                "https://github.com/VK-VfX/nikezverapps/releases");
         trioRow(trio, "Maps and Cats", "Maps, navigation and cats to catch", "app.mapsandcats",
-                "https://github.com/VK-VfX/not-an-ordinary-alarm-clock");
+                "https://github.com/VK-VfX/nikezverapps/tree/main/mapsandcats");
     }
 
     /** One sibling app: opens it when installed, otherwise its download page. */

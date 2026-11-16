@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 VERSION_CODE=13
 VERSION_NAME=1.0.12
 RELEASE_NOTES="Sharper, more readable widgets, fixes for the Hourly and Day clock widgets, Your widgets settings list, and New York sample previews."
-UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/Sam-s-Signal-Stabilizer/claude/signal-stabilizer-game-8le0y5/dist
+UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist
 
 DEPS=build/deps
 mkdir -p "$DEPS" build/gen build/classes build/dex dist

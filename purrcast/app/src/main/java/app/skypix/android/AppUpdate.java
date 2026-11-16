@@ -36,7 +36,7 @@ final class AppUpdate {
     private AppUpdate() {}
 
     /** Where releases are published (a public repo; only this host is contacted). */
-    static final String BASE = "https://raw.githubusercontent.com/VK-VfX/Sam-s-Signal-Stabilizer/claude/signal-stabilizer-game-8le0y5/dist/";
+    static final String BASE = "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/";
 
     static final class Info {
         long code;

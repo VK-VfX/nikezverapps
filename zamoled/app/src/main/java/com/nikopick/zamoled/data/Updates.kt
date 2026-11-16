@@ -40,7 +40,8 @@ sealed interface UpdateResult {
  * does the rest after the person taps the file.
  */
 object Updates {
-    private const val LATEST = "https://api.github.com/repos/VK-VfX/nikopickzamoledz/releases/latest"
+    private const val RELEASES = "https://api.github.com/repos/VK-VfX/nikezverapps/releases?per_page=30"
+    private const val TAG_PREFIX = "zamoled-v"
     private const val WORK = "zamoled-update-check"
     private const val CHANNEL = "updates"
 
@@ -50,7 +51,7 @@ object Updates {
 
     suspend fun check(): UpdateResult = withContext(Dispatchers.IO) {
         try {
-            val conn = (URL(LATEST).openConnection() as HttpURLConnection).apply {
+            val conn = (URL(RELEASES).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8000
                 readTimeout = 8000
                 setRequestProperty("Accept", "application/vnd.github+json")
@@ -61,8 +62,15 @@ object Updates {
             } finally {
                 conn.disconnect()
             }
-            val json = JSONObject(body)
-            val version = json.getString("tag_name").removePrefix("v")
+            // this repo holds several apps: take the newest release whose tag starts with zamoled-v
+            val all = org.json.JSONArray(body)
+            var json: JSONObject? = null
+            for (i in 0 until all.length()) {
+                val r = all.getJSONObject(i)
+                if (r.getString("tag_name").startsWith(TAG_PREFIX) && !r.optBoolean("draft") && !r.optBoolean("prerelease")) { json = r; break }
+            }
+            if (json == null) return@withContext UpdateResult.UpToDate
+            val version = json.getString("tag_name").removePrefix(TAG_PREFIX)
             if (!isNewer(version, installedVersion)) return@withContext UpdateResult.UpToDate
             val assets = json.getJSONArray("assets")
             var apk: String? = null

@@ -1,17 +1,21 @@
-name: Build Windows app
+name: Zamoled - build Windows app
 
 # The Windows app shares the wallpaper generators with the phone app, so it is rebuilt when those or its own
 # files change, and can be run by hand. It adds Zamoled-Windows-x64.zip to the release of the current version.
 on:
   push:
-    branches: ['claude/hopeful-noether-lcc0fj']
-    tags: ['v*']
+    branches: ['main']
+    tags: ['zamoled-v*']
     paths:
-      - 'tools/desktop/**'
-      - 'app/src/main/java/com/nikopick/zamoled/gen/**'
-      - 'release-notes/**'
-      - '.github/workflows/windows.yml'
+      - 'zamoled/tools/desktop/**'
+      - 'zamoled/app/src/main/java/com/nikopick/zamoled/gen/**'
+      - 'zamoled/release-notes/**'
+      - '.github/workflows/zamoled-windows.yml'
   workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: zamoled
 
 permissions:
   contents: write
@@ -40,19 +44,19 @@ jobs:
       # Drawn on Windows itself, so a renderer that does not work there stops the release.
       - name: Draw test pictures on Windows
         shell: bash
-        working-directory: tools/desktop
+        working-directory: zamoled/tools/desktop
         run: bash ./gradlew test --console=plain --stacktrace
 
       - name: Build the Windows app
         shell: bash
-        working-directory: tools/desktop
+        working-directory: zamoled/tools/desktop
         run: bash ./gradlew distZip --console=plain --stacktrace
 
       - name: Keep the test pictures
         uses: actions/upload-artifact@v4
         with:
           name: windows-test-pictures
-          path: tools/desktop/build/smoke/*.png
+          path: zamoled/tools/desktop/build/smoke/*.png
 
       - name: Add to the release
         shell: bash
@@ -60,7 +64,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           V="$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)"
-          TAG="v$V"
+          TAG="zamoled-v$V"
           [ "${GITHUB_REF_TYPE}" = "tag" ] && TAG="${GITHUB_REF_NAME}"
           # The phone build creates the release; when both ran for this push, wait for it.
           for i in $(seq 1 40); do

@@ -212,15 +212,15 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
         Spacer(Modifier.height(12.dp))
         AboutLink("Telegram", "@xnzvix", "https://t.me/xnzvix")
         Spacer(Modifier.height(12.dp))
-        AboutLink("Source and releases", "GitHub", "https://github.com/VK-VfX/nikopickzamoledz/releases")
+        AboutLink("Source and releases", "GitHub", "https://github.com/VK-VfX/nikezverapps/releases")
         Spacer(Modifier.height(22.dp))
         SectionHead("05", "The trio")
         Spacer(Modifier.height(10.dp))
         SiblingApp("Purrcast", "Cat-themed weather and widgets", "app.skypix.weather",
-            "https://github.com/VK-VfX/Sam-s-Signal-Stabilizer/blob/claude/signal-stabilizer-game-8le0y5/dist/skypix.apk")
+            "https://github.com/VK-VfX/nikezverapps/tree/main/purrcast/dist")
         Spacer(Modifier.height(12.dp))
         SiblingApp("Maps and Cats", "Maps, navigation and cats to catch", "app.mapsandcats",
-            "https://github.com/VK-VfX/not-an-ordinary-alarm-clock")
+            "https://github.com/VK-VfX/nikezverapps/tree/main/mapsandcats")
         Spacer(Modifier.height(40.dp))
     }
 }

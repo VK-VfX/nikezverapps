@@ -1,19 +1,25 @@
-name: Build APK
+name: Zamoled - build APK
 
 on:
   push:
     branches: ['**']
-    tags: ['v*']
-    # The Windows app has its own workflow, so changes only to it do not rebuild the phone app.
-    paths-ignore:
-      - 'tools/desktop/**'
-      - 'tools/preview/**'
-      - '.github/workflows/windows.yml'
-      - '**.md'
-      - '!release-notes/**'
-
+    tags: ['zamoled-v*']
+    # Only Zamoled's own files. The Windows app has its own workflow.
+    paths:
+      - 'zamoled/**'
+      - '!zamoled/tools/desktop/**'
+      - '!zamoled/tools/preview/**'
+      - '!zamoled/**.md'
+      - 'zamoled/release-notes/**'
+      - '.github/workflows/zamoled-build.yml'
   pull_request:
+    paths:
+      - 'zamoled/**'
   workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: zamoled
 
 permissions:
   contents: write
@@ -98,7 +104,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: zamoled-apk
-          path: out/*.apk
+          path: zamoled/out/*.apk
 
       - name: Read app version
         id: version
@@ -124,15 +130,15 @@ jobs:
           } >> "$out"
           echo "file=$out" >> "$GITHUB_OUTPUT"
 
-      # Tag pushes publish their own release; pushes to the release branch publish v<versionName>.
+      # Tag pushes publish their own release; pushes to main publish zamoled-v<versionName>.
       - name: Publish release
         # Only publish APKs signed with the permanent key, so every release updates the last one.
-        if: (steps.secret_key.outputs.ready == 'true' || steps.ci_key.outputs.ready == 'true') && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/claude/hopeful-noether-lcc0fj')
+        if: (steps.secret_key.outputs.ready == 'true' || steps.ci_key.outputs.ready == 'true') && (startsWith(github.ref, 'refs/tags/zamoled-v') || github.ref == 'refs/heads/main')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', steps.version.outputs.name) }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/zamoled-v') && github.ref_name || format('zamoled-v{0}', steps.version.outputs.name) }}
           target_commitish: ${{ github.sha }}
           name: Zamoled ${{ steps.version.outputs.name }}
-          make_latest: true
+          make_latest: false
           body_path: ${{ steps.notes.outputs.file }}
-          files: out/*.apk
+          files: zamoled/out/*.apk
