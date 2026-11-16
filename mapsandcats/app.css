@@ -245,3 +245,4 @@ body.hud-on #speedo { bottom: calc(218px + var(--sab)); }
 #tripBar b { display: block; font-size: 17px; font-weight: 800; line-height: 1.15; }
 #tripBar small { color: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
 @media (min-width: 700px) { #tripBar { left: 424px; right: auto; width: 360px; bottom: 16px; } }
+.me.hide { visibility: hidden; }

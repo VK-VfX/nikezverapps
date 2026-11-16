@@ -174,6 +174,28 @@ function onStyleLoad() {
   map.addLayer({ id: 'route-alt', type: 'line', source: 'routes', filter: ['==', ['get', 'sel'], 0], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#7b8190', 'line-width': 5, 'line-opacity': .85 } }, before);
   map.addLayer({ id: 'route-glow', type: 'line', source: 'routes', filter: ['==', ['get', 'sel'], 1], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': acc, 'line-width': 14, 'line-opacity': .25, 'line-blur': 3 } }, before);
   map.addLayer({ id: 'route-main', type: 'line', source: 'routes', filter: ['==', ['get', 'sel'], 1], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': acc, 'line-width': 6 } }, before);
+  // your car-arrow while navigating: a real 3D object in the map (white base plate under a coloured arrow)
+  map.addSource('me3d', { type: 'geojson', data: emptyFC });
+  map.addLayer({ id: 'me-arrow', type: 'fill-extrusion', source: 'me3d', paint: { 'fill-extrusion-color': ['get', 'c'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'b'], 'fill-extrusion-opacity': 1 } });
+  update3dArrow();
+}
+function arrow3dFC() {
+  if (!me || !nav.active) return emptyFC;
+  const mpp = 78271.517 * Math.cos(rad(me.lat)) / 2 ** map.getZoom(), L = 60 * mpp, br = rad(heading), acc = getAccent(); // about 60 px long on screen
+  const shape = (scale, base, top, color) => {
+    const ring = [[0, .5], [.36, -.5], [0, -.24], [-.36, -.5], [0, .5]].map(([x, y]) => {
+      const dx = x * L * scale, dy = y * L * scale;
+      const east = dx * Math.cos(br) + dy * Math.sin(br), north = -dx * Math.sin(br) + dy * Math.cos(br);
+      return [me.lon + deg(east / (R * Math.cos(rad(me.lat)))), me.lat + deg(north / R)];
+    });
+    return { type: 'Feature', properties: { b: base * L, h: top * L, c: color }, geometry: { type: 'Polygon', coordinates: [ring] } };
+  };
+  return { type: 'FeatureCollection', features: [shape(1.22, 0, .12, '#ffffff'), shape(1, .12, .34, acc)] };
+}
+let arrowQueued = false;
+function update3dArrow() {
+  if (!map || arrowQueued) return; arrowQueued = true;
+  requestAnimationFrame(() => { arrowQueued = false; try { map.getSource('me3d')?.setData(arrow3dFC()); } catch {} });
 }
 async function reloadStyle() {
   const kind = S.theme === 'light' ? 'light' : 'dark';
@@ -191,6 +213,7 @@ async function initMap() {
   map.touchZoomRotate.disableRotation();
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
   map.on('style.load', onStyleLoad);
+  map.on('zoom', update3dArrow);
   map.on('dragstart', () => { following = false; $('#locateBtn').classList.remove('on'); });
   map.on('move', updateScale);
   map.on('moveend', () => { updateClusters(); });
@@ -409,8 +432,11 @@ function onPos(lat, lon, acc, ts = Date.now(), spd) {
     meMarker = new maplibregl.Marker({ element: el, rotationAlignment: 'map', pitchAlignment: 'map' }).setLngLat([lon, lat]).addTo(map);
   } else meMarker.setLngLat([lon, lat]);
   // while navigating the dot becomes an arrow that points the way you are heading (it lies flat on the road in 3D)
-  meMarker.getElement().classList.toggle('arrow', !!nav.active);
+  const has3d = !!map.getLayer('me-arrow');
+  meMarker.getElement().classList.toggle('arrow', !!nav.active && !has3d); // the flat arrow is only the fallback
+  meMarker.getElement().classList.toggle('hide', !!nav.active && has3d);
   meMarker.setRotation(nav.active ? heading : 0);
+  update3dArrow();
 
   if (!firstFix.done) {
     firstFix.done = true; following = true; $('#locateBtn').classList.add('on');
@@ -797,7 +823,7 @@ function clearRoute() {
 $('#startNav').addEventListener('click', () => {
   if (!nav.routes[nav.sel] || !me) return toast('Waiting for a route…');
   try { (purr.ac || (purr.ac = new (window.AudioContext || window.webkitAudioContext)())).resume(); } catch {}
-  nav.active = true; keepAwake(true); renderSpeedo(); navDeclutter(true); nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
+  nav.active = true; keepAwake(true); renderSpeedo(); navDeclutter(true); update3dArrow(); nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
   document.body.classList.add('navigating'); $('#navBanner').hidden = false; $('#tripBar').hidden = false; resEl.hidden = true; syncPanels(); syncMute();
   S.trips = [{ name: nav.dest.name, ts: Date.now(), mode: nav.mode, dist: nav.routes[nav.sel].distance }, ...S.trips].slice(0, 20); save(); renderSaved();
   navCamera(800);
@@ -806,7 +832,7 @@ $('#startNav').addEventListener('click', () => {
 });
 // End = leave navigation and return to the map. Hide the UI first so a failure elsewhere can never leave you stuck.
 function endNavigation() {
-  document.body.classList.remove('navigating'); $('#navBanner').hidden = true; $('#tripBar').hidden = true; nav.active = false; keepAwake(quest.on); renderSpeedo(); navDeclutter(false);
+  document.body.classList.remove('navigating'); $('#navBanner').hidden = true; $('#tripBar').hidden = true; nav.active = false; keepAwake(quest.on); renderSpeedo(); navDeclutter(false); update3dArrow(); meMarker?.getElement().classList.remove('hide');
   try { resetCamera(); } catch {}
   try { stopSpeech(); } catch {}
   try { clearRoute(); } catch (e) { try { syncPanels(); } catch {} }
@@ -814,7 +840,7 @@ function endNavigation() {
 }
 $('#navStop').addEventListener('click', endNavigation);
 function stopNav(silent) {
-  if (!nav.active && silent) return; nav.active = false; keepAwake(quest.on); renderSpeedo(); navDeclutter(false);
+  if (!nav.active && silent) return; nav.active = false; keepAwake(quest.on); renderSpeedo(); navDeclutter(false); update3dArrow(); meMarker?.getElement().classList.remove('hide');
   try { resetCamera(); } catch {}
   document.body.classList.remove('navigating'); $('#navBanner').hidden = true; $('#tripBar').hidden = true;
   try { stopSpeech(); } catch {}
