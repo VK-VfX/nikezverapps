@@ -919,41 +919,79 @@ function showQuick() {
 }
 qEl.addEventListener('focus', () => { if (!qEl.value.trim()) showQuick(); });
 qEl.addEventListener('input', () => {
-  $('#clearQ').hidden = !qEl.value; clearTimeout(searchT);
+  $('#clearQ').hidden = !qEl.value; clearTimeout(searchT); clearResultsMap();
   const v = qEl.value.trim(); if (!v) return showQuick();
   if (v.length < 3) { resEl.hidden = true; return; }
   searchT = setTimeout(doSearch, 450);
 });
 qEl.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(searchT); doSearch(true); qEl.blur(); } });
-$('#clearQ').addEventListener('click', () => { qEl.value = ''; $('#clearQ').hidden = true; qEl.focus(); showQuick(); });
+$('#clearQ').addEventListener('click', () => { clearResultsMap(); qEl.value = ''; $('#clearQ').hidden = true; qEl.focus(); showQuick(); });
 const webRow = text => ({ name: `Search the web for “${text}”`, sub: 'DuckDuckGo · finds the place on the internet and reads its coordinates', icon: '🌐', webAction: true });
 async function doSearch(explicit = false) {
   const text = qEl.value.trim(); if (text.length < 2) return;
   searchAbort?.abort(); const ac = searchAbort = new AbortController();
-  showList([], 'Searching…');
+  clearResultsMap(); showList([], 'Searching…');
   let items = null; try { items = await blendSearch(text, ac.signal); } catch {}
   if (ac.signal.aborted) return;
   const weak = !items || !items.length || (items[0].rel < .5 && items[0].agree < 2);
-  if (!weak && !explicit) { showList([...items, webRow(text)], ''); return; }
-  await runWeb(text, items || [], ac, weak);
+  if (explicit && !weak) { showOnMap(items, text); return; }          // Enter: show where they all are
+  if (!weak) { showList([...items, webRow(text)], ''); return; }      // typing: suggestions
+  await runWeb(text, items || [], ac, true, explicit);
 }
-async function runWeb(text, base, ac, webFirst) {
+async function runWeb(text, base, ac, webFirst, toMap = false) {
   showList([...base, { name: 'Searching the web…', sub: 'Reading coordinates from the pages it finds', icon: '🌐', busy: true }], '');
   let web = []; try { web = await webSearch(text, ac.signal); } catch {}
   if (ac.signal.aborted) return;
   const seen = new Set(), all = [];
   for (const r of webFirst ? [...web, ...base] : [...base, ...web]) { const k = dedupeKey(r.lat, r.lon); if (seen.has(k)) continue; seen.add(k); all.push(r); }
-  showList(all.slice(0, 10), 'Nothing found on the web either. Try more of the name, or the area.');
+  if (toMap && all.length) showOnMap(all, text, true); else showList(all.slice(0, 10), 'Nothing found on the web either. Try more of the name, or the area.');
 }
+
+/* --- search results as pins on the map: zoom out to see where they all are, tap a pin or card, then Go --- */
+let resMarks = [], resSel = -1, resList = [];
+function clearResultsMap() { resMarks.forEach(m => m.remove()); resMarks = []; resList = []; resSel = -1; $('#resultStrip').hidden = true; document.body.classList.remove('has-results'); }
+function pickResult(r) {
+  clearResultsMap(); resEl.hidden = true; qEl.value = ''; $('#clearQ').hidden = true;
+  if (r.icon == null || r.src === 'web') { S.recents = [{ name: r.name, sub: r.sub, lat: r.lat, lon: r.lon }, ...S.recents.filter(x => dedupeKey(x.lat, x.lon) !== dedupeKey(r.lat, r.lon))].slice(0, 8); save(); renderSaved(); }
+  choose({ name: r.name, sub: r.sub, lat: r.lat, lon: r.lon });
+}
+function selectResult(i, fly) {
+  resSel = i; const strip = $('#resultStrip');
+  resMarks.forEach((m, j) => m.getElement().classList.toggle('on', j === i));
+  strip.querySelectorAll('.rcard[data-i]').forEach(c => c.classList.toggle('on', +c.dataset.i === i));
+  strip.querySelector(`.rcard[data-i="${i}"]`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  if (fly) map.easeTo({ center: [resList[i].lon, resList[i].lat], zoom: Math.max(map.getZoom(), 15.5), duration: 600 });
+}
+function showOnMap(items, text, fromWeb) {
+  clearResultsMap(); resEl.hidden = true;
+  resList = items.filter(r => isFinite(r.lat) && isFinite(r.lon)).slice(0, 10);
+  if (!resList.length) { showList([], 'No results. Try a different spelling.'); return; }
+  const strip = $('#resultStrip'), o = searchOrigin();
+  strip.innerHTML = resList.map((r, i) => `<div class="rcard" data-i="${i}"><div class="rtop"><span class="rnum">${i + 1}</span><b>${esc(r.name)}</b></div><small>${esc(kindLabel(r))}${esc(r.sub)}</small><div class="rbot"><span>${fmtDist(r.d != null ? r.d : dist(o, [r.lat, r.lon]))}</span><button class="go" data-i="${i}">Go</button></div></div>`).join('')
+    + (fromWeb ? '' : '<div class="rcard web"><div class="rtop"><span class="rnum">🌐</span><b>Search the web</b></div><small>Not here? Look it up on the internet</small></div>');
+  strip._q = text; strip.hidden = false; document.body.classList.add('has-results'); strip.scrollLeft = 0;
+  resList.forEach((r, i) => {
+    const el = document.createElement('div'); el.className = 'result-pin'; el.textContent = i + 1;
+    el.addEventListener('click', ev => { ev.stopPropagation(); selectResult(i, false); });
+    resMarks.push(new maplibregl.Marker({ element: el }).setLngLat([r.lon, r.lat]).addTo(map));
+  });
+  const b = new maplibregl.LngLatBounds(); resList.forEach(r => b.extend([r.lon, r.lat])); if (me) b.extend([me.lon, me.lat]);
+  following = false; $('#locateBtn').classList.remove('on'); $('#sheet').classList.add('collapsed');
+  setTimeout(() => { if (!resList.length) return; map.fitBounds(b, { padding: { top: 120, bottom: 250, left: 50, right: 50 }, maxZoom: 16, pitch: 0, bearing: 0, duration: 900 }); }, 300);
+  selectResult(0, false);
+}
+$('#resultStrip').addEventListener('click', e => {
+  const strip = e.currentTarget, go = e.target.closest('.go'), card = e.target.closest('.rcard');
+  if (go) { pickResult(resList[+go.dataset.i]); return; }
+  if (!card) return;
+  if (card.classList.contains('web')) { const text = strip._q, base = resList.slice(); searchAbort?.abort(); const ac = searchAbort = new AbortController(); clearResultsMap(); runWeb(text, base, ac, false, true); return; }
+  selectResult(+card.dataset.i, true);
+});
 resEl.addEventListener('click', e => {
   const li = e.target.closest('li[data-i]'); if (!li) return;
   const r = resEl._data[+li.dataset.i]; if (!r || r.busy) return;
-  if (r.webAction) { const text = qEl.value.trim(); searchAbort?.abort(); const ac = searchAbort = new AbortController(); runWeb(text, resEl._data.filter(x => !x.webAction), ac, false); return; }
-  resEl.hidden = true; qEl.value = '';
-  $('#clearQ').hidden = true;
-  const fromSearch = r.icon == null || r.src === 'web';
-  if (fromSearch) { S.recents = [{ name: r.name, sub: r.sub, lat: r.lat, lon: r.lon }, ...S.recents.filter(x => dedupeKey(x.lat, x.lon) !== dedupeKey(r.lat, r.lon))].slice(0, 8); save(); renderSaved(); }
-  choose({ name: r.name, sub: r.sub, lat: r.lat, lon: r.lon });
+  if (r.webAction) { const text = qEl.value.trim(); searchAbort?.abort(); const ac = searchAbort = new AbortController(); runWeb(text, resEl._data.filter(x => !x.webAction), ac, false, false); return; }
+  pickResult(r);
 });
 document.addEventListener('pointerdown', e => { if (!e.target.closest('#results, #topbar')) resEl.hidden = true; });
 

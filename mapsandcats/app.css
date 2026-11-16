@@ -278,3 +278,21 @@ body:not(.navigating) #along { bottom: calc(var(--sheet-h, 260px) + 10px + var(-
 #tripBar:has(.wx.wet) { padding: 8px 8px; }
 #overviewBtn { display: none; font-size: 19px; }
 body.navigating #overviewBtn { display: grid; }
+
+/* search results as pins + a card strip */
+#resultStrip { position: fixed; z-index: 760; left: 0; right: 0; bottom: calc(86px + var(--sab)); display: flex; gap: 10px; overflow-x: auto; padding: 4px 12px; scroll-snap-type: x proximity; scrollbar-width: none; }
+#resultStrip[hidden] { display: none; }
+#resultStrip::-webkit-scrollbar { display: none; }
+.rcard { flex: 0 0 min(240px, 70vw); scroll-snap-align: center; background: var(--panel); color: var(--text); border: 1.5px solid var(--line); border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+.rcard.on { border-color: var(--accent); }
+.rcard .rtop { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.rcard .rtop b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rcard small { color: var(--muted, #999); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rcard .rbot { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; font-size: 13px; }
+.rcard .go { border: 0; border-radius: 999px; padding: 6px 16px; font-weight: 800; background: var(--accent); color: var(--accent-ink); }
+.rnum { min-width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: 12px; }
+.result-pin { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); border: 2px solid #000; box-shadow: 0 2px 8px rgba(0,0,0,.5); display: grid; place-items: center; font-weight: 800; font-size: 13px; cursor: pointer; }
+.result-pin { text-align: center; }
+.result-pin.on { width: 34px; height: 34px; background: #ff4d4f; color: #fff; z-index: 5; }
+body.has-results #fabs { bottom: calc(246px + var(--sab)); }
+body.navigating #resultStrip { display: none; }
