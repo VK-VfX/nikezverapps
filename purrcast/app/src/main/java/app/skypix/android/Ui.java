@@ -296,6 +296,9 @@ final class Ui {
             super(c);
             setButtonDrawable(null);
             setBackground(null);
+            // A bare CompoundButton has no style, so it is not clickable and ignores touches; a CheckBox gets this from its style.
+            setClickable(true);
+            setFocusable(true);
         }
 
         /** There is no drawable to react to the checked state, so redraw ourselves or the switch looks stuck. */
