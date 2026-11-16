@@ -1,7 +1,7 @@
 {
-  "versionCode": 16,
-  "versionName": "1.0.15",
+  "versionCode": 17,
+  "versionName": "1.0.16",
   "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
-  "sha256": "718cfa09eed388fb7be193ba5a0cbae8839eec7f62dcecf769d41108b33d73d9",
-  "notes": "Fixes all switches in Settings: they were not clickable."
+  "sha256": "a0c372836bb3d9e4da2a282ec3d0c4eb9b936504856ae5f910aa02375a100eaa",
+  "notes": "The trio: Cat Club, place and wallpaper links with Zamoled and Maps and Cats, and a special Zamoled wallpaper every 10 days of streak."
 }

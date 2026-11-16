@@ -7,9 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Bump both for every release; the in-app updater compares VERSION_CODE (it must always go up).
-VERSION_CODE=16
-VERSION_NAME=1.0.15
-RELEASE_NOTES="Fixes all switches in Settings: they were not clickable."
+VERSION_CODE=17
+VERSION_NAME=1.0.16
+RELEASE_NOTES="The trio: Cat Club, place and wallpaper links with Zamoled and Maps and Cats, and a special Zamoled wallpaper every 10 days of streak."
 UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist
 
 DEPS=build/deps
