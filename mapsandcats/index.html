@@ -207,6 +207,14 @@
       </div>
       <label class="switch"><input id="speedoToggle" type="checkbox"><span></span></label>
     </div>
+    <label class="group-title" for="vehicleSel" style="margin-top:14px">Navigation vehicle</label>
+    <select id="vehicleSel">
+      <option value="arrow">Arrow</option>
+      <option value="hatch">Hatchback</option>
+      <option value="sport">Sports car</option>
+      <option value="plane">Plane</option>
+      <option value="cat">Cat</option>
+    </select>
     <label class="group-title" for="meowAt" style="margin-top:14px">Meow at (km/h)</label>
     <input id="meowAt" type="number" inputmode="numeric" min="0" max="300" step="5">
     <p class="hint">A cat meows once when you reach this speed (80 by default). 0 turns it off. Please keep to the speed limit!</p>

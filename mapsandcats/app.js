@@ -179,18 +179,54 @@ function onStyleLoad() {
   map.addLayer({ id: 'me-arrow', type: 'fill-extrusion', source: 'me3d', paint: { 'fill-extrusion-color': ['get', 'c'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'b'], 'fill-extrusion-opacity': 1 } });
   update3dArrow();
 }
+/* Vehicles for navigation: each is a few extruded shapes in a 1-unit-long box (x = right, y = forward, heights in units).
+   Colours: a = your accent, w white, k near-black, g glass, r red, y amber, o orange, d dark orange, p pink. */
+const rect = (x0, x1, y0, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+const oval = (cx, cy, rx, ry, n = 14) => Array.from({ length: n }, (_, i) => [cx + rx * Math.cos(i / n * 2 * Math.PI), cy + ry * Math.sin(i / n * 2 * Math.PI)]);
+const mirror = pts => pts.map(([x, y]) => [-x, y]);
+const wheels = (xo, yf, yb, w = .07, l = .16) => [[-xo - w, -xo, yf], [xo, xo + w, yf], [-xo - w, -xo, yb], [xo, xo + w, yb]]
+  .map(([x0, x1, y]) => ({ p: rect(x0, x1, y - l / 2, y + l / 2), b: 0, t: .09, c: 'k' }));
+const ARROW = [[0, .5], [.36, -.5], [0, -.24], [-.36, -.5], [0, .5]];
+const VEHICLES = {
+  arrow: { name: 'Arrow', px: 40, parts: [{ p: ARROW.map(([x, y]) => [x * 1.22, y * 1.22]), b: 0, t: .12, c: 'w' }, { p: ARROW, b: .12, t: .34, c: 'a' }] },
+  hatch: { name: 'Hatchback', px: 52, parts: [
+    { p: [[-.2, -.5], [.2, -.5], [.22, -.42], [.22, .3], [.17, .5], [-.17, .5], [-.22, .3], [-.22, -.42]], b: .03, t: .15, c: 'a' },
+    { p: rect(-.17, .17, -.3, .14), b: .15, t: .27, c: 'g' }, { p: rect(-.15, .15, -.22, .08), b: .27, t: .29, c: 'a' },
+    { p: rect(-.17, -.09, .47, .5), b: .08, t: .12, c: 'y' }, { p: rect(.09, .17, .47, .5), b: .08, t: .12, c: 'y' },
+    { p: rect(-.19, -.1, -.51, -.48), b: .08, t: .12, c: 'r' }, { p: rect(.1, .19, -.51, -.48), b: .08, t: .12, c: 'r' },
+    ...wheels(.19, .3, -.3)] },
+  sport: { name: 'Sports car', px: 56, parts: [
+    { p: [[-.22, -.5], [.22, -.5], [.24, -.1], [.18, .3], [.08, .5], [-.08, .5], [-.18, .3], [-.24, -.1]], b: .02, t: .11, c: 'a' },
+    { p: rect(-.14, .14, -.24, .1), b: .11, t: .2, c: 'g' }, { p: rect(-.12, .12, -.18, .02), b: .2, t: .22, c: 'a' },
+    { p: rect(-.23, .23, -.5, -.43), b: .11, t: .17, c: 'k' },
+    { p: rect(-.14, -.06, .47, .5), b: .06, t: .1, c: 'w' }, { p: rect(.06, .14, .47, .5), b: .06, t: .1, c: 'w' },
+    ...wheels(.2, .32, -.3, .07, .17)] },
+  plane: { name: 'Plane', px: 62, parts: [
+    { p: [[0, .5], [.07, .35], [.07, -.3], [.03, -.5], [-.03, -.5], [-.07, -.3], [-.07, .35]], b: .04, t: .16, c: 'w' },
+    { p: [[0, .15], [.5, -.12], [.5, -.2], [0, -.1], [-.5, -.2], [-.5, -.12]], b: .08, t: .1, c: 'a' },
+    { p: [[0, -.36], [.2, -.5], [.2, -.54], [0, -.46], [-.2, -.54], [-.2, -.5]], b: .08, t: .1, c: 'a' },
+    { p: rect(-.012, .012, -.5, -.28), b: .16, t: .3, c: 'a' },
+    { p: oval(.22, -.06, .03, .06, 8), b: .04, t: .1, c: 'k' }, { p: oval(-.22, -.06, .03, .06, 8), b: .04, t: .1, c: 'k' }] },
+  cat: { name: 'Cat', px: 48, parts: [
+    { p: oval(0, -.12, .2, .3), b: .04, t: .22, c: 'o' }, { p: rect(-.04, .04, -.32, .1), b: .22, t: .235, c: 'd' },
+    { p: oval(0, .27, .17, .15), b: .04, t: .28, c: 'o' },
+    { p: [[-.16, .3], [-.11, .47], [-.03, .35]], b: .2, t: .38, c: 'o' }, { p: mirror([[-.16, .3], [-.11, .47], [-.03, .35]]), b: .2, t: .38, c: 'o' },
+    { p: rect(-.025, .025, .38, .42), b: .22, t: .3, c: 'p' },
+    { p: [[.06, -.38], [.26, -.6], [.32, -.55], [.13, -.33]], b: .04, t: .1, c: 'd' }] },
+};
+const VCOLOR = { w: '#ffffff', k: '#15151a', g: '#24323d', r: '#ff3b4d', y: '#ffd54f', o: '#f4a340', d: '#c9701a', p: '#ff7a9a' };
+let vehiclePreviewUntil = 0;
 function arrow3dFC() {
-  if (!me || !nav.active) return emptyFC;
-  const mpp = 78271.517 * Math.cos(rad(me.lat)) / 2 ** map.getZoom(), L = 60 * mpp, br = rad(heading), acc = getAccent(); // about 60 px long on screen
-  const shape = (scale, base, top, color) => {
-    const ring = [[0, .5], [.36, -.5], [0, -.24], [-.36, -.5], [0, .5]].map(([x, y]) => {
-      const dx = x * L * scale, dy = y * L * scale;
-      const east = dx * Math.cos(br) + dy * Math.sin(br), north = -dx * Math.sin(br) + dy * Math.cos(br);
+  if (!me || !(nav.active || Date.now() < vehiclePreviewUntil)) return emptyFC;
+  const v = VEHICLES[S.vehicle] || VEHICLES.arrow;
+  const mpp = 78271.517 * Math.cos(rad(me.lat)) / 2 ** map.getZoom(), L = v.px * mpp, br = rad(nav.active ? heading : 0), acc = getAccent();
+  return { type: 'FeatureCollection', features: v.parts.map(part => ({
+    type: 'Feature', properties: { b: part.b * L, h: part.t * L, c: part.c === 'a' ? acc : VCOLOR[part.c] },
+    geometry: { type: 'Polygon', coordinates: [[...part.p, part.p[0]].map(([x, y]) => {
+      const dx = x * L, dy = y * L, east = dx * Math.cos(br) + dy * Math.sin(br), north = -dx * Math.sin(br) + dy * Math.cos(br);
       return [me.lon + deg(east / (R * Math.cos(rad(me.lat)))), me.lat + deg(north / R)];
-    });
-    return { type: 'Feature', properties: { b: base * L, h: top * L, c: color }, geometry: { type: 'Polygon', coordinates: [ring] } };
-  };
-  return { type: 'FeatureCollection', features: [shape(1.22, 0, .12, '#ffffff'), shape(1, .12, .34, acc)] };
+    })] },
+  })) };
 }
 let arrowQueued = false;
 function update3dArrow() {
@@ -1085,7 +1121,7 @@ function applyTheme(t) {
 function syncUI() {
   $$('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.theme === S.theme));
   $('#themeHint').textContent = { dark: 'Pitch-black AMOLED. Easy on the eyes and battery.', light: 'Bright and clean for daylight.', quest: 'Walking only. Cats spawn on the map — tap or stroll past them for XP.' }[S.theme];
-  $('#gkey').value = S.gkey; $('#gUsage').textContent = S.gkey ? `Google searches this month: ${gUsage().n} / ${G_LIMIT}. Used only on Enter or when open results look weak.` : ''; $('#weight').value = S.weight; $('#simToggle').checked = S.sim; $('#speedoToggle').checked = S.speedo !== false; $('#meowAt').value = S.meowAt; $('#verLabel').textContent = 'v' + APP_VERSION; $('#aboutVer').textContent = 'Version ' + APP_VERSION;
+  $('#gkey').value = S.gkey; $('#gUsage').textContent = S.gkey ? `Google searches this month: ${gUsage().n} / ${G_LIMIT}. Used only on Enter or when open results look weak.` : ''; $('#weight').value = S.weight; $('#simToggle').checked = S.sim; $('#speedoToggle').checked = S.speedo !== false; $('#vehicleSel').value = S.vehicle || 'arrow'; $('#meowAt').value = S.meowAt; $('#verLabel').textContent = 'v' + APP_VERSION; $('#aboutVer').textContent = 'Version ' + APP_VERSION;
   $('#srvPhoton').value = S.servers.photon; $('#srvNominatim').value = S.servers.nominatim; $('#srvOsrm').value = S.servers.osrm;
   syncMute();
 }
@@ -1110,6 +1146,10 @@ $('#srvSave').addEventListener('click', () => {
 });
 $('#srvReset').addEventListener('click', () => { S.servers = { photon: '', nominatim: '', osrm: '' }; save(); syncUI(); toast('Using public servers'); });
 $('#weight').addEventListener('change', e => { S.weight = Math.min(250, Math.max(30, +e.target.value || 65)); e.target.value = S.weight; save(); renderHud(); });
+$('#vehicleSel').addEventListener('change', e => {
+  S.vehicle = e.target.value; save(); update3dArrow();
+  toast(`${(VEHICLES[S.vehicle] || VEHICLES.arrow).name} chosen. You will see it when you start navigating.`, 2800);
+});
 $('#speedoToggle').addEventListener('change', e => { S.speedo = e.target.checked; save(); renderSpeedo(); });
 $('#meowAt').addEventListener('change', e => { const v = Math.min(300, Math.max(0, Math.round(+e.target.value || 0))); S.meowAt = v; e.target.value = v; meowArmed = true; save(); renderSpeedo(); toast(v ? `Meow at ${v} km/h 😼` : 'Meow off'); });
 $('#simToggle').addEventListener('change', e => { setSim(e.target.checked); toast(e.target.checked ? 'Simulating a stroll 🚶' : 'Simulation off'); });
