@@ -792,6 +792,112 @@ async function blendSearch(q, signal) {
   return mergeRank(q, o, [ph, nm]);
 }
 
+/* ================= web search: asks DuckDuckGo (or Bing) for the place, then reads the coordinates off the pages it finds =================
+   Nothing but the question leaves the phone. Pages are fetched by the Android shell (a page can't, CORS); Wikipedia answers directly. */
+const webCbs = {}; let webSeq = 0;
+window.__webGot = (id, status, url, body) => { const f = webCbs[id]; if (f) { delete webCbs[id]; f({ status, url, body }); } };
+function webGet(url, ms = 9000) {
+  return new Promise((res, rej) => {
+    if (window.AndroidWeb) {
+      const id = 'w' + (++webSeq), t = setTimeout(() => { delete webCbs[id]; rej(new Error('timeout')); }, ms);
+      webCbs[id] = r => { clearTimeout(t); r.status >= 200 && r.status < 400 ? res(r) : rej(new Error(r.status)); };
+      AndroidWeb.get(url, id);
+    } else {
+      const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
+      fetch(url, { signal: ac.signal }).then(async r => { clearTimeout(t); r.ok ? res({ status: r.status, url: r.url, body: await r.text() }) : rej(new Error(r.status)); }, e => { clearTimeout(t); rej(e); });
+    }
+  });
+}
+const SKIP_HOST = /(^|\.)(facebook|instagram|tiktok|twitter|youtube|pinterest|linkedin|reddit|tripadvisor)\.[a-z.]+$|(^|\.)x\.com$|duckduckgo\.com|bing\.com|google\./;
+function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } }
+function ddgLinks(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html'), out = [];
+  doc.querySelectorAll('a.result__a, a.result-link').forEach(a => {
+    let h = a.getAttribute('href') || ''; const m = h.match(/[?&]uddg=([^&]+)/); if (m) { try { h = decodeURIComponent(m[1]); } catch {} } else if (h.startsWith('//')) h = 'https:' + h;
+    if (/^https:/.test(h) && !/duckduckgo\.com\/y\.js/.test(h)) out.push({ url: h, title: a.textContent.trim() });
+  });
+  return out;
+}
+function bingLinks(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html'), out = [];
+  doc.querySelectorAll('li.b_algo h2 a').forEach(a => {
+    let h = a.getAttribute('href') || ''; const m = h.match(/[?&]u=a1([^&]+)/);
+    if (m) { try { h = atob(m[1].replace(/-/g, '+').replace(/_/g, '/')); } catch {} }
+    if (/^https:/.test(h)) out.push({ url: h, title: a.textContent.trim() });
+  });
+  return out;
+}
+const okLL = (a, b) => isFinite(a) && isFinite(b) && Math.abs(a) <= 90 && Math.abs(b) <= 180 && !(a === 0 && b === 0);
+const cleanTitle = t => String(t || '').split(/\s[-–—|·•:]\s/)[0].trim().slice(0, 80);
+function pageCoords(html) { // structured data first, then map links, then meta tags
+  const doc = new DOMParser().parseFromString(html, 'text/html'); let addr = null;
+  const title = cleanTitle(doc.querySelector('meta[property="og:title"]')?.content || doc.title);
+  for (const sc of doc.querySelectorAll('script[type="application/ld+json"]')) {
+    let j; try { j = JSON.parse(sc.textContent); } catch { continue; }
+    const stack = [j];
+    while (stack.length) {
+      const o = stack.pop(); if (!o || typeof o !== 'object') continue;
+      if (Array.isArray(o)) { stack.push(...o); continue; }
+      const g = o.geo && typeof o.geo === 'object' ? o.geo : o, la = +g.latitude, lo = +g.longitude;
+      if (okLL(la, lo)) return { lat: la, lon: lo, name: typeof o.name === 'string' && o.name ? o.name.slice(0, 80) : title };
+      if (!addr && o.address) {
+        const a = o.address; const t = typeof a === 'string' ? a : [a.streetAddress, a.addressLocality, a.postalCode, a.addressRegion, typeof a.addressCountry === 'string' ? a.addressCountry : a.addressCountry?.name].filter(x => typeof x === 'string' && x).join(', ');
+        if (t.length > 8) addr = { text: t, name: typeof o.name === 'string' ? o.name : title };
+      }
+      for (const k in o) if (o[k] && typeof o[k] === 'object') stack.push(o[k]);
+    }
+  }
+  const N = '(-?\\d{1,3}\\.\\d{3,})', RES = [
+    /"wgCoordinates":\{"lat":(-?[\d.]+),"lon":(-?[\d.]+)/, new RegExp(`!3d${N}!4d${N}`), new RegExp(`google\\.[a-z.]+/maps[^"'\\s<]*?@${N},${N}`),
+    new RegExp(`(?:maps\\.google\\.[a-z.]+|google\\.[a-z.]+/maps)[^"'\\s<]*?[?&;](?:q|ll|center|daddr)=${N}(?:,|%2C)${N}`), new RegExp(`openstreetmap\\.org[^"'\\s<]*?mlat=${N}(?:&amp;|&)mlon=${N}`),
+    new RegExp(`openstreetmap\\.org[^"'\\s<]*?#map=\\d+/${N}/${N}`), new RegExp(`geo:${N},${N}`), new RegExp(`maps\\.apple\\.com[^"'\\s<]*?[?&;](?:ll|q|coordinate)=${N},${N}`)];
+  for (const re of RES) { const m = html.match(re); if (m && okLL(+m[1], +m[2])) return { lat: +m[1], lon: +m[2], name: title }; }
+  const meta = n => doc.querySelector(`meta[name="${n}"],meta[property="${n}"]`)?.content;
+  const pos = meta('geo.position') || meta('ICBM');
+  if (pos) { const [la, lo] = pos.split(/[;,]/).map(Number); if (okLL(la, lo)) return { lat: la, lon: lo, name: title }; }
+  const la = +(meta('place:location:latitude') || meta('og:latitude') || meta('business:contact_data:latitude')), lo = +(meta('place:location:longitude') || meta('og:longitude') || meta('business:contact_data:longitude'));
+  if (okLL(la, lo)) return { lat: la, lon: lo, name: title };
+  return addr ? { addr } : null;
+}
+async function geocodeAddress(text, signal) {
+  const r = await fetch(`${SV().nominatim}/search?format=jsonv2&limit=1&q=${encodeURIComponent(text)}`, { signal });
+  const j = r.ok ? await r.json() : []; return j[0] ? { lat: +j[0].lat, lon: +j[0].lon } : null;
+}
+async function wikiSearch(q, signal) {
+  const lang = UI_LANG.slice(0, 2).replace(/[^a-z]/g, '') || 'en';
+  const r = await webGet(`https://${lang}.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrlimit=6&prop=coordinates|description&colimit=6`);
+  const pages = Object.values(JSON.parse(r.body).query?.pages || {});
+  return pages.filter(p => p.coordinates?.[0]).sort((a, b) => a.index - b.index).map(p => ({ name: p.title, sub: p.description || 'Wikipedia', lat: p.coordinates[0].lat, lon: p.coordinates[0].lon, src: 'web', icon: '🌐', host: 'wikipedia.org' }));
+}
+async function pageHunt(q, o, signal) {
+  const cc = S.country?.cc, query = encodeURIComponent(q + ' address'); let links = [];
+  try { links = ddgLinks((await webGet(`https://html.duckduckgo.com/html/?q=${query}${cc ? `&kl=${cc}-en` : ''}`)).body); } catch {}
+  if (links.length < 2) { try { links = links.concat(bingLinks((await webGet(`https://www.bing.com/search?q=${query}&setlang=en`)).body)); } catch {} }
+  const seen = new Set(), picks = [];
+  for (const l of links) { const h = hostOf(l.url); if (!h || SKIP_HOST.test(h) || seen.has(h) || /\.(pdf|docx?|xlsx?)(\?|$)/i.test(l.url)) continue; seen.add(h); picks.push({ ...l, host: h }); if (picks.length >= 6) break; }
+  if (!picks.length) throw new Error('no web results');
+  const got = await Promise.allSettled(picks.map(async p => { const c = pageCoords((await webGet(p.url, 9000)).body); return c ? { ...c, host: p.host, title: p.title } : null; }));
+  const out = []; let geocoded = 0;
+  for (const g of got) {
+    const c = g.status === 'fulfilled' ? g.value : null; if (!c) continue;
+    if (c.addr) { if (geocoded >= 2) continue; geocoded++; const pt = await geocodeAddress(c.addr.text, signal).catch(() => null); if (pt) out.push({ name: cleanTitle(c.addr.name) || c.host, sub: c.addr.text, ...pt, src: 'web', icon: '🌐', host: c.host }); continue; }
+    out.push({ name: c.name || cleanTitle(c.title) || c.host, sub: c.host, lat: c.lat, lon: c.lon, src: 'web', icon: '🌐', host: c.host });
+  }
+  return out;
+}
+async function webSearch(q, signal) {
+  const o = searchOrigin();
+  const [wk, pg] = (await Promise.allSettled([wikiSearch(q, signal), pageHunt(q, o, signal)])).map(r => r.status === 'fulfilled' ? r.value : null);
+  if (!wk && !pg) throw new Error('web search failed');
+  const keys = new Map(), out = [];
+  for (const r of [...(pg || []), ...(wk || [])]) {
+    const k = dedupeKey(r.lat, r.lon), ex = keys.get(k); if (ex) { ex.agree++; continue; }
+    r.agree = 1; r.d = dist(o, [r.lat, r.lon]); r.rel = relevance(q, r); keys.set(k, r); out.push(r);
+  }
+  for (const r of out) r.score = r.agree * .5 + r.rel + .25 / (1 + r.d / 15000);
+  return out.sort((a, b) => b.score - a.score).slice(0, 8);
+}
+
 let searchT, searchAbort, addingStop = false;
 const qEl = $('#q'), resEl = $('#results');
 function kindLabel(r) { // "Fuel · address" — helps tell apart ten places with the same name
@@ -820,20 +926,32 @@ qEl.addEventListener('input', () => {
 });
 qEl.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(searchT); doSearch(true); qEl.blur(); } });
 $('#clearQ').addEventListener('click', () => { qEl.value = ''; $('#clearQ').hidden = true; qEl.focus(); showQuick(); });
+const webRow = text => ({ name: `Search the web for “${text}”`, sub: 'DuckDuckGo · finds the place on the internet and reads its coordinates', icon: '🌐', webAction: true });
 async function doSearch(explicit = false) {
   const text = qEl.value.trim(); if (text.length < 2) return;
   searchAbort?.abort(); const ac = searchAbort = new AbortController();
   showList([], 'Searching…');
-  try {
-    const items = await blendSearch(text, ac.signal);
-    if (!ac.signal.aborted) showList(items, 'No results. Try a different spelling.');
-  } catch (e) { if (!ac.signal.aborted) showList([], 'Search failed. Check your connection.'); }
+  let items = null; try { items = await blendSearch(text, ac.signal); } catch {}
+  if (ac.signal.aborted) return;
+  const weak = !items || !items.length || (items[0].rel < .5 && items[0].agree < 2);
+  if (!weak && !explicit) { showList([...items, webRow(text)], ''); return; }
+  await runWeb(text, items || [], ac, weak);
+}
+async function runWeb(text, base, ac, webFirst) {
+  showList([...base, { name: 'Searching the web…', sub: 'Reading coordinates from the pages it finds', icon: '🌐', busy: true }], '');
+  let web = []; try { web = await webSearch(text, ac.signal); } catch {}
+  if (ac.signal.aborted) return;
+  const seen = new Set(), all = [];
+  for (const r of webFirst ? [...web, ...base] : [...base, ...web]) { const k = dedupeKey(r.lat, r.lon); if (seen.has(k)) continue; seen.add(k); all.push(r); }
+  showList(all.slice(0, 10), 'Nothing found on the web either. Try more of the name, or the area.');
 }
 resEl.addEventListener('click', e => {
   const li = e.target.closest('li[data-i]'); if (!li) return;
-  const r = resEl._data[+li.dataset.i]; resEl.hidden = true; qEl.value = '';
+  const r = resEl._data[+li.dataset.i]; if (!r || r.busy) return;
+  if (r.webAction) { const text = qEl.value.trim(); searchAbort?.abort(); const ac = searchAbort = new AbortController(); runWeb(text, resEl._data.filter(x => !x.webAction), ac, false); return; }
+  resEl.hidden = true; qEl.value = '';
   $('#clearQ').hidden = true;
-  const fromSearch = r.icon == null;
+  const fromSearch = r.icon == null || r.src === 'web';
   if (fromSearch) { S.recents = [{ name: r.name, sub: r.sub, lat: r.lat, lon: r.lon }, ...S.recents.filter(x => dedupeKey(x.lat, x.lon) !== dedupeKey(r.lat, r.lon))].slice(0, 8); save(); renderSaved(); }
   choose({ name: r.name, sub: r.sub, lat: r.lat, lon: r.lon });
 });
@@ -1418,6 +1536,6 @@ initMap().then(() => {
   if (S.theme === 'quest') setQuest(true);
   startLocation(); if (S.sim) setSim(true);
   window.__macCheckPending();
-  window.__mac = { map, S, nav, quest, onPos, selectPlace, catSay, limit, parseLimit, startNavTest: () => $('#startNav').click(), spawnCat, catchCat, segmentByScript, blendSearch, relevance, mergeRank, getMe: () => me };
+  window.__mac = { map, S, nav, quest, onPos, selectPlace, catSay, limit, parseLimit, startNavTest: () => $('#startNav').click(), spawnCat, catchCat, segmentByScript, blendSearch, webSearch, pageCoords, ddgLinks, relevance, mergeRank, getMe: () => me };
 });
 })();

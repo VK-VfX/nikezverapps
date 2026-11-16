@@ -85,6 +85,35 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> web.evaluateJavascript("window.__updProgress && window.__updProgress(" + JSONObject.quote(text) + ")", null));
         }
     }
+    /** Exposed to the page as window.AndroidWeb: fetches a public web page for the place search (the page itself cannot, CORS). */
+    private class WebBridge {
+        @JavascriptInterface public void get(final String url, final String id) {
+            new Thread(() -> {
+                int status = 0; String finalUrl = url, body = "";
+                try {
+                    Uri u = Uri.parse(url);
+                    String h = u.getHost() == null ? "" : u.getHost().toLowerCase(Locale.ROOT);
+                    if (!"https".equals(u.getScheme()) || h.isEmpty() || h.equals("localhost") || h.endsWith(".local") || h.matches("[\\d.]+") || h.contains(":"))
+                        throw new Exception("blocked");
+                    java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+                    c.setConnectTimeout(7000); c.setReadTimeout(8000); c.setInstanceFollowRedirects(true);
+                    c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36");
+                    c.setRequestProperty("Accept-Language", Locale.getDefault().toLanguageTag() + ",en;q=0.8");
+                    c.setRequestProperty("Accept", "text/html,application/json;q=0.9,*/*;q=0.5");
+                    status = c.getResponseCode(); finalUrl = c.getURL().toString();
+                    java.io.InputStream in = status >= 400 ? c.getErrorStream() : c.getInputStream();
+                    if (in != null) {
+                        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+                        byte[] buf = new byte[16384]; int n, total = 0;
+                        while ((n = in.read(buf)) > 0 && total < 700000) { out.write(buf, 0, n); total += n; }
+                        in.close(); body = out.toString("UTF-8");
+                    }
+                } catch (Exception e) { status = 0; }
+                final int st = status; final String fu = finalUrl, bd = body;
+                runOnUiThread(() -> web.evaluateJavascript("window.__webGot && window.__webGot(" + JSONObject.quote(id) + "," + st + "," + JSONObject.quote(fu) + "," + JSONObject.quote(bd) + ")", null));
+            }).start();
+        }
+    }
     /** Exposed to the page as window.AndroidApps: opens a sibling app (Purrcast, Zamoled), or its page when it isn't installed. */
     private class AppsBridge {
         @JavascriptInterface public boolean installed(String pkg) {
@@ -234,6 +263,7 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new AppsBridge(), "AndroidApps");
         web.addJavascriptInterface(new UpdateBridge(), "AndroidUpdater");
         web.addJavascriptInterface(new TrioBridge(), "AndroidTrio");
+        web.addJavascriptInterface(new WebBridge(), "AndroidWeb");
         captureLink(getIntent());
         web.loadUrl("https://" + HOST + "/index.html");
     }
