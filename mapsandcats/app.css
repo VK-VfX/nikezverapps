@@ -231,3 +231,17 @@ h2, h3, .brand h2, .label, .lvl, #navBanner b { font-family: "sans-serif-condens
 body.navigating #speedo { bottom: calc(66px + var(--sab)); }
 body.hud-on #speedo { bottom: calc(218px + var(--sab)); }
 @media (min-width: 700px) { #speedo { left: 424px; bottom: 60px !important; } }
+
+/* Navigation arrow: the blue dot becomes an arrow while you navigate */
+.me .navarrow { display: none; position: absolute; left: 50%; top: 50%; margin: -26px 0 0 -26px; fill: var(--accent); stroke: #fff; stroke-width: 3;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent)) drop-shadow(0 3px 4px rgba(0,0,0,.55)); }
+.me.arrow .navarrow { display: block; }
+.me.arrow i { display: none; }
+#navThen { margin-top: 3px; font-size: 13px; color: var(--accent); font-weight: 600; }
+#navThen:empty { display: none; }
+
+/* Trip bar */
+#tripBar { position: fixed; z-index: 700; left: 104px; right: 78px; bottom: calc(20px + var(--sab)); display: flex; justify-content: space-around; gap: 6px; padding: 8px 10px; border-radius: 18px; text-align: center; }
+#tripBar b { display: block; font-size: 17px; font-weight: 800; line-height: 1.15; }
+#tripBar small { color: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+@media (min-width: 700px) { #tripBar { left: 424px; right: auto; width: 360px; bottom: 16px; } }

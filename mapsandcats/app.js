@@ -387,9 +387,15 @@ function updateHeading(prev, cur) {
   if (prev && dist([prev.lat, prev.lon], [cur.lat, cur.lon]) > 4) heading = (heading + angDiff(heading, bearingDeg(prev, cur)) * 0.5 + 360) % 360;
 }
 const NO_PAD = { top: 0, bottom: 0, left: 0, right: 0 };
+// the faster you go, the further the camera pulls back so you see the road ahead
+const navZoom = () => 17.4 - Math.min(1.6, speedMs * 3.6 / 70);
+// while navigating, hide the shop dots and names so the road, the route and the next turn stand out
+function navDeclutter(on) {
+  for (const id of ['poi-dots', 'poi-labels']) { try { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'none' : 'visible'); } catch {} }
+}
 function navCamera(duration = 900) {
   if (!map || !me) return;
-  if (view3d) map.easeTo({ center: [me.lon, me.lat], bearing: heading, pitch: 60, zoom: 17.2, padding: { top: Math.round(innerHeight * .38), bottom: 0, left: 0, right: 0 }, duration, easing: t => t });
+  if (view3d) map.easeTo({ center: [me.lon, me.lat], bearing: heading, pitch: 60, zoom: navZoom(), padding: { top: Math.round(innerHeight * .38), bottom: 0, left: 0, right: 0 }, duration, easing: t => t });
   else map.easeTo({ center: [me.lon, me.lat], bearing: 0, pitch: 0, zoom: 17, padding: NO_PAD, duration });
 }
 function resetCamera() { map.easeTo({ pitch: 0, bearing: 0, padding: NO_PAD, duration: 600 }); }
@@ -398,9 +404,13 @@ function onPos(lat, lon, acc, ts = Date.now(), spd) {
   updateHeading(prev, me); updateSpeed(prev, me, spd);
   if (!map) return;
   if (!meMarker) {
-    const el = document.createElement('div'); el.className = 'me'; el.innerHTML = '<i></i>';
-    meMarker = new maplibregl.Marker({ element: el }).setLngLat([lon, lat]).addTo(map);
+    const el = document.createElement('div'); el.className = 'me';
+    el.innerHTML = '<i></i><svg class="navarrow" viewBox="0 0 48 48" width="52" height="52"><path d="M24 4 L40 41 L24 33 L8 41 Z" stroke-linejoin="round"/></svg>';
+    meMarker = new maplibregl.Marker({ element: el, rotationAlignment: 'map', pitchAlignment: 'map' }).setLngLat([lon, lat]).addTo(map);
   } else meMarker.setLngLat([lon, lat]);
+  // while navigating the dot becomes an arrow that points the way you are heading (it lies flat on the road in 3D)
+  meMarker.getElement().classList.toggle('arrow', !!nav.active);
+  meMarker.setRotation(nav.active ? heading : 0);
 
   if (!firstFix.done) {
     firstFix.done = true; following = true; $('#locateBtn').classList.add('on');
@@ -787,8 +797,8 @@ function clearRoute() {
 $('#startNav').addEventListener('click', () => {
   if (!nav.routes[nav.sel] || !me) return toast('Waiting for a route…');
   try { (purr.ac || (purr.ac = new (window.AudioContext || window.webkitAudioContext)())).resume(); } catch {}
-  nav.active = true; keepAwake(true); renderSpeedo(); nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
-  document.body.classList.add('navigating'); $('#navBanner').hidden = false; resEl.hidden = true; syncPanels(); syncMute();
+  nav.active = true; keepAwake(true); renderSpeedo(); navDeclutter(true); nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
+  document.body.classList.add('navigating'); $('#navBanner').hidden = false; $('#tripBar').hidden = false; resEl.hidden = true; syncPanels(); syncMute();
   S.trips = [{ name: nav.dest.name, ts: Date.now(), mode: nav.mode, dist: nav.routes[nav.sel].distance }, ...S.trips].slice(0, 20); save(); renderSaved();
   navCamera(800);
   speak(`Starting navigation. ${instr(nav.steps[0])}.`);
@@ -796,7 +806,7 @@ $('#startNav').addEventListener('click', () => {
 });
 // End = leave navigation and return to the map. Hide the UI first so a failure elsewhere can never leave you stuck.
 function endNavigation() {
-  document.body.classList.remove('navigating'); $('#navBanner').hidden = true; nav.active = false; keepAwake(quest.on);
+  document.body.classList.remove('navigating'); $('#navBanner').hidden = true; $('#tripBar').hidden = true; nav.active = false; keepAwake(quest.on); renderSpeedo(); navDeclutter(false);
   try { resetCamera(); } catch {}
   try { stopSpeech(); } catch {}
   try { clearRoute(); } catch (e) { try { syncPanels(); } catch {} }
@@ -804,9 +814,9 @@ function endNavigation() {
 }
 $('#navStop').addEventListener('click', endNavigation);
 function stopNav(silent) {
-  if (!nav.active && silent) return; nav.active = false; keepAwake(quest.on); renderSpeedo();
+  if (!nav.active && silent) return; nav.active = false; keepAwake(quest.on); renderSpeedo(); navDeclutter(false);
   try { resetCamera(); } catch {}
-  document.body.classList.remove('navigating'); $('#navBanner').hidden = true;
+  document.body.classList.remove('navigating'); $('#navBanner').hidden = true; $('#tripBar').hidden = true;
   try { stopSpeech(); } catch {}
   try { syncPanels(); } catch {}
   if (!silent) toast('Navigation ended');
@@ -820,7 +830,14 @@ function navTick() {
   }
   $('#navArrow').textContent = arrow(next); $('#navDist').textContent = fmtDist(dNext);
   const rest = steps.slice(nav.idx + 2).reduce((a, s) => a + s.distance, 0) + dNext;
-  $('#navText').textContent = `${instr(next)} · ${fmtDist(rest)} left`;
+  $('#navText').textContent = instr(next);
+  // "then ..." preview of the turn after this one, when it is close
+  const after = steps[nav.idx + 2], dThen = after ? dist([nl[1], nl[0]], [after.maneuver.location[1], after.maneuver.location[0]]) : Infinity;
+  $('#navThen').textContent = after && after.maneuver.type !== 'arrive' && dThen < 400 ? `Then ${arrow(after)} ${instr(after)}` : '';
+  // trip bar: arrival clock time, time left and distance left
+  const r = nav.routes[nav.sel], total = r.distance || 1, secs = (r.duration || 0) * Math.min(1, rest / total);
+  $('#tripEta').textContent = new Date(Date.now() + secs * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  $('#tripLeft').textContent = fmtTime(secs); $('#tripDist').textContent = fmtDist(rest);
   // voice: one heads-up, one "now"
   const far = nav.mode === 'foot' ? 80 : 400, near = nav.mode === 'foot' ? 25 : 80;
   const kf = `${nav.idx}f`, kn = `${nav.idx}n`;
@@ -1159,6 +1176,6 @@ initMap().then(() => {
   if (S.theme === 'quest') setQuest(true);
   startLocation(); if (S.sim) setSim(true);
   window.__macCheckPending();
-  window.__mac = { map, S, nav, quest, onPos, spawnCat, catchCat, segmentByScript, blendSearch, relevance, mergeRank, getMe: () => me };
+  window.__mac = { map, S, nav, quest, onPos, selectPlace, startNavTest: () => $('#startNav').click(), spawnCat, catchCat, segmentByScript, blendSearch, relevance, mergeRank, getMe: () => me };
 });
 })();
