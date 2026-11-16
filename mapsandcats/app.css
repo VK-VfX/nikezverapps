@@ -246,3 +246,33 @@ body.hud-on #speedo { bottom: calc(218px + var(--sab)); }
 #tripBar small { color: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
 @media (min-width: 700px) { #tripBar { left: 424px; right: auto; width: 360px; bottom: 16px; } }
 .me.hide { visibility: hidden; }
+
+/* Stops along the route */
+#alongBtn { display: none; font-size: 20px; }
+body.navigating #alongBtn { display: grid; }
+#along { position: fixed; z-index: 760; left: 12px; right: 12px; bottom: calc(100px + var(--sab)); max-height: 46vh; display: flex; flex-direction: column; padding: 10px 12px; border-radius: 20px; }
+#along[hidden] { display: none; }
+.along-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+#alongList { max-height: 28vh; }
+#alongList li .chip { margin-left: auto; flex: none; }
+@media (min-width: 700px) { #along { left: 424px; right: auto; width: 380px; bottom: 70px; } }
+
+/* Destination weather */
+.destwx { font-size: 14px; color: var(--muted); margin: -6px 0 10px; cursor: pointer; }
+.destwx:empty { display: none; }
+.destwx.wet { color: #4fa3ff; font-weight: 600; }
+#tripBar .wx { display: none; }
+#tripBar .wx.wet { display: block; }
+#tripBar .wx b { color: #4fa3ff; }
+
+/* Speed limit sign */
+#limit { position: fixed; z-index: 651; left: 14px; bottom: calc(66px + 82px + var(--sab)); width: 52px; height: 52px; border-radius: 50%; background: #fff; border: 5px solid #e53935; color: #111;
+  display: grid; place-items: center; box-shadow: var(--shadow); pointer-events: none; }
+#limit b { font-size: 20px; font-weight: 800; }
+#limit[hidden] { display: none; }
+#speedo.over { border-color: #ff5f6d; }
+#speedo.over b { color: #ff5f6d; }
+body:not(.navigating) #along { bottom: calc(var(--sheet-h, 260px) + 10px + var(--sab)); }
+#tripBar b { white-space: nowrap; }
+#tripBar:has(.wx.wet) b { font-size: 15px; }
+#tripBar:has(.wx.wet) { padding: 8px 8px; }

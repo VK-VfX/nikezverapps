@@ -50,12 +50,22 @@
   <div><b id="tripEta">—</b><small>arrive</small></div>
   <div><b id="tripLeft">—</b><small>left</small></div>
   <div><b id="tripDist">—</b><small>to go</small></div>
+  <div class="wx"><b id="tripWx">—</b><small>rain</small></div>
 </div>
+
+<div id="along" class="card" hidden>
+  <div class="along-head"><b>Stops along your route</b><button id="alongClose" class="icon-btn small" aria-label="Close">✕</button></div>
+  <div id="alongChips" class="chips"><button class="chip on" data-along="fuel">⛽ Fuel</button><button class="chip" data-along="coffee">☕ Coffee</button><button class="chip" data-along="rest">🚻 Rest</button></div>
+  <ul id="alongList" class="list compact"></ul>
+</div>
+
+<div id="limit" hidden aria-label="Speed limit"><b id="limitNum"></b></div>
 
 <div id="speedo" hidden aria-label="Current speed"><b id="speedoNum">0</b><small>km/h</small></div>
 
 <div id="fabs">
   <button id="view3dBtn" class="fab" aria-label="Switch between 3D and 2D view">3D</button>
+  <button id="alongBtn" class="fab" aria-label="Fuel, coffee and rest stops along the route">⛽</button>
   <button id="locateBtn" class="fab" aria-label="Centre on my location">
     <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="3.2" fill="currentColor"/><circle cx="12" cy="12" r="7.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
   </button>
@@ -101,11 +111,13 @@
       <div class="chips">
         <button id="avoidHw" class="chip">🛣️ Avoid highways</button>
         <button id="addStop" class="chip">➕ Add stop</button>
+        <button id="alongChip" class="chip">⛽ Fuel &amp; stops</button>
         <button id="weatherHere" class="chip" hidden>🌦️ Weather here</button>
         <button id="optimizeStops" class="chip" hidden>🔀 Optimize order</button>
       </div>
       <ol id="stops" class="list stops" hidden></ol>
       <div id="routeSummary" class="summary"></div>
+      <div id="destWx" class="destwx"></div>
       <div class="row">
         <button id="startNav" class="btn primary grow">Start</button>
         <button id="toggleSteps" class="btn ghost">Steps</button>
@@ -206,6 +218,20 @@
         <div class="hint">Your speed in km/h while navigating, or whenever you are moving.</div>
       </div>
       <label class="switch"><input id="speedoToggle" type="checkbox"><span></span></label>
+    </div>
+    <div class="switch-row" style="margin-top:14px">
+      <div>
+        <div class="label">Speed limit sign</div>
+        <div class="hint">Shows the road's limit while you drive when OpenStreetMap has one (not every road does). Asks the free Overpass service about the road you are on.</div>
+      </div>
+      <label class="switch"><input id="limitToggle" type="checkbox"><span></span></label>
+    </div>
+    <div class="switch-row" style="margin-top:14px">
+      <div>
+        <div class="label">Cat co-pilot</div>
+        <div class="hint">Directions with a purr: “Purr… in 200 metres, turn left.”</div>
+      </div>
+      <label class="switch"><input id="catVoiceToggle" type="checkbox"><span></span></label>
     </div>
     <label class="group-title" for="vehicleSel" style="margin-top:14px">Navigation vehicle</label>
     <select id="vehicleSel">

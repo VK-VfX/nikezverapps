@@ -11,7 +11,7 @@ const KL = [3.139, 101.687]; // [lat, lon] fallback view until we get a fix
 /* ================= state ================= */
 const KEY = 'mapsandcats.v1', RKEY = 'mapsandcats.routes';
 const S = Object.assign({
-  theme: 'dark', speedo: true, meowAt: 80, gkey: '', weight: 65, sim: false, xp: 0, caught: 0, avoidHw: false,
+  theme: 'dark', speedo: true, meowAt: 80, catVoice: true, limitSign: true, gkey: '', weight: 65, sim: false, xp: 0, caught: 0, avoidHw: false,
   voice: { on: true, name: '' },
   servers: { photon: '', nominatim: '', osrm: '' },
   saved: { home: null, work: null, favs: [] }, recents: [], trips: [], country: null,
@@ -400,6 +400,109 @@ function osrmBase(mode) {
 let meMarker = null, simTimer = null, simHeading = Math.random() * 6.28, watchId = null;
 const firstFix = { done: false };
 
+/* ================= driving extras: stops along the route, speed limit, cat co-pilot voice, rain at the destination ================= */
+const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+async function overpass(q) {
+  for (const url of OVERPASS) {
+    const ac = new AbortController(), t = setTimeout(() => ac.abort(), 14000);
+    try {
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q), signal: ac.signal });
+      if (r.ok) return await r.json();
+    } catch {} finally { clearTimeout(t); }
+  }
+  throw new Error('overpass unavailable');
+}
+
+/* Stops along the way: fuel, coffee and rest areas near the part of the route still ahead of you. One tap adds one as a stop. */
+const STOP_KINDS = {
+  fuel: { icon: '⛽', label: 'Fuel', sel: ['[amenity=fuel]'] },
+  coffee: { icon: '☕', label: 'Coffee', sel: ['[amenity=cafe]'] },
+  rest: { icon: '🚻', label: 'Rest', sel: ['[highway=rest_area]', '[amenity=toilets]', '[highway=services]'] },
+};
+let alongHits = [];
+function routeAhead(maxPts = 45) {
+  const line = nav.routes[nav.sel]?.geometry.coordinates || []; if (line.length < 2) return [];
+  let start = 0;
+  if (nav.active && me) { let best = Infinity; line.forEach((c, i) => { const d = dist([me.lat, me.lon], [c[1], c[0]]); if (d < best) { best = d; start = i; } }); }
+  const rest = line.slice(start), step = Math.max(1, Math.ceil(rest.length / maxPts)), pts = [];
+  for (let i = 0; i < rest.length; i += step) pts.push([rest[i][1], rest[i][0]]);
+  const last = rest[rest.length - 1]; if (last) pts.push([last[1], last[0]]);
+  let acc = 0; return pts.map((p, i) => { if (i) acc += dist(pts[i - 1], p); return { lat: p[0], lon: p[1], at: acc }; });
+}
+async function findStops(kind) {
+  const k = STOP_KINDS[kind], pts = routeAhead(); if (!k || pts.length < 2) return [];
+  const poly = pts.map(p => p.lat.toFixed(5) + ',' + p.lon.toFixed(5)).join(',');
+  const j = await overpass(`[out:json][timeout:20];(${k.sel.map(x => `nwr(around:600,${poly})${x};`).join('')});out center 80;`);
+  const seen = [], out = [];
+  for (const e of j.elements || []) {
+    const lat = e.lat ?? e.center?.lat, lon = e.lon ?? e.center?.lon; if (lat == null || lon == null) continue;
+    let bi = 0, bd = Infinity; pts.forEach((p, i) => { const d = dist([lat, lon], [p.lat, p.lon]); if (d < bd) { bd = d; bi = i; } });
+    if (seen.some(s => dist(s, [lat, lon]) < 60)) continue; seen.push([lat, lon]);
+    const t = e.tags || {};
+    out.push({ name: t.name || t.brand || t.operator || k.label, sub: [t['addr:street'], t.opening_hours ? 'hours listed' : ''].filter(Boolean).join(' · '), lat, lon, ahead: pts[bi].at, off: bd, icon: k.icon });
+  }
+  return out.sort((a, b) => a.ahead - b.ahead).slice(0, 12);
+}
+async function showAlong(kind) {
+  const list = $('#alongList'); $$('#alongChips .chip').forEach(c => c.classList.toggle('on', c.dataset.along === kind));
+  list.innerHTML = '<li class="empty">Looking along your route…</li>';
+  try {
+    alongHits = await findStops(kind);
+    list.innerHTML = alongHits.length ? alongHits.map((p, i) => `<li data-i="${i}"><div class="ico">${p.icon}</div><div class="li-main"><div class="li-title">${esc(p.name)}</div><div class="li-sub">${fmtDist(p.ahead)} ahead · ${fmtDist(p.off)} off the route${p.sub ? ' · ' + esc(p.sub) : ''}</div></div><button class="chip" data-add="${i}">➕ Add</button></li>`).join('')
+      : '<li class="empty">Nothing found near the route</li>';
+  } catch { list.innerHTML = '<li class="empty">Couldn’t search right now — check your connection</li>'; }
+}
+function addAlongStop(p) {
+  nav.wps.push({ name: p.name, sub: p.sub || '', lat: p.lat, lon: p.lon }); renderStops(); drawMarkers(); haptic(20);
+  toast(`Added ${p.name} as a stop 😸`, 2200); $('#along').hidden = true;
+  if (nav.active) { nav.lastReroute = 0; reroute(); } else fetchRoute();
+}
+function openAlong(kind) { if (!nav.routes[nav.sel]) return toast('Pick a destination first'); $('#along').hidden = false; showAlong(kind || 'fuel'); }
+
+/* Speed limit on a road sign, read from OpenStreetMap's maxspeed tags (the free routing service has no limits). Not every road is tagged. */
+const limit = { v: null, at: 0, lat: 0, lon: 0 };
+function parseLimit(s) { const m = /^(\d{2,3})\s*(mph)?$/i.exec(String(s || '').trim()); if (!m) return null; const v = m[2] ? Math.round(+m[1] * 1.609) : +m[1]; return v >= 5 && v <= 140 ? v : null; }
+async function refreshLimit() {
+  if (S.limitSign === false || !nav.active || !me || nav.mode === 'foot') return;
+  if (Date.now() - limit.at < 20000 && dist([me.lat, me.lon], [limit.lat, limit.lon]) < 200) return;
+  limit.at = Date.now(); limit.lat = me.lat; limit.lon = me.lon;
+  try {
+    const j = await overpass(`[out:json][timeout:10];way(around:25,${me.lat},${me.lon})[highway][maxspeed];out tags 6;`);
+    limit.v = (j.elements || []).map(e => parseLimit(e.tags?.maxspeed)).find(Boolean) || null;
+  } catch { limit.v = null; }
+  renderSpeedo();
+}
+
+/* Cat co-pilot: the same directions with a little purr. */
+let catN = 0;
+const CAT_FAR = ['Purr… ', 'Meow! ', 'Mrrp… ', 'Nya! ', ''], CAT_NOW = [' Meow!', ' Purr-fect.', '', ' Mrrp!', ''];
+function catSay(kind, text) {
+  if (S.catVoice === false) return text; catN++;
+  if (kind === 'far') return CAT_FAR[catN % CAT_FAR.length] + text;
+  if (kind === 'start') return `Purr… let's go! ${text}`;
+  if (kind === 'arrive') return 'Purr-fect! You have arrived. Meow!';
+  return text + CAT_NOW[catN % CAT_NOW.length];
+}
+
+/* Weather where you are going, for the time you will get there (the same free forecast Purrcast uses). */
+const wxCache = {};
+async function destWeather() {
+  const r = nav.routes[nav.sel], d = nav.dest, el = $('#destWx'); nav.wx = null; el.textContent = ''; el.classList.remove('wet'); $('#tripWx').textContent = '—';
+  if (!r || !d) return;
+  const key = d.lat.toFixed(2) + ',' + d.lon.toFixed(2);
+  try {
+    let j = wxCache[key] && Date.now() - wxCache[key].t < 15 * 60000 ? wxCache[key].j : null;
+    if (!j) { j = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${d.lat}&longitude=${d.lon}&hourly=temperature_2m,precipitation_probability,weather_code&timezone=auto&forecast_days=2`)).json(); wxCache[key] = { t: Date.now(), j }; }
+    const arrive = Date.now() + (r.duration || 0) * 1000, off = (j.utc_offset_seconds || 0) * 1000; let best = 0, bd = Infinity;
+    j.hourly.time.forEach((t, i) => { const dd = Math.abs(Date.parse(t + 'Z') - off - arrive); if (dd < bd) { bd = dd; best = i; } });
+    const pop = Math.round(j.hourly.precipitation_probability[best] ?? 0), code = j.hourly.weather_code[best], t = Math.round(j.hourly.temperature_2m[best]);
+    const rain = pop >= 50 || (code >= 51 && code <= 67) || (code >= 80 && code <= 99), storm = code >= 95;
+    nav.wx = { rain, pop, t };
+    el.textContent = rain ? `${storm ? '⛈️' : '🌧️'} Rain likely when you arrive · ${pop}% · ${t}°` : `${code <= 1 ? '☀️' : '⛅'} ${t}° and dry when you arrive${pop >= 20 ? ` (${pop}% chance of rain)` : ''}`;
+    el.classList.toggle('wet', rain); $('#tripWx').textContent = `${pop}%`; $('#tripWx').parentElement.classList.toggle('wet', rain);
+  } catch { el.textContent = ''; }
+}
+
 /* Speedometer, and a meow when you reach your chosen speed (80 km/h unless you change it in settings). */
 let speedMs = 0, meowArmed = true;
 function updateSpeed(prev, cur, spd) {
@@ -415,6 +518,7 @@ function renderSpeedo() {
   el.hidden = !(S.speedo !== false && (nav.active || k >= 3));
   $('#speedoNum').textContent = Math.round(k);
   el.classList.toggle('fast', at > 0 && k >= at);
+  const lim = $('#limit'); if (lim) { const show = nav.active && S.limitSign !== false && limit.v; lim.hidden = !show; if (show) { $('#limitNum').textContent = limit.v; el.classList.toggle('over', k > limit.v + 3); } else el.classList.remove('over'); }
 }
 function meowCheck() {
   const k = speedMs * 3.6, at = +S.meowAt; if (!(at > 0)) return;
@@ -825,6 +929,7 @@ function selectAlt(i, silent) {
   if (!silent) { drawRoutes(false); renderAlts(); haptic(10); }
   nav.steps = r.legs.flatMap(l => l.steps);
   $('#routeSummary').innerHTML = `${fmtTime(r.duration)} <small>${fmtDist(r.distance)} · ${nav.mode === 'foot' ? 'walking' : 'driving'}${nav.wps.length ? ` · ${nav.wps.length + 1} stops` : ''}</small>`;
+  destWeather();
   $('#steps').innerHTML = nav.steps.map(s => `<li><div class="ico">${arrow(s)}</div><div class="li-main"><div class="li-title">${esc(instr(s))}</div><div class="li-sub">${s.distance ? fmtDist(s.distance) : ''}</div></div></li>`).join('');
 }
 
@@ -863,12 +968,13 @@ $('#startNav').addEventListener('click', () => {
   document.body.classList.add('navigating'); $('#navBanner').hidden = false; $('#tripBar').hidden = false; resEl.hidden = true; syncPanels(); syncMute();
   S.trips = [{ name: nav.dest.name, ts: Date.now(), mode: nav.mode, dist: nav.routes[nav.sel].distance }, ...S.trips].slice(0, 20); save(); renderSaved();
   navCamera(800);
-  speak(`Starting navigation. ${instr(nav.steps[0])}.`);
+  speak(catSay('start', `Starting navigation. ${instr(nav.steps[0])}.`));
+  if (nav.wx?.rain) setTimeout(() => speak(catSay('far', 'Heads up, rain is likely when you arrive. Bring an umbrella.')), 6000);
   navTick();
 });
 // End = leave navigation and return to the map. Hide the UI first so a failure elsewhere can never leave you stuck.
 function endNavigation() {
-  document.body.classList.remove('navigating'); $('#navBanner').hidden = true; $('#tripBar').hidden = true; nav.active = false; keepAwake(quest.on); renderSpeedo(); navDeclutter(false); update3dArrow(); meMarker?.getElement().classList.remove('hide');
+  document.body.classList.remove('navigating'); $('#navBanner').hidden = true; $('#tripBar').hidden = true; nav.active = false; keepAwake(quest.on); renderSpeedo(); navDeclutter(false); update3dArrow(); meMarker?.getElement().classList.remove('hide'); $('#along').hidden = true; limit.v = null;
   try { resetCamera(); } catch {}
   try { stopSpeech(); } catch {}
   try { clearRoute(); } catch (e) { try { syncPanels(); } catch {} }
@@ -888,7 +994,7 @@ function navTick() {
   while (nav.idx + 1 < steps.length) { const m = steps[nav.idx + 1].maneuver.location; if (dist(here, [m[1], m[0]]) < 25) nav.idx++; else break; }
   const next = steps[Math.min(nav.idx + 1, steps.length - 1)], nl = next.maneuver.location, dNext = dist(here, [nl[1], nl[0]]);
   if (next.maneuver.type === 'arrive' && dNext < 25) {
-    haptic(80); setTimeout(() => haptic(80), 200); speak('You have arrived at your destination.'); toast('🎉 You have arrived!', 3500); clearRoute(); return;
+    haptic(80); setTimeout(() => haptic(80), 200); speak(catSay('arrive')); toast('🎉 You have arrived!', 3500); clearRoute(); return;
   }
   $('#navArrow').textContent = arrow(next); $('#navDist').textContent = fmtDist(dNext);
   const rest = steps.slice(nav.idx + 2).reduce((a, s) => a + s.distance, 0) + dNext;
@@ -900,11 +1006,12 @@ function navTick() {
   const r = nav.routes[nav.sel], total = r.distance || 1, secs = (r.duration || 0) * Math.min(1, rest / total);
   $('#tripEta').textContent = new Date(Date.now() + secs * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   $('#tripLeft').textContent = fmtTime(secs); $('#tripDist').textContent = fmtDist(rest);
+  refreshLimit();
   // voice: one heads-up, one "now"
   const far = nav.mode === 'foot' ? 80 : 400, near = nav.mode === 'foot' ? 25 : 80;
   const kf = `${nav.idx}f`, kn = `${nav.idx}n`;
-  if (dNext < near && !nav.said.has(kn)) { nav.said.add(kn); nav.said.add(kf); speak(instr(next)); haptic(30); }
-  else if (dNext < far && !nav.said.has(kf)) { nav.said.add(kf); speak(`In ${fmtDist(dNext).replace(' m', ' metres').replace(' km', ' kilometres')}, ${instr(next)}`); }
+  if (dNext < near && !nav.said.has(kn)) { nav.said.add(kn); nav.said.add(kf); speak(catSay('now', instr(next))); haptic(30); }
+  else if (dNext < far && !nav.said.has(kf)) { nav.said.add(kf); speak(catSay('far', `In ${fmtDist(dNext).replace(' m', ' metres').replace(' km', ' kilometres')}, ${instr(next)}`)); }
   // off-route: farther than max(60 m, 1.5× GPS accuracy) from the line for 3 consecutive good fixes (jitter and bad fixes are ignored)
   const line = nav.routes[nav.sel].geometry.coordinates; let min = Infinity;
   for (let i = 0; i + 1 < line.length; i++) { const d = distToSeg(here, [line[i][1], line[i][0]], [line[i + 1][1], line[i + 1][0]]); if (d < min) min = d; if (min < 15) break; }
@@ -1121,7 +1228,7 @@ function applyTheme(t) {
 function syncUI() {
   $$('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.theme === S.theme));
   $('#themeHint').textContent = { dark: 'Pitch-black AMOLED. Easy on the eyes and battery.', light: 'Bright and clean for daylight.', quest: 'Walking only. Cats spawn on the map — tap or stroll past them for XP.' }[S.theme];
-  $('#gkey').value = S.gkey; $('#gUsage').textContent = S.gkey ? `Google searches this month: ${gUsage().n} / ${G_LIMIT}. Used only on Enter or when open results look weak.` : ''; $('#weight').value = S.weight; $('#simToggle').checked = S.sim; $('#speedoToggle').checked = S.speedo !== false; $('#vehicleSel').value = S.vehicle || 'arrow'; $('#meowAt').value = S.meowAt; $('#verLabel').textContent = 'v' + APP_VERSION; $('#aboutVer').textContent = 'Version ' + APP_VERSION;
+  $('#gkey').value = S.gkey; $('#gUsage').textContent = S.gkey ? `Google searches this month: ${gUsage().n} / ${G_LIMIT}. Used only on Enter or when open results look weak.` : ''; $('#weight').value = S.weight; $('#simToggle').checked = S.sim; $('#speedoToggle').checked = S.speedo !== false; $('#vehicleSel').value = S.vehicle || 'arrow'; $('#catVoiceToggle').checked = S.catVoice !== false; $('#limitToggle').checked = S.limitSign !== false; $('#meowAt').value = S.meowAt; $('#verLabel').textContent = 'v' + APP_VERSION; $('#aboutVer').textContent = 'Version ' + APP_VERSION;
   $('#srvPhoton').value = S.servers.photon; $('#srvNominatim').value = S.servers.nominatim; $('#srvOsrm').value = S.servers.osrm;
   syncMute();
 }
@@ -1150,6 +1257,14 @@ $('#vehicleSel').addEventListener('change', e => {
   S.vehicle = e.target.value; save(); update3dArrow();
   toast(`${(VEHICLES[S.vehicle] || VEHICLES.arrow).name} chosen. You will see it when you start navigating.`, 2800);
 });
+$('#alongBtn').addEventListener('click', () => { const a = $('#along'); if (a.hidden) openAlong('fuel'); else a.hidden = true; });
+$('#alongChip').addEventListener('click', () => openAlong('fuel'));
+$('#alongClose').addEventListener('click', () => { $('#along').hidden = true; });
+$('#alongChips').addEventListener('click', e => { const c = e.target.closest('[data-along]'); if (c) showAlong(c.dataset.along); });
+$('#alongList').addEventListener('click', e => { const b = e.target.closest('[data-add]'); if (b && alongHits[+b.dataset.add]) addAlongStop(alongHits[+b.dataset.add]); });
+$('#destWx').addEventListener('click', () => { const d = nav.dest; if (d && TRIO) TRIO.openUri(`purrcast://weather?lat=${d.lat}&lon=${d.lon}&name=${encodeURIComponent(d.name || '')}`, REPO_URL + '/releases'); });
+$('#catVoiceToggle').addEventListener('change', e => { S.catVoice = e.target.checked; save(); if (e.target.checked) speak(catSay('far', 'In 200 metres, turn left.'), true); });
+$('#limitToggle').addEventListener('change', e => { S.limitSign = e.target.checked; save(); limit.at = 0; renderSpeedo(); });
 $('#speedoToggle').addEventListener('change', e => { S.speedo = e.target.checked; save(); renderSpeedo(); });
 $('#meowAt').addEventListener('change', e => { const v = Math.min(300, Math.max(0, Math.round(+e.target.value || 0))); S.meowAt = v; e.target.value = v; meowArmed = true; save(); renderSpeedo(); toast(v ? `Meow at ${v} km/h 😼` : 'Meow off'); });
 $('#simToggle').addEventListener('change', e => { setSim(e.target.checked); toast(e.target.checked ? 'Simulating a stroll 🚶' : 'Simulation off'); });
@@ -1242,6 +1357,6 @@ initMap().then(() => {
   if (S.theme === 'quest') setQuest(true);
   startLocation(); if (S.sim) setSim(true);
   window.__macCheckPending();
-  window.__mac = { map, S, nav, quest, onPos, selectPlace, startNavTest: () => $('#startNav').click(), spawnCat, catchCat, segmentByScript, blendSearch, relevance, mergeRank, getMe: () => me };
+  window.__mac = { map, S, nav, quest, onPos, selectPlace, catSay, limit, parseLimit, startNavTest: () => $('#startNav').click(), spawnCat, catchCat, segmentByScript, blendSearch, relevance, mergeRank, getMe: () => me };
 });
 })();
