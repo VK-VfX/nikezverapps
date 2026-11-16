@@ -173,6 +173,37 @@ function updateScale() {
   $('#scale span').textContent = len >= 1000 ? `${len / 1000} km` : `${len} m`;
 }
 
+/* --- the trio: Cat Club numbers, and hand-offs to Purrcast and Zamoled (docs/TRIO.md) --- */
+const TRIO = window.AndroidTrio || null;
+function syncCats() { try { TRIO && TRIO.setCats(S.caught | 0); } catch {} }
+const REPO_URL = 'https://github.com/VK-VfX/nikezverapps';
+async function refreshTrio() {
+  if (!TRIO) return;
+  syncCats();
+  let sib = {}; try { sib = JSON.parse(TRIO.siblings()); } catch {}
+  let latest = {};
+  try {
+    const rs = await (await fetch(RELEASES_URL, { headers: { Accept: 'application/vnd.github+json' } })).json();
+    const z = rs.find(x => /^zamoled-v/.test(x.tag_name) && !x.draft && !x.prerelease); if (z) latest.zamoled = z.tag_name.replace('zamoled-v', '');
+    latest.purrcast = (await (await fetch('https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/update.json')).json()).versionName;
+  } catch {}
+  const line = (k, el) => {
+    const s = sib[k] || {}; let t = '';
+    if (s.installed) { t = s.version ? 'v' + s.version : ''; if (s.version && latest[k] && vNewer(latest[k], s.version)) t += ` → v${latest[k]} is out, open to update`; }
+    $(el).textContent = t ? '· ' + t : '';
+  };
+  line('purrcast', '#purrStat'); line('zamoled', '#zamStat');
+  const parts = [`${S.caught | 0} cats caught`]; if (sib.purrcast && sib.purrcast.stat) parts.push(sib.purrcast.stat); if (sib.zamoled && sib.zamoled.stat) parts.push(sib.zamoled.stat);
+  $('#catClub').textContent = 'Cat Club: ' + parts.join(' · ');
+}
+$('#weatherHere').addEventListener('click', () => {
+  const d = nav.dest; if (!d || !TRIO) return;
+  TRIO.openUri(`purrcast://weather?lat=${d.lat}&lon=${d.lon}&name=${encodeURIComponent(d.name || '')}`, REPO_URL + '/releases');
+});
+if (TRIO) $('#weatherHere').hidden = false;
+window.__macOpenPlace = (lat, lon, name) => selectPlace({ name: name || 'Shared place', sub: `${(+lat).toFixed(5)}, ${(+lon).toFixed(5)}`, lat: +lat, lon: +lon }, { quiet: true });
+window.__macCheckPending = () => { try { const j = TRIO && TRIO.takePlace(); if (j) { const p = JSON.parse(j); window.__macOpenPlace(p.lat, p.lon, p.name); } } catch {} };
+
 /* --- long-press to drop a pin (MapLibre has no native touch long-press) --- */
 let lpFired = 0;
 function setupLongPress() {
@@ -863,7 +894,7 @@ function topUpCats() {
 function catchCat(cat, tapped) {
   if (cat.gone) return; cat.gone = true; quest.cats = quest.cats.filter(c => c !== cat);
   cat.span.classList.add('caught'); setTimeout(() => cat.marker.remove(), 450);
-  session.cats++; S.caught++; addXp(cat.type.xp); popXp(cat.pos, cat.type.xp);
+  session.cats++; S.caught++; syncCats(); addXp(cat.type.xp); popXp(cat.pos, cat.type.xp);
   toast(tapped ? pick(TAP_MSGS) : pick(PASS_MSGS)); purr(); haptic(30); setTimeout(topUpCats, 1500);
 }
 function questTick(prev, cur) {
@@ -1023,10 +1054,11 @@ window.__macBack = () => {
   return false;
 };
 document.body.dataset.theme = S.theme;
-syncUI(); renderSaved(); renderNearby();
+syncUI(); renderSaved(); renderNearby(); refreshTrio();
 initMap().then(() => {
   if (S.theme === 'quest') setQuest(true);
   startLocation(); if (S.sim) setSim(true);
+  window.__macCheckPending();
   window.__mac = { map, S, nav, quest, onPos, spawnCat, catchCat, segmentByScript, blendSearch, relevance, mergeRank, getMe: () => me };
 });
 })();

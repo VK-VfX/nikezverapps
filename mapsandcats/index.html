@@ -92,6 +92,7 @@
       <div class="chips">
         <button id="avoidHw" class="chip">🛣️ Avoid highways</button>
         <button id="addStop" class="chip">➕ Add stop</button>
+        <button id="weatherHere" class="chip" hidden>🌦️ Weather here</button>
         <button id="optimizeStops" class="chip" hidden>🔀 Optimize order</button>
       </div>
       <ol id="stops" class="list stops" hidden></ol>
@@ -241,8 +242,9 @@
 
   <div class="group">
     <label class="group-title">The trio</label>
-    <button class="btn ghost" id="openPurrcast" data-pkg="app.skypix.weather" data-url="https://github.com/VK-VfX/nikezverapps/tree/main/purrcast/dist" style="width:100%;margin-bottom:8px;text-align:left">🐱 Purrcast <span class="hint">· weather and widgets</span></button>
-    <button class="btn ghost" id="openZamoled" data-pkg="com.nikopick.zamoled" data-url="https://github.com/VK-VfX/nikezverapps/releases" style="width:100%;text-align:left">🌑 Zamoled <span class="hint">· AMOLED wallpapers</span></button>
+    <p class="hint" id="catClub"></p>
+    <button class="btn ghost" id="openPurrcast" data-pkg="app.skypix.weather" data-url="https://github.com/VK-VfX/nikezverapps/tree/main/purrcast/dist" style="width:100%;margin-bottom:8px;text-align:left">🐱 Purrcast <span class="hint">· weather and widgets</span> <span class="hint" id="purrStat"></span></button>
+    <button class="btn ghost" id="openZamoled" data-pkg="com.nikopick.zamoled" data-url="https://github.com/VK-VfX/nikezverapps/releases" style="width:100%;text-align:left">🌑 Zamoled <span class="hint">· AMOLED wallpapers</span> <span class="hint" id="zamStat"></span></button>
   </div>
 
   <div class="group">

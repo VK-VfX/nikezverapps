@@ -85,3 +85,8 @@ Three apps by the same owner that open each other. Done: each app has a "The tri
 Maps and Cats side is NOT done yet: it needs push access to `VK-VfX/Not-An-Ordinary-Alarm-Clock` (a web app packaged with Capacitor, `android/` module, `app.js`).
 Ideas: Maps and Cats gets a weather chip and cat from Purrcast; Zamoled wallpapers from Maps and Cats trips; shared cat set across all three;
 deep links (`zamoled://w?k=...`, a future `purrcast://`, `mapsandcats://`).
+
+## Trio links built (see /docs/TRIO.md in the repo root)
+Cat Club read-only counts in all three apps, place hand-offs (Purrcast <-> Maps and Cats), "Wallpaper for this weather" (Purrcast -> Zamoled),
+sibling version lines. Not built yet: weather chip on a Maps and Cats destination (own forecast call), Zamoled daily wallpaper by weather mood,
+commute rain alerts from Maps and Cats Home/Work, walk-to-wallpaper from Quest stats.

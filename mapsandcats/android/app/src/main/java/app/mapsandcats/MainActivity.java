@@ -99,6 +99,71 @@ public class MainActivity extends Activity {
             });
         }
     }
+    private static final String[][] SIBLINGS = {
+        {"purrcast", "app.skypix.weather", "app.skypix.weather.catclub"},
+        {"zamoled", "com.nikopick.zamoled", "com.nikopick.zamoled.catclub"},
+    };
+    private String pendingPlace = "";
+
+    /** mapsandcats://place?lat=..&lon=..&name=..  (sent by Purrcast): remembered until the page asks for it. */
+    private void captureLink(Intent i) {
+        Uri d = i == null ? null : i.getData();
+        if (d == null || !"mapsandcats".equals(d.getScheme()) || !"place".equals(d.getHost())) return;
+        try {
+            double lat = Double.parseDouble(d.getQueryParameter("lat")), lon = Double.parseDouble(d.getQueryParameter("lon"));
+            if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return;
+            String name = d.getQueryParameter("name");
+            pendingPlace = new JSONObject().put("lat", lat).put("lon", lon).put("name", name == null ? "" : name).toString();
+        } catch (Exception ignored) {}
+    }
+
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        captureLink(intent);
+        if (web != null) web.evaluateJavascript("window.__macCheckPending && window.__macCheckPending()", null);
+    }
+
+    /** Exposed to the page as window.AndroidTrio: the shared Cat Club numbers and links to Purrcast and Zamoled. */
+    private class TrioBridge {
+        @JavascriptInterface public void setCats(int n) {
+            getSharedPreferences(CatClubProvider.PREFS, MODE_PRIVATE).edit().putInt("cats", n).apply();
+        }
+        @JavascriptInterface public String takePlace() { String p = pendingPlace; pendingPlace = ""; return p; }
+        /** {"purrcast":{"installed":true,"version":"1.0.15","stat":"5 day streak"}, ...} */
+        @JavascriptInterface public String siblings() {
+            JSONObject out = new JSONObject();
+            for (String[] s : SIBLINGS) {
+                try {
+                    JSONObject o = new JSONObject();
+                    boolean has = getPackageManager().getLaunchIntentForPackage(s[1]) != null;
+                    o.put("installed", has);
+                    if (has) {
+                        try { o.put("version", getPackageManager().getPackageInfo(s[1], 0).versionName); } catch (Exception ignored) {}
+                        android.database.Cursor c = null;
+                        try {
+                            c = getContentResolver().query(Uri.parse("content://" + s[2] + "/stats"), null, null, null, null);
+                            if (c != null && c.moveToFirst()) o.put("stat", c.getInt(c.getColumnIndexOrThrow("value")) + " " + c.getString(c.getColumnIndexOrThrow("label")));
+                        } catch (Exception ignored) {} finally { if (c != null) c.close(); }
+                    }
+                    out.put(s[0], o);
+                } catch (Exception ignored) {}
+            }
+            return out.toString();
+        }
+        /** Opens purrcast://... or zamoled://... when installed, otherwise the project page. */
+        @JavascriptInterface public void openUri(String uri, String fallback) {
+            runOnUiThread(() -> {
+                try {
+                    if (uri != null && (uri.startsWith("purrcast://") || uri.startsWith("zamoled://"))) {
+                        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+                        if (i.resolveActivity(getPackageManager()) != null) { startActivity(i); return; }
+                    }
+                    if (fallback != null && fallback.startsWith("https://github.com/VK-VfX/")) startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(fallback)));
+                } catch (Exception ignored) {}
+            });
+        }
+    }
     /** Exposed to the page as window.AndroidTTS */
     private class TtsBridge {
         @JavascriptInterface public boolean ready() { return ttsReady; }
@@ -160,6 +225,8 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new TtsBridge(), "AndroidTTS");
         web.addJavascriptInterface(new AppsBridge(), "AndroidApps");
         web.addJavascriptInterface(new UpdateBridge(), "AndroidUpdater");
+        web.addJavascriptInterface(new TrioBridge(), "AndroidTrio");
+        captureLink(getIntent());
         web.loadUrl("https://" + HOST + "/index.html");
     }
 
