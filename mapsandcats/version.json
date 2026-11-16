@@ -1,1 +1,1 @@
-{ "version": "1.0.6", "notes": "3D vehicles, trip bar, stops along the route, speed limit sign, cat co-pilot, rain at your destination" }
+{ "version": "1.1.0", "notes": "Waze-style navigation (snaps to the road, smooth arrow, earlier voice prompts), open-source + web search, results as pins on the map, Quest walking mode" }
