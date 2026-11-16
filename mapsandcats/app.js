@@ -251,7 +251,7 @@ async function initMap() {
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
   map.on('style.load', onStyleLoad);
   map.on('zoom', update3dArrow);
-  map.on('dragstart', () => { following = false; $('#locateBtn').classList.remove('on'); if (nav.active) scheduleRecenter(); });
+  map.on('dragstart', () => { following = false; $('#locateBtn').classList.remove('on'); if (nav.active || quest.walking) scheduleRecenter(); });
   map.on('move', updateScale);
   map.on('moveend', () => { updateClusters(); });
   map.on('idle', () => { updateClusters(); maybeNearbyFromTiles(); });
@@ -550,7 +550,7 @@ function trimTravelled(sn) { // draw only the route still ahead
 let recenterT = null;
 function scheduleRecenter(ms = 8000) {
   clearTimeout(recenterT);
-  recenterT = setTimeout(() => { if (!nav.active) return; following = true; $('#locateBtn').classList.add('on'); navCamera(700); }, ms);
+  recenterT = setTimeout(() => { if (!nav.active && !quest.walking) return; following = true; $('#locateBtn').classList.add('on'); nav.active ? navCamera(700) : walkCamera(700); }, ms);
 }
 function routeOverview() {
   if (!nav.active || !nav.routes[nav.sel]) return; following = false; $('#locateBtn').classList.remove('on');
@@ -603,8 +603,10 @@ function bearingDeg(a, b) {
   const x = Math.cos(rad(a.lat)) * Math.sin(rad(b.lat)) - Math.sin(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.cos(rad(b.lon - a.lon));
   return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 }
-function updateHeading(prev, cur) {
-  if (prev && dist([prev.lat, prev.lon], [cur.lat, cur.lon]) > 4) heading = (heading + angDiff(heading, bearingDeg(prev, cur)) * 0.5 + 360) % 360;
+let hdAnchor = null;
+function updateHeading(prev, cur) { // measured from a point a few metres back, so a slow walk still turns the map
+  if (!hdAnchor) { hdAnchor = cur; return; }
+  if (dist([hdAnchor.lat, hdAnchor.lon], [cur.lat, cur.lon]) >= 5) { heading = (heading + angDiff(heading, bearingDeg(hdAnchor, cur)) * 0.5 + 360) % 360; hdAnchor = cur; }
 }
 const NO_PAD = { top: 0, bottom: 0, left: 0, right: 0 };
 // the faster you go, the further the camera pulls back so you see the road ahead
@@ -619,6 +621,24 @@ function navCamera(duration = 900) {
   if (view3d) map.easeTo({ center: [c.lon, c.lat], bearing: heading, pitch: 60, zoom: navZoom(), padding: { top: Math.round(innerHeight * .38), bottom: 0, left: 0, right: 0 }, duration, easing: t => t });
   else map.easeTo({ center: [c.lon, c.lat], bearing: 0, pitch: 0, zoom: 17, padding: NO_PAD, duration });
 }
+/* Quest walking mode: as soon as the GPS sees you walking, the map tilts, turns to face where you are heading and follows you. */
+function walkCamera(duration = 900) {
+  if (!map || !me) return;
+  map.easeTo({ center: [me.lon, me.lat], bearing: heading, pitch: 55, zoom: 18, padding: { top: Math.round(innerHeight * .3), bottom: 0, left: 0, right: 0 }, duration, easing: t => t });
+}
+function setWalking(on) {
+  if (quest.walking === on) return; quest.walking = on; document.body.classList.toggle('walking', on);
+  if (!meMarker) return; meMarker.getElement().classList.toggle('arrow', on && !nav.active); meMarker.setRotation(on ? heading : 0);
+  if (on) { toast('Walking mode 🐾', 1800); following = true; $('#locateBtn').classList.add('on'); walkCamera(700); }
+  else if (!nav.active) { map.easeTo({ bearing: 0, pitch: 0, padding: NO_PAD, duration: 700 }); }
+}
+function walkWatch(cur) { // is the phone really walking? ~10 m at a walking pace within 20 s
+  const w = quest.wAnchor || (quest.wAnchor = { lat: cur.lat, lon: cur.lon, ts: cur.ts });
+  const d = dist([w.lat, w.lon], [cur.lat, cur.lon]), dt = (cur.ts - w.ts) / 1000;
+  if (dt > 20) { quest.wAnchor = { lat: cur.lat, lon: cur.lon, ts: cur.ts }; if (d < 4 && quest.walking && Date.now() - (quest.lastMove || 0) > 30000) setWalking(false); return; }
+  if (cur.acc <= 50 && d >= 10 && d / Math.max(1, dt) <= 3.2) { quest.lastMove = Date.now(); quest.wAnchor = { lat: cur.lat, lon: cur.lon, ts: cur.ts }; if (!quest.walking && quest.on) setWalking(true); }
+  else if (quest.walking && d >= 4) quest.lastMove = Date.now();
+}
 function resetCamera() { map.easeTo({ pitch: 0, bearing: 0, padding: NO_PAD, duration: 600 }); }
 function onPos(lat, lon, acc, ts = Date.now(), spd) {
   const prev = me; me = { lat, lon, acc, ts };
@@ -632,9 +652,9 @@ function onPos(lat, lon, acc, ts = Date.now(), spd) {
   } else meMarker.setLngLat([lon, lat]);
   // while navigating the dot becomes an arrow that points the way you are heading (it lies flat on the road in 3D)
   const has3d = !!map.getLayer('me-arrow');
-  meMarker.getElement().classList.toggle('arrow', !!nav.active && !has3d); // the flat arrow is only the fallback
+  meMarker.getElement().classList.toggle('arrow', (!!nav.active && !has3d) || (!!quest.walking && !nav.active)); // the flat arrow is only the fallback
   meMarker.getElement().classList.toggle('hide', !!nav.active && has3d);
-  meMarker.setRotation(nav.active ? heading : 0);
+  meMarker.setRotation(nav.active || quest.walking ? heading : 0);
   update3dArrow();
 
   if (!firstFix.done) {
@@ -643,9 +663,9 @@ function onPos(lat, lon, acc, ts = Date.now(), spd) {
     $('#locLabel').textContent = 'Around your location';
     resolveCountry(); renderNearby();
     if (quest.on) topUpCats();
-  } else if (following) { if (nav.active) navCamera(900); else map.easeTo({ center: [lon, lat], duration: 600 }); }
+  } else if (following) { if (nav.active) navCamera(900); else if (quest.walking) walkCamera(900); else map.easeTo(quest.on ? { center: [lon, lat], pitch: 0, bearing: 0, padding: NO_PAD, duration: 600 } : { center: [lon, lat], duration: 600 }); }
 
-  if (quest.on) questTick(prev, me);
+  if (quest.on) { walkWatch(me); questTick(prev, me); }
   if (nav.active) navTick();
 }
 function startLocation() {
@@ -1425,7 +1445,7 @@ function setQuest(on) {
     // cats wobble: sine-wave rotation re-applied every 140 ms
     quest.wobble = setInterval(() => { const t = Date.now() / 320; for (const c of quest.cats) if (!c.gone) c.span.style.transform = `rotate(${(Math.sin(t + c.phase) * 11).toFixed(1)}deg)`; }, 140);
     toast('Quest mode on — go find some cats! 🐾', 2600);
-  } else { quest.cats.forEach(c => c.marker.remove()); quest.cats = []; }
+  } else { quest.cats.forEach(c => c.marker.remove()); quest.cats = []; setWalking(false); quest.wAnchor = null; }
   syncModeSeg(); syncPanels();
 }
 function syncPanels() {
