@@ -1,7 +1,7 @@
 {
-  "versionCode": 13,
-  "versionName": "1.0.12",
-  "apkUrl": "https://raw.githubusercontent.com/VK-VfX/Sam-s-Signal-Stabilizer/claude/signal-stabilizer-game-8le0y5/dist/skypix.apk",
-  "sha256": "55b12c0c2caba09e9dbf13f64a5c151592bcf4f5e41d72182a21564b52c3c79b",
-  "notes": "Sharper, more readable widgets, fixes for the Hourly and Day clock widgets, Your widgets settings list, and New York sample previews."
+  "versionCode": 14,
+  "versionName": "1.0.13",
+  "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
+  "sha256": "bb0b64338d4f8d885feed3907d3c4fd3a40bf7853ba2b4a5f58dfd2170eebcb9",
+  "notes": "New signing key and a new home. Uninstall the old Purrcast once, then install this one; updates work from now on. Includes the trio links and About section."
 }

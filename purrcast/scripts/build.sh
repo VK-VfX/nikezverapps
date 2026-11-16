@@ -7,9 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Bump both for every release; the in-app updater compares VERSION_CODE (it must always go up).
-VERSION_CODE=13
-VERSION_NAME=1.0.12
-RELEASE_NOTES="Sharper, more readable widgets, fixes for the Hourly and Day clock widgets, Your widgets settings list, and New York sample previews."
+VERSION_CODE=14
+VERSION_NAME=1.0.13
+RELEASE_NOTES="New signing key and a new home. Uninstall the old Purrcast once, then install this one; updates work from now on. Includes the trio links and About section."
 UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist
 
 DEPS=build/deps
