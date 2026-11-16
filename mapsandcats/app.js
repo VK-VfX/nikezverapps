@@ -78,16 +78,70 @@ const POI_GROUPS = {
 const POI_COLOR = { food: '#ffb84d', coffee: '#d49a6a', park: '#4ade80', sight: '#c084fc', shop: '#38bdf8' };
 const catOfClass = c => Object.keys(POI_GROUPS).find(k => POI_GROUPS[k].includes(c)) || null;
 
-function darkify(s) {
-  const byId = {
-    water: 'rgb(5,9,15)', waterway: 'rgb(5,9,15)', landuse_park: 'rgb(6,13,9)', landcover_wood: 'rgb(6,13,9)',
-    landuse_residential: '#030303', building: 'rgb(12,12,14)', landcover_ice_shelf: '#000', landcover_glacier: '#000',
-  };
+/* Map colours. Dark is true AMOLED: land, water and buildings are pure black and only roads, outlines and labels glow.
+   Light is a warm paper tone. Both add 3D buildings that rise when the camera is tilted. */
+const MAP_THEME = {
+  dark: {
+    bg: '#000', text: '#b4b4bc', halo: '#000', road: '#8c8c96', water: '#5b8db5', boundary: '#3a3a42',
+    layers: {
+      water: { 'fill-color': '#000', 'fill-outline-color': 'rgb(18,40,62)' }, waterway: { 'line-color': 'rgb(16,36,56)' },
+      landcover_ice_shelf: { 'fill-color': '#000' }, landcover_glacier: { 'fill-color': '#000' }, landuse_residential: { 'fill-color': '#000' },
+      landcover_wood: { 'fill-color': 'rgb(1,7,3)', 'fill-outline-color': 'rgb(10,30,16)' }, landuse_park: { 'fill-color': 'rgb(1,7,3)', 'fill-outline-color': 'rgb(10,30,16)' },
+      building: { 'fill-color': '#000', 'fill-outline-color': 'rgb(44,44,52)' },
+      'aeroway-area': { 'fill-color': '#000' }, 'aeroway-taxiway': { 'line-color': '#2a2a30' }, 'aeroway-runway-casing': { 'line-color': '#000' }, 'aeroway-runway': { 'line-color': '#3a3a42' },
+      road_area_pier: { 'fill-color': '#000' }, road_pier: { 'line-color': '#000' },
+      highway_path: { 'line-color': '#26262c' }, highway_minor: { 'line-color': '#36363e' }, highway_major_casing: { 'line-color': '#000' },
+      highway_major_inner: { 'line-color': '#5a5a66' }, highway_major_subtle: { 'line-color': '#3a3a42' },
+      highway_motorway_casing: { 'line-color': '#000' }, highway_motorway_inner: { 'line-color': '#8f8f9e' }, highway_motorway_subtle: { 'line-color': '#3a3a42' },
+      railway_transit: { 'line-color': '#2a2a30' }, railway_transit_dashline: { 'line-color': '#000' }, railway_minor: { 'line-color': '#2a2a30' }, railway_minor_dashline: { 'line-color': '#000' },
+      railway: { 'line-color': '#2a2a30' }, railway_dashline: { 'line-color': '#000' },
+    },
+    extrusion: '#23232c', extrusionOpacity: .98, light: { anchor: 'viewport', color: '#ffffff', intensity: .6, position: [1.2, 210, 40] },
+  },
+  light: {
+    bg: '#f6efe3', text: '#4a382a', halo: '#f6efe3', road: '#7a6652', water: '#4f7f8a', boundary: '#c9b79a',
+    layers: {
+      water: { 'fill-color': '#bcd6da' }, waterway: { 'line-color': '#a9c8cd' },
+      park: { 'fill-color': '#dde6c4' }, landcover_ice_shelf: { 'fill-color': '#fbf6ec' }, landcover_glacier: { 'fill-color': '#fbf6ec' },
+      landuse_residential: { 'fill-color': '#f2e9d9' }, landcover_wood: { 'fill-color': '#d2dfb4' },
+      building: { 'fill-color': '#e9dcc6', 'fill-outline-color': '#d6c6aa' },
+      'aeroway-area': { 'fill-color': '#fffaf0' }, 'aeroway-taxiway': { 'line-color': '#e6dac4' }, 'aeroway-runway-casing': { 'line-color': '#e6dac4' }, 'aeroway-runway': { 'line-color': '#fffaf0' },
+      road_area_pier: { 'fill-color': '#f6efe3' }, road_pier: { 'line-color': '#f6efe3' },
+      highway_path: { 'line-color': '#e8dcc6' }, highway_minor: { 'line-color': '#fffaf0' }, highway_major_casing: { 'line-color': '#dccdb2' },
+      highway_major_inner: { 'line-color': '#fff7e6' }, highway_major_subtle: { 'line-color': 'rgba(222,205,176,.7)' },
+      highway_motorway_casing: { 'line-color': '#e0b56a' }, highway_motorway_inner: { 'line-color': '#f7c978' }, highway_motorway_subtle: { 'line-color': 'rgba(222,205,176,.7)' },
+      tunnel_motorway_casing: { 'line-color': '#dccdb2' }, tunnel_motorway_inner: { 'line-color': '#efe3cc' },
+      highway_motorway_bridge_casing: { 'line-color': '#e0b56a' }, highway_motorway_bridge_inner: { 'line-color': '#f7c978' },
+      railway_transit: { 'line-color': '#d8ccb6' }, railway_transit_dashline: { 'line-color': '#f6efe3' }, railway_service: { 'line-color': '#d8ccb6' }, railway_service_dashline: { 'line-color': '#f6efe3' },
+      railway: { 'line-color': '#d8ccb6' }, railway_dashline: { 'line-color': '#f6efe3' },
+    },
+    extrusion: '#e3d4ba', extrusionOpacity: .93, light: { anchor: 'viewport', color: '#fff4e0', intensity: .35, position: [1.2, 200, 50] },
+  },
+};
+function restyle(s, dark) {
+  const T = MAP_THEME[dark ? 'dark' : 'light'];
   for (const l of s.layers) {
-    if (l.type === 'background') l.paint['background-color'] = '#000';
-    else if (byId[l.id]) l.paint[l.type === 'fill' ? 'fill-color' : 'line-color'] = byId[l.id];
-    else if (l.type === 'symbol' && l.paint?.['text-color']) { l.paint['text-color'] = l.id.startsWith('place') ? '#a8a8ad' : '#7d7d85'; l.paint['text-halo-color'] = '#000'; }
+    l.paint = l.paint || {};
+    if (l.type === 'background') l.paint['background-color'] = T.bg;
+    else if (T.layers[l.id]) Object.assign(l.paint, T.layers[l.id]);
+    else if (l.type === 'line' && /^boundary/.test(l.id)) l.paint['line-color'] = T.boundary;
+    else if (l.type === 'symbol' && 'text-color' in l.paint) {
+      const road = /^highway[-_]name|^road/.test(l.id), water = /water/.test(l.id);
+      l.paint['text-color'] = water ? T.water : road ? T.road : T.text;
+      l.paint['text-halo-color'] = T.halo;
+    }
   }
+  // flat footprints below z15, real 3D buildings from z15 up
+  const flat = s.layers.find(l => l.id === 'building'); if (flat) flat.maxzoom = 15;
+  const at = s.layers.findIndex(l => l.type === 'symbol');
+  s.layers.splice(at < 0 ? s.layers.length : at, 0, {
+    id: 'building-3d', type: 'fill-extrusion', source: 'openmaptiles', 'source-layer': 'building', minzoom: 15,
+    paint: {
+      'fill-extrusion-color': T.extrusion, 'fill-extrusion-opacity': T.extrusionOpacity,
+      'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 6], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+    },
+  });
+  s.light = T.light;
   return s;
 }
 function addPoiLayers(s, dark) {
@@ -108,7 +162,7 @@ async function buildStyle() {
   try {
     if (!styleCache[name]) { const r = await fetch(`https://tiles.openfreemap.org/styles/${name}`); if (!r.ok) throw 0; styleCache[name] = await r.json(); }
     const s = JSON.parse(JSON.stringify(styleCache[name]));
-    return addPoiLayers(dark ? darkify(s) : s, dark);
+    return addPoiLayers(restyle(s, dark), dark);
   } catch { toast('Map tiles need an internet connection'); return FALLBACK_STYLE(dark); }
 }
 
@@ -133,7 +187,7 @@ function recolorRoute() {
 async function initMap() {
   mapStyleKind = S.theme === 'light' ? 'light' : 'dark';
   const style = await buildStyle();
-  map = new maplibregl.Map({ container: 'map', style, center: [KL[1], KL[0]], zoom: 13, attributionControl: false, dragRotate: false, pitchWithRotate: false, fadeDuration: 100 });
+  map = new maplibregl.Map({ container: 'map', style, center: [KL[1], KL[0]], zoom: 13, attributionControl: false, dragRotate: true, pitchWithRotate: true, maxPitch: 72, fadeDuration: 100 });
   map.touchZoomRotate.disableRotation();
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
   map.on('style.load', onStyleLoad);
@@ -275,8 +329,27 @@ function osrmBase(mode) {
 let meMarker = null, simTimer = null, simHeading = Math.random() * 6.28, watchId = null;
 const firstFix = { done: false };
 
+/* 3D navigation: the camera tilts, turns to face where you are heading and keeps you in the lower part of the screen. */
+let view3d = S.view3d !== false, heading = 0;
+const angDiff = (a, b) => ((b - a + 540) % 360) - 180;
+function bearingDeg(a, b) {
+  const y = Math.sin(rad(b.lon - a.lon)) * Math.cos(rad(b.lat));
+  const x = Math.cos(rad(a.lat)) * Math.sin(rad(b.lat)) - Math.sin(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.cos(rad(b.lon - a.lon));
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+function updateHeading(prev, cur) {
+  if (prev && dist([prev.lat, prev.lon], [cur.lat, cur.lon]) > 4) heading = (heading + angDiff(heading, bearingDeg(prev, cur)) * 0.5 + 360) % 360;
+}
+const NO_PAD = { top: 0, bottom: 0, left: 0, right: 0 };
+function navCamera(duration = 900) {
+  if (!map || !me) return;
+  if (view3d) map.easeTo({ center: [me.lon, me.lat], bearing: heading, pitch: 60, zoom: 17.2, padding: { top: Math.round(innerHeight * .38), bottom: 0, left: 0, right: 0 }, duration, easing: t => t });
+  else map.easeTo({ center: [me.lon, me.lat], bearing: 0, pitch: 0, zoom: 17, padding: NO_PAD, duration });
+}
+function resetCamera() { map.easeTo({ pitch: 0, bearing: 0, padding: NO_PAD, duration: 600 }); }
 function onPos(lat, lon, acc, ts = Date.now()) {
   const prev = me; me = { lat, lon, acc, ts };
+  updateHeading(prev, me);
   if (!map) return;
   if (!meMarker) {
     const el = document.createElement('div'); el.className = 'me'; el.innerHTML = '<i></i>';
@@ -289,7 +362,7 @@ function onPos(lat, lon, acc, ts = Date.now()) {
     $('#locLabel').textContent = 'Around your location';
     resolveCountry(); renderNearby();
     if (quest.on) topUpCats();
-  } else if (following) map.easeTo({ center: [lon, lat], duration: 600 });
+  } else if (following) { if (nav.active) navCamera(900); else map.easeTo({ center: [lon, lat], duration: 600 }); }
 
   if (quest.on) questTick(prev, me);
   if (nav.active) navTick();
@@ -670,13 +743,14 @@ $('#startNav').addEventListener('click', () => {
   nav.active = true; nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
   document.body.classList.add('navigating'); $('#navBanner').hidden = false; resEl.hidden = true; syncPanels(); syncMute();
   S.trips = [{ name: nav.dest.name, ts: Date.now(), mode: nav.mode, dist: nav.routes[nav.sel].distance }, ...S.trips].slice(0, 20); save(); renderSaved();
-  map.easeTo({ center: [me.lon, me.lat], zoom: 17.5, duration: 800 });
+  navCamera(800);
   speak(`Starting navigation. ${instr(nav.steps[0])}.`);
   navTick();
 });
 // End = leave navigation and return to the map. Hide the UI first so a failure elsewhere can never leave you stuck.
 function endNavigation() {
   document.body.classList.remove('navigating'); $('#navBanner').hidden = true; nav.active = false;
+  try { resetCamera(); } catch {}
   try { stopSpeech(); } catch {}
   try { clearRoute(); } catch (e) { try { syncPanels(); } catch {} }
   toast('Navigation ended');
@@ -684,6 +758,7 @@ function endNavigation() {
 $('#navStop').addEventListener('click', endNavigation);
 function stopNav(silent) {
   if (!nav.active && silent) return; nav.active = false;
+  try { resetCamera(); } catch {}
   document.body.classList.remove('navigating'); $('#navBanner').hidden = true;
   try { stopSpeech(); } catch {}
   try { syncPanels(); } catch {}
@@ -947,9 +1022,16 @@ $('#srvReset').addEventListener('click', () => { S.servers = { photon: '', nomin
 $('#weight').addEventListener('change', e => { S.weight = Math.min(250, Math.max(30, +e.target.value || 65)); e.target.value = S.weight; save(); renderHud(); });
 $('#simToggle').addEventListener('change', e => { setSim(e.target.checked); toast(e.target.checked ? 'Simulating a stroll 🚶' : 'Simulation off'); });
 
+function sync3dBtn() { const b = $('#view3dBtn'); b.textContent = view3d ? '3D' : '2D'; b.classList.toggle('on', view3d); }
+$('#view3dBtn').addEventListener('click', () => {
+  if (nav.active) view3d = !view3d;
+  else { const tilt = map.getPitch() < 10; map.easeTo({ pitch: tilt ? 58 : 0, zoom: tilt ? Math.max(map.getZoom(), 16.5) : map.getZoom(), duration: 700 }); view3d = tilt; }
+  S.view3d = view3d; save(); sync3dBtn(); if (nav.active) navCamera(500);
+});
+sync3dBtn();
 $('#locateBtn').addEventListener('click', () => {
   if (!me) { startLocation(); return toast('Looking for you…'); }
-  following = true; $('#locateBtn').classList.add('on'); map.easeTo({ center: [me.lon, me.lat], zoom: Math.max(map.getZoom(), 16) });
+  following = true; $('#locateBtn').classList.add('on'); if (nav.active) navCamera(600); else map.easeTo({ center: [me.lon, me.lat], zoom: Math.max(map.getZoom(), 16) });
 });
 $('#sheetHandle').addEventListener('click', () => $('#sheet').classList.toggle('collapsed'));
 new ResizeObserver(() => document.documentElement.style.setProperty('--sheet-h', ($('#sheet').hidden ? 0 : $('#sheet').offsetHeight) + 'px')).observe($('#sheet'));
