@@ -7,9 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Bump both for every release; the in-app updater compares VERSION_CODE (it must always go up).
-VERSION_CODE=15
-VERSION_NAME=1.0.14
-RELEASE_NOTES="Fixes switches that did not redraw when tapped. Same signing key as 1.0.13, so it updates over it."
+VERSION_CODE=16
+VERSION_NAME=1.0.15
+RELEASE_NOTES="Fixes all switches in Settings: they were not clickable."
 UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist
 
 DEPS=build/deps
