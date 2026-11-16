@@ -11,7 +11,7 @@ const KL = [3.139, 101.687]; // [lat, lon] fallback view until we get a fix
 /* ================= state ================= */
 const KEY = 'mapsandcats.v1', RKEY = 'mapsandcats.routes';
 const S = Object.assign({
-  theme: 'dark', gkey: '', weight: 65, sim: false, xp: 0, caught: 0, avoidHw: false,
+  theme: 'dark', speedo: true, meowAt: 80, gkey: '', weight: 65, sim: false, xp: 0, caught: 0, avoidHw: false,
   voice: { on: true, name: '' },
   servers: { photon: '', nominatim: '', osrm: '' },
   saved: { home: null, work: null, favs: [] }, recents: [], trips: [], country: null,
@@ -341,6 +341,40 @@ function osrmBase(mode) {
 let meMarker = null, simTimer = null, simHeading = Math.random() * 6.28, watchId = null;
 const firstFix = { done: false };
 
+/* Speedometer, and a meow when you reach your chosen speed (80 km/h unless you change it in settings). */
+let speedMs = 0, meowArmed = true;
+function updateSpeed(prev, cur, spd) {
+  let v = Number.isFinite(spd) && spd >= 0 ? spd : null;
+  if (v === null && prev) { const dt = (cur.ts - prev.ts) / 1000; if (dt > 0.3 && dt < 10) v = dist([prev.lat, prev.lon], [cur.lat, cur.lon]) / dt; }
+  if (v === null) return;
+  speedMs = v < 0.6 ? 0 : speedMs + (v - speedMs) * 0.6; // stand still = 0, light smoothing otherwise
+  renderSpeedo(); meowCheck();
+}
+function renderSpeedo() {
+  const el = $('#speedo'); if (!el) return;
+  const k = speedMs * 3.6, at = +S.meowAt;
+  el.hidden = !(S.speedo !== false && (nav.active || k >= 3));
+  $('#speedoNum').textContent = Math.round(k);
+  el.classList.toggle('fast', at > 0 && k >= at);
+}
+function meowCheck() {
+  const k = speedMs * 3.6, at = +S.meowAt; if (!(at > 0)) return;
+  if (k >= at && meowArmed) { meowArmed = false; meow(); } else if (k < at - 5) meowArmed = true;
+}
+function meow() {
+  try {
+    const ac = purr.ac || (purr.ac = new (window.AudioContext || window.webkitAudioContext)()); if (ac.state === 'suspended') ac.resume();
+    const t = ac.currentTime, o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(420, t); o.frequency.linearRampToValueAtTime(760, t + .16); o.frequency.linearRampToValueAtTime(980, t + .26); o.frequency.exponentialRampToValueAtTime(380, t + .7);
+    f.type = 'bandpass'; f.Q.value = 4; f.frequency.setValueAtTime(700, t); f.frequency.linearRampToValueAtTime(1800, t + .22); f.frequency.exponentialRampToValueAtTime(900, t + .7);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.35, t + .06); g.gain.setValueAtTime(.35, t + .3); g.gain.exponentialRampToValueAtTime(.001, t + .75);
+    o.connect(f).connect(g).connect(ac.destination); o.start(t); o.stop(t + .8);
+  } catch {}
+  haptic(40); toast(`Meow! ${Math.round(+S.meowAt)} km/h 😼`, 2200);
+}
+setInterval(() => { if (me && Date.now() - me.ts > 6000 && speedMs) { speedMs = 0; renderSpeedo(); } }, 2000);
+
 /* 3D navigation: the camera tilts, turns to face where you are heading and keeps you in the lower part of the screen. */
 let view3d = S.view3d !== false, heading = 0;
 const angDiff = (a, b) => ((b - a + 540) % 360) - 180;
@@ -359,9 +393,9 @@ function navCamera(duration = 900) {
   else map.easeTo({ center: [me.lon, me.lat], bearing: 0, pitch: 0, zoom: 17, padding: NO_PAD, duration });
 }
 function resetCamera() { map.easeTo({ pitch: 0, bearing: 0, padding: NO_PAD, duration: 600 }); }
-function onPos(lat, lon, acc, ts = Date.now()) {
+function onPos(lat, lon, acc, ts = Date.now(), spd) {
   const prev = me; me = { lat, lon, acc, ts };
-  updateHeading(prev, me);
+  updateHeading(prev, me); updateSpeed(prev, me, spd);
   if (!map) return;
   if (!meMarker) {
     const el = document.createElement('div'); el.className = 'me'; el.innerHTML = '<i></i>';
@@ -383,7 +417,7 @@ function startLocation() {
   if (!('geolocation' in navigator)) { $('#locLabel').textContent = 'Location not supported'; return; }
   if (watchId != null) navigator.geolocation.clearWatch(watchId);
   watchId = navigator.geolocation.watchPosition(
-    p => { if (!S.sim) onPos(p.coords.latitude, p.coords.longitude, p.coords.accuracy || 20, p.timestamp); },
+    p => { if (!S.sim) onPos(p.coords.latitude, p.coords.longitude, p.coords.accuracy || 20, p.timestamp, p.coords.speed); },
     err => { $('#locLabel').textContent = err.code === 1 ? 'Location is off — tap ◎ to retry' : 'Can’t find you yet…'; if (!me) renderNearby(); },
     { enableHighAccuracy: true, maximumAge: 2000, timeout: 25000 });
 }
@@ -752,7 +786,8 @@ function clearRoute() {
 /* ---- turn-by-turn ---- */
 $('#startNav').addEventListener('click', () => {
   if (!nav.routes[nav.sel] || !me) return toast('Waiting for a route…');
-  nav.active = true; keepAwake(true); nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
+  try { (purr.ac || (purr.ac = new (window.AudioContext || window.webkitAudioContext)())).resume(); } catch {}
+  nav.active = true; keepAwake(true); renderSpeedo(); nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
   document.body.classList.add('navigating'); $('#navBanner').hidden = false; resEl.hidden = true; syncPanels(); syncMute();
   S.trips = [{ name: nav.dest.name, ts: Date.now(), mode: nav.mode, dist: nav.routes[nav.sel].distance }, ...S.trips].slice(0, 20); save(); renderSaved();
   navCamera(800);
@@ -769,7 +804,7 @@ function endNavigation() {
 }
 $('#navStop').addEventListener('click', endNavigation);
 function stopNav(silent) {
-  if (!nav.active && silent) return; nav.active = false; keepAwake(quest.on);
+  if (!nav.active && silent) return; nav.active = false; keepAwake(quest.on); renderSpeedo();
   try { resetCamera(); } catch {}
   document.body.classList.remove('navigating'); $('#navBanner').hidden = true;
   try { stopSpeech(); } catch {}
@@ -1007,7 +1042,7 @@ function applyTheme(t) {
 function syncUI() {
   $$('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.theme === S.theme));
   $('#themeHint').textContent = { dark: 'Pitch-black AMOLED. Easy on the eyes and battery.', light: 'Bright and clean for daylight.', quest: 'Walking only. Cats spawn on the map — tap or stroll past them for XP.' }[S.theme];
-  $('#gkey').value = S.gkey; $('#gUsage').textContent = S.gkey ? `Google searches this month: ${gUsage().n} / ${G_LIMIT}. Used only on Enter or when open results look weak.` : ''; $('#weight').value = S.weight; $('#simToggle').checked = S.sim; $('#verLabel').textContent = 'v' + APP_VERSION; $('#aboutVer').textContent = 'Version ' + APP_VERSION;
+  $('#gkey').value = S.gkey; $('#gUsage').textContent = S.gkey ? `Google searches this month: ${gUsage().n} / ${G_LIMIT}. Used only on Enter or when open results look weak.` : ''; $('#weight').value = S.weight; $('#simToggle').checked = S.sim; $('#speedoToggle').checked = S.speedo !== false; $('#meowAt').value = S.meowAt; $('#verLabel').textContent = 'v' + APP_VERSION; $('#aboutVer').textContent = 'Version ' + APP_VERSION;
   $('#srvPhoton').value = S.servers.photon; $('#srvNominatim').value = S.servers.nominatim; $('#srvOsrm').value = S.servers.osrm;
   syncMute();
 }
@@ -1032,6 +1067,8 @@ $('#srvSave').addEventListener('click', () => {
 });
 $('#srvReset').addEventListener('click', () => { S.servers = { photon: '', nominatim: '', osrm: '' }; save(); syncUI(); toast('Using public servers'); });
 $('#weight').addEventListener('change', e => { S.weight = Math.min(250, Math.max(30, +e.target.value || 65)); e.target.value = S.weight; save(); renderHud(); });
+$('#speedoToggle').addEventListener('change', e => { S.speedo = e.target.checked; save(); renderSpeedo(); });
+$('#meowAt').addEventListener('change', e => { const v = Math.min(300, Math.max(0, Math.round(+e.target.value || 0))); S.meowAt = v; e.target.value = v; meowArmed = true; save(); renderSpeedo(); toast(v ? `Meow at ${v} km/h 😼` : 'Meow off'); });
 $('#simToggle').addEventListener('change', e => { setSim(e.target.checked); toast(e.target.checked ? 'Simulating a stroll 🚶' : 'Simulation off'); });
 
 function sync3dBtn() { const b = $('#view3dBtn'); b.textContent = view3d ? '3D' : '2D'; b.classList.toggle('on', view3d); }
