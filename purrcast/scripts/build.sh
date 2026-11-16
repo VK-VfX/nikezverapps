@@ -37,11 +37,14 @@ java -cp "$DX_JAR" com.android.dx.command.Main --dex --min-sdk-version=26 --outp
 cp build/dex/classes.dex build/classes.dex
 (cd build && aapt add -f unsigned.apk classes.dex >/dev/null)
 
-# 4. align + sign (v1+v2+v3). The keystore is a throwaway signing identity kept in the repo so updates install over each other.
-[ -f keystore/skypix.jks ] || keytool -genkeypair -keystore keystore/skypix.jks -storepass skypix123 -keypass skypix123 \
-  -alias skypix -keyalg RSA -keysize 2048 -validity 36500 -dname "CN=Skypix, O=Skypix"
+# 4. align + sign (v1+v2+v3). The signing key lives OUTSIDE this public repo, in the private nikezverapps-keys repo
+#    (clone it next to this repo, or point NIKEZ_KEYS at it). Updates only install over each other with the same key.
+KEYS="${NIKEZ_KEYS:-$(cd "$(dirname "$0")/../.." && pwd)/../nikezverapps-keys}"
+KS="$KEYS/purrcast/purrcast.jks"
+[ -f "$KS" ] || { echo "Signing key not found at $KS. Clone the private nikezverapps-keys repo or set NIKEZ_KEYS." >&2; exit 1; }
+KPASS="$(cat "$KEYS/purrcast/purrcast.pass")"
 zipalign -f -p 4 build/unsigned.apk build/aligned.apk
-apksigner sign --ks keystore/skypix.jks --ks-pass pass:skypix123 --key-pass pass:skypix123 --out dist/skypix.apk build/aligned.apk
+apksigner sign --ks "$KS" --ks-pass "pass:$KPASS" --key-pass "pass:$KPASS" --out dist/skypix.apk build/aligned.apk
 apksigner verify --verbose dist/skypix.apk | head -5
 ls -la dist/skypix.apk
 
