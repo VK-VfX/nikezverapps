@@ -27,6 +27,9 @@ android {
             }
         }
     }
+    // Release builds run "lint vital", which reads the copied web files without declaring that; Gradle 8 then refuses the build.
+    // The web app is not Android UI code, so skip lint on release builds.
+    lint { checkReleaseBuilds = false }
     buildTypes {
         release {
             isMinifyEnabled = false
