@@ -85,12 +85,12 @@ object Updates {
                 }
             }
             val page = json.optString("html_url")
-            val body = json.optString("body")
+            val notes = json.optString("body")
             // older releases list the checksum in their notes instead of on the asset
             if (!Regex("^[0-9a-fA-F]{64}$").matches(sha)) {
-                sha = Regex("APK SHA-256: `([0-9a-fA-F]{64})`").find(body)?.groupValues?.get(1).orEmpty()
+                sha = Regex("APK SHA-256: `([0-9a-fA-F]{64})`").find(notes)?.groupValues?.get(1).orEmpty()
             }
-            UpdateResult.Available(UpdateInfo(version, apk ?: page, page, body.trim(), size, sha))
+            UpdateResult.Available(UpdateInfo(version, apk ?: page, page, notes.trim(), size, sha))
         } catch (e: Exception) {
             UpdateResult.Failed
         }
