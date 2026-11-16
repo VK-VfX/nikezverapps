@@ -1,0 +1,905 @@
+package com.nikopick.zamoled.ui
+
+import android.graphics.Bitmap
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.FileDownload
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.Smartphone
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Wallpaper
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilledTonalIconToggleButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.sp
+import com.nikopick.zamoled.data.ShareLink
+import com.nikopick.zamoled.data.FavoritesStore
+import com.nikopick.zamoled.data.Resolution
+import com.nikopick.zamoled.data.Screen
+import com.nikopick.zamoled.data.WallpaperActions
+import com.nikopick.zamoled.data.WallpaperTarget
+import com.nikopick.zamoled.gen.Category
+import com.nikopick.zamoled.gen.DoodleLayout
+import com.nikopick.zamoled.gen.Palette
+import com.nikopick.zamoled.gen.Palettes
+import com.nikopick.zamoled.gen.Renderer
+import com.nikopick.zamoled.gen.WallpaperSpec
+import com.nikopick.zamoled.gen.Zones
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
+import kotlin.random.Random
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DetailScreen(initial: WallpaperSpec, favorites: FavoritesStore, onBack: () -> Unit, onMoreLikeThis: (String) -> Unit = {}) {
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+    val snackbar = remember { SnackbarHostState() }
+
+    var spec by remember(initial.key) { mutableStateOf(initial) }
+    val placeholder = remember(initial.key) { ThumbCache.peekBest(initial) }
+    var preview by remember { mutableStateOf<Bitmap?>(null) }
+    var blackShare by remember { mutableStateOf<Float?>(null) }
+    var rendering by remember { mutableStateOf(true) }
+    var busy by remember { mutableStateOf(false) }
+    var chrome by remember { mutableStateOf(true) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    var showApply by remember { mutableStateOf(false) }
+    var celebration by remember { mutableStateOf<String?>(null) }
+    var lastCelebration by remember { mutableStateOf("") }
+    var resolution by rememberSaveable { mutableStateOf(Resolution.SCREEN) }
+    var detail by remember(spec.styleId, spec.seed) { mutableFloatStateOf(spec.density) }
+    var blackLevel by remember(spec.styleId, spec.seed) { mutableFloatStateOf(spec.black) }
+    var words by remember(spec.styleId) { mutableStateOf(spec.text) }
+    var showClock by rememberSaveable { mutableStateOf(false) }
+    // Variations already seen, so a swipe right can go back to them.
+    val trail = remember { mutableStateListOf<WallpaperSpec>() }
+    var drag by remember { mutableFloatStateOf(0f) }
+
+    fun nextVariation() {
+        trail.add(spec)
+        if (trail.size > 30) trail.removeAt(0)
+        spec = spec.copy(seed = Random.nextLong())
+    }
+
+    fun previousVariation() {
+        if (trail.isNotEmpty()) spec = trail.removeAt(trail.size - 1)
+    }
+    val zoom = remember { Animatable(1f) }
+    val shuffleSpin = remember { Animatable(0f) }
+
+    BackHandler(onBack = onBack)
+
+    LaunchedEffect(spec) {
+        rendering = true
+        blackShare = null
+        val bmp = withContext(renderDispatcher) { Renderer.render(spec, Screen.width, Screen.height) }
+        preview = bmp
+        rendering = false
+        blackShare = withContext(renderDispatcher) { Renderer.blackRatio(bmp) }
+    }
+    // Each new render settles in with a gentle zoom.
+    LaunchedEffect(preview) {
+        if (preview != null) {
+            zoom.snapTo(1.06f)
+            zoom.animateTo(1f, tween(900, easing = FastOutSlowInEasing))
+        }
+    }
+    LaunchedEffect(celebration) {
+        if (celebration != null) {
+            delay(1600)
+            celebration = null
+        }
+    }
+
+    fun celebrate(message: String) {
+        lastCelebration = message
+        celebration = message
+        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
+
+    suspend fun bitmapFor(res: Resolution): Bitmap {
+        val current = preview
+        if (res == Resolution.SCREEN && current != null) return current
+        return withContext(renderDispatcher) { Renderer.render(spec, res.width, res.height) }
+    }
+
+    fun fileName() = "zamoled_${spec.styleId}_${spec.seed.toULong().toString(16)}"
+
+    fun save() = scope.launch {
+        busy = true
+        val bmp = bitmapFor(resolution)
+        val uri = WallpaperActions.saveToGallery(context, bmp, fileName())
+        if (bmp !== preview) bmp.recycle()
+        busy = false
+        if (uri != null) celebrate("Saved in ${resolution.label}") else snackbar.showSnackbar("Couldn't save. Check storage space and try again.")
+    }
+
+    fun apply(target: WallpaperTarget) = scope.launch {
+        busy = true
+        val ok = WallpaperActions.setWallpaper(context, bitmapFor(Resolution.SCREEN), target)
+        busy = false
+        if (ok) celebrate("Wallpaper applied") else snackbar.showSnackbar("Couldn't set the wallpaper on this device.")
+    }
+
+    // The same style and palette twice: this one on the home screen, a sibling on the lock screen.
+    fun applyPair() = scope.launch {
+        busy = true
+        val home = bitmapFor(Resolution.SCREEN)
+        val sibling = spec.copy(seed = spec.seed xor 0x5DEECE66DL, paletteId = spec.palette.id)
+        val lock = withContext(renderDispatcher) { Renderer.render(sibling, Screen.width, Screen.height) }
+        val ok = WallpaperActions.setWallpaper(context, home, WallpaperTarget.HOME) &&
+            WallpaperActions.setWallpaper(context, lock, WallpaperTarget.LOCK)
+        lock.recycle()
+        busy = false
+        if (ok) celebrate("Matching pair applied") else snackbar.showSnackbar("Couldn't set the wallpaper on this device.")
+    }
+
+    Box(Modifier.fillMaxSize().background(Color.Black)) {
+        // Wallpaper preview: starts from the cached thumbnail so the shared-element flight has a picture,
+        // then crossfades to the full-resolution render.
+        Box(
+            Modifier
+                .fillMaxSize()
+                .sharedWallpaper(initial.key, RectangleShape)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { chrome = !chrome }
+                // Swipe left for a new variation, right to go back to the last one.
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { drag = 0f },
+                        onDragEnd = {
+                            if (drag < -90f) nextVariation() else if (drag > 90f) previousVariation()
+                            drag = 0f
+                        },
+                        onDragCancel = { drag = 0f },
+                    ) { _, amount -> drag += amount }
+                },
+        ) {
+            placeholder?.let {
+                Image(it.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            }
+            Crossfade(targetState = preview, animationSpec = tween(450), label = "preview") { bmp ->
+                if (bmp != null) {
+                    Image(
+                        bmp.asImageBitmap(),
+                        contentDescription = "${spec.style.name} wallpaper preview",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().graphicsLayer {
+                            scaleX = zoom.value
+                            scaleY = zoom.value
+                        },
+                    )
+                }
+            }
+        }
+
+        if (showClock) ClockOverlay(lockScreen = !chrome)
+
+        AnimatedVisibility(
+            visible = chrome,
+            enter = slideInVertically(Motion.spatial()) { -it } + fadeIn(),
+            exit = slideOutVertically(Motion.spatial()) { -it } + fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter),
+        ) {
+            TopControls(
+                spec = spec,
+                favorite = favorites.isFavorite(spec),
+                clock = showClock,
+                onClock = { showClock = !showClock },
+                onBack = onBack,
+                onFavorite = {
+                    favorites.toggle(spec)
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
+            )
+        }
+
+        AnimatedVisibility(
+            visible = chrome,
+            enter = slideInVertically(Motion.spatial()) { it } + fadeIn(),
+            exit = slideOutVertically(Motion.spatial()) { it } + fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            Surface(
+                shape = RoundedCornerShape(36.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                shadowElevation = 12.dp,
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .padding(horizontal = 12.dp, vertical = 12.dp)
+                    .fillMaxWidth(),
+            ) {
+                Column(Modifier.animateContentSize(Motion.spatial()).padding(10.dp)) {
+                    AnimatedVisibility(
+                        visible = rendering || busy,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut(),
+                    ) {
+                        LinearProgressIndicator(
+                            strokeCap = StrokeCap.Round,
+                            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 10.dp),
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = expanded,
+                        enter = expandVertically(Motion.spatial()) + fadeIn(),
+                        exit = shrinkVertically(Motion.spatial()) + fadeOut(),
+                    ) {
+                        CustomizePanel(
+                            spec = spec,
+                            detail = detail,
+                            resolution = resolution,
+                            onPalette = { spec = spec.copy(paletteId = it) },
+                            onDetail = { detail = it },
+                            onDetailDone = { spec = spec.copy(density = (detail * 10).roundToInt() / 10f) },
+                            onResolution = { resolution = it },
+                            onLayout = { spec = spec.copy(layoutId = it) },
+                            black = blackLevel,
+                            onBlack = { blackLevel = it },
+                            onBlackDone = { spec = spec.copy(black = (blackLevel * 20).roundToInt() / 20f) },
+                            words = words,
+                            onWords = { words = it.take(80).replace('|', ' ').replace('\n', ' ') },
+                            onWordsDone = { spec = spec.copy(text = words.trim()) },
+                            onSafe = { spec = spec.copy(safe = it) },
+                            onZone = { spec = spec.copy(zone = it) },
+                            onDetailPreset = { detail = it; spec = spec.copy(density = it) },
+                            onBlackPreset = { blackLevel = it; spec = spec.copy(black = it) },
+                            onWhite = { spec = spec.copy(white = it) },
+                            onAlign = { spec = spec.copy(align = it) },
+                            onVpos = { spec = spec.copy(vpos = it) },
+                            onShare = { ShareLink.share(context, spec) },
+                            onMore = { onMoreLikeThis(spec.styleId) },
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        BlackMeter(blackShare) {
+                            scope.launch {
+                                snackbar.currentSnackbarData?.dismiss()
+                                snackbar.showSnackbar(
+                                    blackShare?.let { "${(it * 100).roundToInt()}% of pixels are pure black, so your OLED screen keeps them switched off." }
+                                        ?: "Measuring how much of this wallpaper is pure black…",
+                                )
+                            }
+                        }
+                        IconButton(onClick = {
+                            spec = spec.copy(seed = Random.nextLong())
+                            scope.launch { shuffleSpin.animateTo(shuffleSpin.value + 180f, Motion.bouncy()) }
+                        }) {
+                            Icon(
+                                Icons.Rounded.Shuffle,
+                                contentDescription = "Shuffle",
+                                modifier = Modifier.graphicsLayer { rotationY = shuffleSpin.value },
+                            )
+                        }
+                        FilledTonalIconToggleButton(checked = expanded, onCheckedChange = { expanded = it }) {
+                            Icon(Icons.Rounded.Tune, contentDescription = "Customize")
+                        }
+                        IconButton(onClick = { save() }, enabled = !busy && !rendering) {
+                            Icon(Icons.Rounded.FileDownload, contentDescription = "Save to gallery")
+                        }
+                        Spacer(Modifier.weight(1f))
+                        val applyInteraction = remember { MutableInteractionSource() }
+                        Button(
+                            onClick = { showApply = true },
+                            enabled = !busy && !rendering,
+                            interactionSource = applyInteraction,
+                            contentPadding = PaddingValues(horizontal = 18.dp),
+                            modifier = Modifier.height(52.dp).pressScale(applyInteraction),
+                        ) {
+                            Icon(Icons.Rounded.Wallpaper, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Apply")
+                        }
+                    }
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = celebration != null,
+            enter = scaleIn(spring(dampingRatio = 0.5f, stiffness = 450f), initialScale = 0.4f) + fadeIn(),
+            exit = scaleOut(targetScale = 0.85f) + fadeOut(),
+            modifier = Modifier.align(Alignment.Center),
+        ) {
+            Surface(shape = RoundedCornerShape(36.dp), color = MaterialTheme.colorScheme.primaryContainer, shadowElevation = 16.dp) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 24.dp),
+                ) {
+                    Icon(
+                        Icons.Rounded.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(52.dp),
+                    )
+                    Text(lastCelebration, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            }
+        }
+
+        SnackbarHost(
+            snackbar,
+            modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 72.dp),
+        )
+    }
+
+    if (showApply) {
+        ModalBottomSheet(
+            onDismissRequest = { showApply = false },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ) {
+            Text(
+                "Set wallpaper on",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+            WallpaperTarget.entries.forEach { target ->
+                val icon: ImageVector = when (target) {
+                    WallpaperTarget.HOME -> Icons.Rounded.Home
+                    WallpaperTarget.LOCK -> Icons.Rounded.Lock
+                    WallpaperTarget.BOTH -> Icons.Rounded.Smartphone
+                }
+                ListItem(
+                    headlineContent = { Text(target.label, style = MaterialTheme.typography.titleMedium) },
+                    leadingContent = {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(44.dp)
+                                .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(14.dp)),
+                        ) {
+                            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                        }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable {
+                            showApply = false
+                            apply(target)
+                        },
+                )
+            }
+            ListItem(
+                headlineContent = { Text("Matching pair", style = MaterialTheme.typography.titleMedium) },
+                supportingContent = { Text("This one on home, a sibling in the same style and colours on lock") },
+                leadingContent = {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(14.dp)),
+                    ) {
+                        Icon(Icons.Rounded.Wallpaper, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                    }
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable {
+                        showApply = false
+                        applyPair()
+                    },
+            )
+            Spacer(Modifier.navigationBarsPadding().padding(bottom = 16.dp))
+        }
+    }
+}
+
+@Composable
+private fun CustomizePanel(
+    spec: WallpaperSpec,
+    detail: Float,
+    resolution: Resolution,
+    onPalette: (String) -> Unit,
+    onDetail: (Float) -> Unit,
+    onDetailDone: () -> Unit,
+    onResolution: (Resolution) -> Unit,
+    onLayout: (String) -> Unit,
+    black: Float,
+    onBlack: (Float) -> Unit,
+    onBlackDone: () -> Unit,
+    words: String,
+    onWords: (String) -> Unit,
+    onWordsDone: () -> Unit,
+    onSafe: (Boolean) -> Unit,
+    onZone: (Int) -> Unit,
+    onDetailPreset: (Float) -> Unit,
+    onBlackPreset: (Float) -> Unit,
+    onWhite: (Boolean) -> Unit,
+    onAlign: (Int) -> Unit,
+    onVpos: (Int) -> Unit,
+    onShare: () -> Unit,
+    onMore: () -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 14.dp),
+    ) {
+        if (spec.style.usesPalette) {
+            SectionLabel("Palette")
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 2.dp)) {
+                item(key = "auto") {
+                    PaletteSwatch(null, selected = spec.paletteId == "auto") { onPalette("auto") }
+                }
+                items(Palettes.choices, key = { it.id }) { p ->
+                    PaletteSwatch(p, selected = spec.paletteId == p.id) { onPalette(p.id) }
+                }
+            }
+        }
+        // Arrangement only changes styles that lay doodles out across the page.
+        if (spec.style.category == Category.DOODLE || spec.style.category == Category.LAB) {
+            SectionLabel("Arrangement")
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 2.dp)) {
+                items(DoodleLayout.choices, key = { it.id }) { l ->
+                    val selected = spec.layoutId == l.id
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onLayout(l.id) },
+                        label = { Text(l.label) },
+                        leadingIcon = if (l == DoodleLayout.AUTO) {
+                            { Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+                        } else {
+                            { LayoutGlyph(l, if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant) }
+                        },
+                        shape = CircleShape,
+                    )
+                }
+            }
+        }
+        if (spec.style.usesDetail) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SectionLabel("Detail", Modifier.weight(1f))
+                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
+                    Text(
+                        "%.1f×".format(detail),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                    )
+                }
+            }
+            Slider(value = detail, onValueChange = onDetail, onValueChangeFinished = onDetailDone, valueRange = 0.4f..1.8f)
+            PresetRow(listOf("Minimal" to 0.6f, "Normal" to 1f, "Rich" to 1.4f, "Dense" to 1.8f), detail, onDetailPreset)
+        }
+        if (spec.style.usesText) {
+            SectionLabel("Your words")
+            OutlinedTextField(
+                value = words,
+                onValueChange = onWords,
+                singleLine = true,
+                placeholder = { Text("Type something, then press Done") },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { onWordsDone() }),
+                trailingIcon = { IconButton(onClick = onWordsDone) { Icon(Icons.Rounded.CheckCircle, contentDescription = "Use these words") } },
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            SectionLabel("Highlight")
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                SegmentedButton(selected = !spec.white, onClick = { onWhite(false) }, shape = SegmentedButtonDefaults.itemShape(0, 2)) { Text("Red") }
+                SegmentedButton(selected = spec.white, onClick = { onWhite(true) }, shape = SegmentedButtonDefaults.itemShape(1, 2)) { Text("White") }
+            }
+            SectionLabel("Alignment")
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                listOf("Left", "Center", "Right").forEachIndexed { k, label ->
+                    SegmentedButton(selected = spec.align == k, onClick = { onAlign(k) }, shape = SegmentedButtonDefaults.itemShape(k, 3)) { Text(label) }
+                }
+            }
+            SectionLabel("Position")
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                listOf("Top", "Middle", "Bottom").forEachIndexed { k, label ->
+                    SegmentedButton(selected = spec.vpos == k, onClick = { onVpos(k) }, shape = SegmentedButtonDefaults.itemShape(k, 3)) { Text(label) }
+                }
+            }
+        }
+        // Widget-safe moves the picture below the launcher clock and weather; some styles are already built that way.
+        val built = spec.style.widgetSafe
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                SectionLabel("Widget-safe")
+                Text(
+                    if (built) "This design already keeps its focus clear of the widgets." else "Keeps the picture below your clock and weather widgets.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(checked = built || spec.safe, onCheckedChange = onSafe, enabled = !built)
+        }
+        SectionLabel("Make room for Purrcast")
+        Text(
+            "Dims soft quiet zones where Purrcast's clock and weather cards sit on your home screen.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            Zones.NAMES.forEachIndexed { k, label ->
+                SegmentedButton(selected = spec.zone == k, onClick = { onZone(k) }, shape = SegmentedButtonDefaults.itemShape(k, Zones.COUNT)) { Text(label) }
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SectionLabel("Black level", Modifier.weight(1f))
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
+                Text(
+                    if (black < 0.03f) "Off" else "${(black * 100).roundToInt()}%",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                )
+            }
+        }
+        Slider(value = black, onValueChange = onBlack, onValueChangeFinished = onBlackDone, valueRange = 0f..1f)
+        PresetRow(listOf("Off" to 0f, "Soft" to 0.25f, "Deep" to 0.5f, "Pure" to 0.85f), black, onBlackPreset)
+        SectionLabel("Save resolution")
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            Resolution.entries.forEachIndexed { index, res ->
+                SegmentedButton(
+                    selected = resolution == res,
+                    onClick = { onResolution(res) },
+                    shape = SegmentedButtonDefaults.itemShape(index, Resolution.entries.size),
+                ) { Text(res.label) }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilledTonalButton(onClick = onShare, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Share")
+            }
+            FilledTonalButton(onClick = onMore, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Rounded.GridView, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("More like this")
+            }
+        }
+    }
+}
+
+/**
+ * A stand-in for the launcher, drawn over the preview: the lock-screen clock when the controls are
+ * hidden, and a clock widget with a row of app icons and a dock otherwise.
+ */
+@Composable
+private fun ClockOverlay(lockScreen: Boolean) {
+    val soft = Color.White.copy(alpha = 0.9f)
+    Box(Modifier.fillMaxSize().statusBarsPadding()) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = if (lockScreen) 96.dp else 84.dp),
+        ) {
+            Text("Mon, 10 Nov", style = MaterialTheme.typography.titleMedium, color = soft)
+            Text(
+                "9:41",
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = if (lockScreen) 88.sp else 64.sp, fontWeight = FontWeight.Medium),
+                color = Color.White,
+            )
+        }
+        if (!lockScreen) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(26.dp),
+                modifier = Modifier.align(Alignment.Center).fillMaxWidth().padding(top = 150.dp, start = 28.dp, end = 28.dp),
+            ) {
+                repeat(2) {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        repeat(4) { Box(Modifier.size(54.dp).background(Color.White.copy(alpha = 0.22f), CircleShape)) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BlackMeter(share: Float?, onClick: () -> Unit) {
+    val progress by animateFloatAsState(share ?: 0f, tween(1000, easing = FastOutSlowInEasing), label = "black")
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(52.dp).clip(CircleShape).clickable(onClick = onClick),
+    ) {
+        if (share == null) {
+            CircularProgressIndicator(modifier = Modifier.size(40.dp), strokeWidth = 3.dp, strokeCap = StrokeCap.Round)
+        } else {
+            CircularProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.size(40.dp),
+                strokeWidth = 4.dp,
+                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                strokeCap = StrokeCap.Round,
+            )
+            Text(
+                "${(progress * 100).roundToInt()}",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TopControls(spec: WallpaperSpec, favorite: Boolean, clock: Boolean, onClock: () -> Unit, onBack: () -> Unit, onFavorite: () -> Unit) {
+    val glass = IconButtonDefaults.filledTonalIconButtonColors(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f),
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    )
+    val heart = remember { Animatable(1f) }
+    var firstRun by remember { mutableStateOf(true) }
+    LaunchedEffect(favorite) {
+        if (firstRun) {
+            firstRun = false
+        } else {
+            heart.snapTo(0.5f)
+            heart.animateTo(1f, spring(dampingRatio = 0.35f, stiffness = 500f))
+        }
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        FilledTonalIconButton(onClick = onBack, colors = glass, modifier = Modifier.size(48.dp)) {
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+        }
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+            modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(start = 6.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
+            ) {
+                ShapeIcon(spec.style.category, active = false, size = 36.dp, spin = false)
+                Column {
+                    Text(spec.style.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                    Text(
+                        "${spec.style.category.label} · ${spec.palette.name}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+        FilledTonalIconButton(onClick = onClock, colors = glass, modifier = Modifier.padding(end = 8.dp).size(48.dp)) {
+            Icon(
+                Icons.Rounded.Schedule,
+                contentDescription = if (clock) "Hide clock preview" else "Preview with clock and icons",
+                tint = if (clock) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        FilledTonalIconButton(onClick = onFavorite, colors = glass, modifier = Modifier.size(48.dp)) {
+            Icon(
+                if (favorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                contentDescription = if (favorite) "Remove from favorites" else "Add to favorites",
+                tint = if (favorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.graphicsLayer {
+                    scaleX = heart.value
+                    scaleY = heart.value
+                },
+            )
+        }
+    }
+}
+
+/** Dot diagram of an arrangement, used on the picker chips. */
+@Composable
+private fun LayoutGlyph(layout: DoodleLayout, color: Color) {
+    val dots = remember(layout) { layoutDots(layout) }
+    Canvas(Modifier.size(FilterChipDefaults.IconSize)) {
+        val r = size.minDimension * 0.075f
+        dots.forEach { (dx, dy) ->
+            drawCircle(color, radius = r, center = Offset(dx * size.width, dy * size.height))
+        }
+    }
+}
+
+/** Dot positions in 0..1 space for each arrangement's chip glyph. */
+private fun layoutDots(layout: DoodleLayout): List<Pair<Float, Float>> = when (layout) {
+    DoodleLayout.GRID -> listOf(0.25f, 0.5f, 0.75f).flatMap { y -> listOf(0.25f, 0.5f, 0.75f).map { it to y } }
+    DoodleLayout.RINGS -> buildList {
+        add(0.5f to 0.5f)
+        repeat(8) { add((0.5f + 0.33f * kotlin.math.cos(it * 0.785f)) to (0.5f + 0.33f * kotlin.math.sin(it * 0.785f))) }
+    }
+    DoodleLayout.SPIRAL -> (0..9).map {
+        val a = it * 0.9f
+        val rr = 0.045f * it
+        (0.5f + rr * kotlin.math.cos(a)) to (0.5f + rr * kotlin.math.sin(a))
+    }
+    DoodleLayout.WAVE -> (0..4).flatMap { c ->
+        val x = 0.16f + c * 0.17f
+        listOf(0.3f, 0.65f).map { base -> x to (base + 0.12f * kotlin.math.sin(c * 1.4f)) }
+    }
+    DoodleLayout.MOSAIC -> listOf(0.3f to 0.3f, 0.72f to 0.22f, 0.76f to 0.52f, 0.26f to 0.68f, 0.56f to 0.74f, 0.84f to 0.8f)
+    DoodleLayout.BURST -> buildList {
+        add(0.5f to 0.5f)
+        repeat(6) {
+            val a = it * 1.047f
+            add((0.5f + 0.2f * kotlin.math.cos(a)) to (0.5f + 0.2f * kotlin.math.sin(a)))
+            add((0.5f + 0.4f * kotlin.math.cos(a)) to (0.5f + 0.4f * kotlin.math.sin(a)))
+        }
+    }
+    DoodleLayout.DIAGONAL -> (0..3).flatMap { k -> (0..2).map { i -> (0.18f + i * 0.28f + k * 0.07f).coerceAtMost(0.92f) to (0.8f - i * 0.28f + k * 0.03f) } }
+    DoodleLayout.FRAME -> buildList {
+        for (i in 0..3) {
+            add((0.16f + i * 0.23f) to 0.16f); add((0.16f + i * 0.23f) to 0.84f)
+            add(0.16f to (0.16f + i * 0.23f)); add(0.84f to (0.16f + i * 0.23f))
+        }
+    }
+    DoodleLayout.SHAPE -> listOf(
+        0.32f to 0.3f, 0.5f to 0.24f, 0.68f to 0.3f, 0.26f to 0.45f, 0.5f to 0.45f, 0.74f to 0.45f,
+        0.36f to 0.62f, 0.5f to 0.68f, 0.64f to 0.62f, 0.5f to 0.82f,
+    )
+    else -> listOf(0.22f to 0.3f, 0.52f to 0.2f, 0.78f to 0.38f, 0.3f to 0.62f, 0.62f to 0.56f, 0.8f to 0.78f, 0.42f to 0.84f)
+}
+
+@Composable
+private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
+    MonoLabel(text, modifier = modifier)
+}
+
+@Composable
+private fun PaletteSwatch(palette: Palette?, selected: Boolean, onClick: () -> Unit) {
+    val ringWidth by animateDpAsState(if (selected) 3.dp else 0.dp, Motion.bouncy(), label = "ring")
+    val corner by animateDpAsState(if (selected) 14.dp else 22.dp, Motion.bouncy(), label = "corner")
+    val shape = RoundedCornerShape(corner)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(44.dp)
+            .border(ringWidth, MaterialTheme.colorScheme.primary, shape)
+            .padding(5.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .clickable(onClick = onClick),
+    ) {
+        if (palette == null) {
+            Icon(Icons.Rounded.AutoAwesome, contentDescription = "Auto palette", modifier = Modifier.size(18.dp))
+        } else {
+            val colors = palette.colors.map { Color(it) }
+            Canvas(Modifier.fillMaxSize()) {
+                val sweep = 360f / colors.size
+                colors.forEachIndexed { i, c ->
+                    drawArc(
+                        c, startAngle = -90f + i * sweep, sweepAngle = sweep, useCenter = true,
+                        topLeft = Offset(-size.width * 0.25f, -size.height * 0.25f),
+                        size = Size(size.width * 1.5f, size.height * 1.5f),
+                    )
+                }
+            }
+        }
+        AnimatedVisibility(
+            visible = selected && palette != null,
+            enter = scaleIn(Motion.bouncy()) + fadeIn(),
+            exit = scaleOut() + fadeOut(),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(20.dp).background(Color.Black.copy(alpha = 0.55f), CircleShape),
+            ) {
+                Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+            }
+        }
+    }
+}

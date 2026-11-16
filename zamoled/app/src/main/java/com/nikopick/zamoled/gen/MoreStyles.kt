@@ -1,0 +1,406 @@
+package com.nikopick.zamoled.gen
+
+import android.graphics.BlendMode
+import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Shader
+import android.graphics.Typeface
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.hypot
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
+
+// ---------- Audio ----------
+
+object SpectrumBars : Style("spectrum_bars", "Spectrum", Category.AUDIO) {
+    override fun draw(s: Scene) {
+        val n = s.count(44).coerceIn(12, 120)
+        val gap = s.w / n
+        val bw = gap * 0.56f
+        val y0 = s.h * s.f(0.5f, 0.62f)
+        val maxH = s.f(240f, 400f)
+        val off = s.f(0f, 50f)
+        for (i in 0 until n) {
+            val x = gap * (i + 0.5f)
+            val t = i / (n - 1f)
+            val env = sin(PI.toFloat() * t).pow(0.8f)
+            val v = ((s.noise.at(i * 0.21f + off, 3.3f) + 1f) / 2f).coerceIn(0f, 1f)
+            val hgt = 10f + maxH * env * v.pow(1.4f)
+            val color = s.grad(t)
+            s.canvas.drawRoundRect(x - bw / 2f, y0 - hgt, x + bw / 2f, y0, bw / 2f, bw / 2f, s.fill(color, 70, 12f))
+            s.canvas.drawRoundRect(x - bw / 2f, y0 - hgt, x + bw / 2f, y0, bw / 2f, bw / 2f, s.fill(color, 235))
+            // Reflection under the baseline.
+            s.canvas.drawRoundRect(x - bw / 2f, y0 + 8f, x + bw / 2f, y0 + 8f + hgt * 0.4f, bw / 2f, bw / 2f, s.fill(color, 45))
+        }
+    }
+}
+
+object CircularSpectrum : Style("circular_spectrum", "Radial Beat", Category.AUDIO) {
+    override fun draw(s: Scene) {
+        val x = s.cx
+        val y = s.h * s.f(0.4f, 0.5f)
+        val r = s.f(150f, 210f)
+        val n = s.count(110).coerceIn(30, 240)
+        val off = s.f(0f, 50f)
+        for (j in 0 until n) {
+            val t = j / n.toFloat()
+            val a = t * TAU - PI.toFloat() / 2f
+            // Mirror the noise so the ring joins seamlessly.
+            val m = if (t < 0.5f) t else 1f - t
+            val v = ((s.noise.at(m * 9f + off, 1.7f) + 1f) / 2f).coerceIn(0f, 1f)
+            val len = 14f + v.pow(1.6f) * 190f
+            val c = s.grad(m * 2f)
+            s.canvas.drawLine(x + cos(a) * r, y + sin(a) * r, x + cos(a) * (r + len), y + sin(a) * (r + len), s.stroke(c, 4f, 230))
+        }
+        s.canvas.drawCircle(x, y, r - 14f, s.stroke(s.color(0), 6f, 120, 18f))
+        s.canvas.drawCircle(x, y, r - 14f, s.stroke(s.color(0), 2f))
+        s.glowDot(x, y, 10f, s.color(1), 24f)
+    }
+}
+
+object Oscilloscope : Style("oscilloscope", "Oscilloscope", Category.AUDIO) {
+    override fun draw(s: Scene) {
+        val grid = s.stroke(s.color(2), 1f, 28)
+        var gx = 0f
+        while (gx <= s.w) { s.canvas.drawLine(gx, 0f, gx, s.h, grid); gx += 100f }
+        var gy = 0f
+        while (gy <= s.h) { s.canvas.drawLine(0f, gy, s.w, gy, grid); gy += 100f }
+
+        val a = s.i(1, 6)
+        var b = s.i(1, 6)
+        if (b == a) b = a + 1
+        val delta = s.f(0f, PI.toFloat())
+        val ax = s.f(300f, 420f)
+        val ay = ax * s.f(0.9f, 1.4f)
+        val cx = s.cx
+        val cy = s.h * 0.45f
+        repeat(s.count(4).coerceIn(1, 8)) { k ->
+            val p = Path()
+            val steps = 900
+            val d = delta + k * 0.06f
+            for (i in 0..steps) {
+                val t = i / steps.toFloat() * TAU
+                val px = cx + ax * sin(a * t + d)
+                val py = cy + ay * sin(b * t)
+                if (i == 0) p.moveTo(px, py) else p.lineTo(px, py)
+            }
+            s.glowPath(p, s.color(k), 2f, 10f, (255 * (1f - k * 0.2f)).toInt().coerceAtLeast(60))
+        }
+    }
+}
+// ---------- City ----------
+
+object Skyline : Style("skyline", "Skyline", Category.CITY) {
+    override fun draw(s: Scene) {
+        s.faintStars(150, s.h * 0.5f)
+        s.glowDot(s.w * s.f(0.15f, 0.85f), s.h * s.f(0.12f, 0.25f), 36f, s.color(2), 30f, 220)
+        for (layer in 0..1) {
+            var x = -10f
+            val base = s.h * (0.86f + layer * 0.04f)
+            val outlineAlpha = if (layer == 0) 70 else 150
+            while (x < s.w + 10f) {
+                val bw = s.f(50f, 120f)
+                val bh = s.f(160f, 560f) * (if (layer == 0) 1.15f else 0.8f)
+                val top = base - bh
+                s.canvas.drawRect(x, top, x + bw, s.h + 10f, s.fill(Color.BLACK))
+                s.canvas.drawRect(x, top, x + bw, s.h + 10f, s.stroke(s.color(0), 1.4f, outlineAlpha))
+                var wy = top + 14f
+                while (wy < s.h - 10f) {
+                    var wx = x + 10f
+                    while (wx < x + bw - 14f) {
+                        if (s.chance(if (layer == 0) 0.06f else 0.14f)) {
+                            s.canvas.drawRect(wx, wy, wx + 7f, wy + 10f, s.fill(s.anyColor(), s.i(120, 240)))
+                        }
+                        wx += 15f
+                    }
+                    wy += 20f
+                }
+                if (layer == 1 && s.chance(0.25f)) {
+                    val ax = x + bw / 2f
+                    s.canvas.drawLine(ax, top, ax, top - 40f, s.stroke(s.color(0), 1.4f, 150))
+                    s.glowDot(ax, top - 42f, 2.5f, Color.rgb(255, 64, 64), 8f)
+                }
+                x += bw + s.f(-6f, 14f)
+            }
+        }
+    }
+}
+
+object NeonRain : Style("neon_rain", "Neon Rain", Category.CITY) {
+    override fun draw(s: Scene) {
+        val ground = s.h * s.f(0.72f, 0.8f)
+        val tilt = s.f(-0.15f, 0.15f)
+        repeat(s.count(260)) {
+            val x = s.f(-50f, s.w + 50f)
+            val y = s.f(0f, ground)
+            val len = s.f(20f, 80f)
+            s.canvas.drawLine(x, y, x + tilt * len, y + len, s.stroke(s.anyColor(), 1.1f, s.i(30, 150)))
+        }
+        repeat(s.i(3, 6)) { k ->
+            val color = s.color(k)
+            val w = s.f(80f, 220f)
+            val hh = s.f(26f, 70f)
+            val x = s.f(30f, s.w - w - 30f)
+            val y = ground - s.f(60f, 320f)
+            val path = Path()
+            if (s.chance(0.3f)) path.addCircle(x + w / 2f, y + hh / 2f, hh, Path.Direction.CW)
+            else path.addRoundRect(x, y, x + w, y + hh, 12f, 12f, Path.Direction.CW)
+            s.glowPath(path, color, 3.5f, 18f)
+            // Broken reflection in the wet street.
+            var ry = ground + (ground - y - hh)
+            val bottom = ground + (ground - y)
+            while (ry < bottom && ry < s.h) {
+                val jitter = s.f(-14f, 14f)
+                val fade = (1f - (ry - ground) / (s.h - ground + 1f)).coerceIn(0f, 1f)
+                s.canvas.drawLine(x + jitter, ry, x + w + jitter, ry, s.stroke(color, 2f, (90 * fade).toInt()))
+                ry += s.f(6f, 12f)
+            }
+        }
+        s.canvas.drawLine(0f, ground, s.w, ground, s.stroke(s.color(0), 1.2f, 90))
+    }
+}
+
+object NightHighway : Style("night_highway", "Night Highway", Category.CITY) {
+    override fun draw(s: Scene) {
+        val vx = s.cx + s.f(-80f, 80f)
+        val vy = s.h * s.f(0.4f, 0.5f)
+        s.faintStars(90, vy - 60f)
+        val hill = Path()
+        var x = -10f
+        while (x <= s.w + 10f) {
+            val y = vy - (1f - abs(s.noise.fbm(x * 0.004f, 9f))) * 70f
+            if (x == -10f) hill.moveTo(x, y) else hill.lineTo(x, y)
+            x += 8f
+        }
+        s.canvas.drawPath(hill, s.stroke(s.color(2), 1.4f, 90))
+        val edge = s.stroke(s.color(2), 1.2f, 60)
+        s.canvas.drawLine(vx, vy, -200f, s.h, edge)
+        s.canvas.drawLine(vx, vy, s.w + 200f, s.h, edge)
+        val warm = Color.rgb(255, 60, 60)
+        for (side in 0..1) {
+            val color = if (side == 0) warm else s.color(0)
+            repeat(s.count(10)) {
+                val bx = if (side == 0) s.f(-120f, s.w * 0.45f) else s.f(s.w * 0.55f, s.w + 120f)
+                val bend = s.f(-120f, 120f)
+                val p = Path()
+                p.moveTo(bx, s.h + 20f)
+                p.quadTo((bx + vx) / 2f + bend, (s.h + vy) / 2f, vx, vy)
+                s.canvas.drawPath(p, s.stroke(color, 4f, 50, 10f))
+                s.canvas.drawPath(p, s.stroke(color, s.f(1f, 2.4f), s.i(130, 240)))
+            }
+        }
+        s.glowDot(vx, vy, 4f, Color.WHITE, 16f)
+    }
+}
+
+// ---------- Glitch ----------
+
+object GlitchBlocks : Style("glitch_blocks", "Glitch", Category.GLITCH) {
+    override fun draw(s: Scene) {
+        val x = s.cx
+        val y = s.h * s.f(0.4f, 0.5f)
+        val size = s.f(180f, 260f)
+        val shape = Path()
+        when (s.i(0, 3)) {
+            0 -> shape.addCircle(x, y, size, Path.Direction.CW)
+            1 -> {
+                shape.moveTo(x, y - size); shape.lineTo(x + size * 0.87f, y + size * 0.5f)
+                shape.lineTo(x - size * 0.87f, y + size * 0.5f); shape.close()
+            }
+            else -> shape.addRect(x - size * 0.8f, y - size * 0.8f, x + size * 0.8f, y + size * 0.8f, Path.Direction.CW)
+        }
+        val split = s.f(5f, 10f)
+        val channels = listOf(s.color(0) to -split, s.color(1) to split, Color.WHITE to 0f)
+        for ((c, dx) in channels) {
+            s.canvas.save()
+            s.canvas.translate(dx, 0f)
+            s.canvas.drawPath(shape, s.stroke(c, 4f, if (c == Color.WHITE) 255 else 170).apply { blendMode = BlendMode.PLUS })
+            s.canvas.restore()
+        }
+        // Torn horizontal slices.
+        repeat(s.count(14)) {
+            val by = y + s.f(-size * 1.3f, size * 1.3f)
+            val bh = s.f(4f, 26f)
+            val dx = s.f(-90f, 90f)
+            s.canvas.save()
+            s.canvas.clipRect(0f, by, s.w, by + bh)
+            s.canvas.drawRect(0f, by, s.w, by + bh, s.fill(Color.BLACK))
+            s.canvas.translate(dx, 0f)
+            s.canvas.drawPath(shape, s.stroke(s.anyColor(), 4f))
+            s.canvas.restore()
+        }
+        repeat(s.count(26)) {
+            val bx = s.f(0f, s.w)
+            val by = y + s.f(-size * 1.6f, size * 1.6f)
+            s.canvas.drawRect(bx, by, bx + s.f(10f, 90f), by + s.f(3f, 12f), s.fill(s.anyColor(), s.i(60, 200)))
+        }
+    }
+}
+
+
+object PixelDrip : Style("pixel_drip", "Pixel Drip", Category.GLITCH) {
+    override fun draw(s: Scene) {
+        val top = s.h * s.f(0.28f, 0.4f)
+        val off = s.f(0f, 100f)
+        var x = 0f
+        while (x < s.w) {
+            val y0 = top + s.noise.at(x * 0.006f + off, 0f) * 90f
+            val v = ((s.noise.at(x * 0.02f + off, 5f) + 1f) / 2f).coerceIn(0f, 1f)
+            if (v > 0.3f) {
+                val len = 30f + v.pow(2f) * s.f(300f, 900f)
+                val color = s.grad(x / s.w)
+                val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    strokeWidth = 3.6f
+                    shader = LinearGradient(0f, y0, 0f, y0 + len, intArrayOf(color, Color.TRANSPARENT), null, Shader.TileMode.CLAMP)
+                }
+                s.canvas.drawLine(x, y0, x, y0 + len, p)
+                s.canvas.drawRect(x - 1.8f, y0 - 3f, x + 1.8f, y0 + 3f, s.fill(Color.WHITE, 220))
+            }
+            x += 4.4f
+        }
+    }
+}
+
+// ---------- Pixel ----------
+
+private fun Scene.pixelGrid(): Float = 12f
+
+private fun Scene.sprite(mask: Array<String>, x: Float, y: Float, px: Float, color: Int, alpha: Int = 255) {
+    val paint = fill(color, alpha)
+    for ((r, row) in mask.withIndex()) for ((c, ch) in row.withIndex()) {
+        if (ch == '1') canvas.drawRect(x + c * px, y + r * px, x + (c + 1) * px - 1f, y + (r + 1) * px - 1f, paint)
+    }
+}
+
+private val INVADER = arrayOf(
+    "00100000100",
+    "00010001000",
+    "00111111100",
+    "01101110110",
+    "11111111111",
+    "10111111101",
+    "10100000101",
+    "00011011000",
+)
+
+private val HEART = arrayOf(
+    "0110110",
+    "1111111",
+    "1111111",
+    "0111110",
+    "0011100",
+    "0001000",
+)
+
+private fun Scene.pixelStars(n: Int, px: Float) {
+    repeat(count(n)) {
+        val gx = (f(0f, w) / px).toInt() * px
+        val gy = (f(0f, h) / px).toInt() * px
+        val big = chance(0.15f)
+        val c = if (chance(0.7f)) Color.WHITE else anyColor()
+        val a = i(90, 256)
+        canvas.drawRect(gx, gy, gx + px / 2f, gy + px / 2f, fill(c, a))
+        if (big) {
+            val q = px / 2f
+            canvas.drawRect(gx - q, gy, gx, gy + q, fill(c, a / 2))
+            canvas.drawRect(gx + q, gy, gx + 2 * q, gy + q, fill(c, a / 2))
+            canvas.drawRect(gx, gy - q, gx + q, gy, fill(c, a / 2))
+            canvas.drawRect(gx, gy + q, gx + q, gy + 2 * q, fill(c, a / 2))
+        }
+    }
+}
+
+
+object PixelHearts : Style("pixel_hearts", "Pixel Hearts", Category.PIXEL) {
+    override fun draw(s: Scene) {
+        val px = s.pixelGrid()
+        s.pixelStars(80, px)
+        val cell = 140f / sqrt(s.density)
+        var y = cell * 0.3f
+        var row = 0
+        while (y < s.h) {
+            var x = if (row % 2 == 0) cell * 0.2f else cell * 0.7f
+            while (x < s.w) {
+                if (s.chance(0.55f)) {
+                    val hp = s.f(4f, 9f)
+                    s.sprite(HEART, x + s.f(-12f, 12f), y + s.f(-12f, 12f), hp, s.anyColor(), s.i(150, 256))
+                }
+                x += cell
+            }
+            y += cell * 0.8f
+            row++
+        }
+    }
+}
+
+
+// ---------- Light ----------
+
+object Bokeh : Style("bokeh", "Bokeh", Category.LIGHT) {
+    override fun draw(s: Scene) {
+        val a = s.f(-0.8f, 0.8f)
+        val by = s.h * s.f(0.35f, 0.65f)
+        repeat(s.count(42)) {
+            val t = s.f(-1f, 1f) * s.h * 0.6f
+            val off = s.gauss() * 260f
+            val x = s.cx + cos(a) * t - sin(a) * off
+            val y = by + sin(a) * t + cos(a) * off
+            val r = s.f(14f, 80f)
+            val c = s.anyColor()
+            s.canvas.drawCircle(x, y, r, s.fill(c, s.i(18, 55), r * 0.08f))
+            s.canvas.drawCircle(x, y, r, s.stroke(c, 1.6f, s.i(50, 120), 1.5f))
+        }
+    }
+}
+
+object Fireflies : Style("fireflies", "Fireflies", Category.LIGHT) {
+    override fun draw(s: Scene) {
+        val ground = s.h * 0.88f
+        repeat(s.count(110)) {
+            val y = s.h * (0.3f + 0.6f * sqrt(s.f()))
+            val r = s.f(1.2f, 3.6f)
+            s.glowDot(s.f(0f, s.w), y.coerceAtMost(ground), r, s.anyColor(), r * 5f, s.i(140, 256))
+        }
+        // Grass silhouette.
+        var x = -10f
+        while (x < s.w + 10f) {
+            val hgt = s.f(40f, 150f)
+            val bend = s.f(-30f, 30f)
+            val p = Path()
+            p.moveTo(x, s.h + 5f)
+            p.quadTo(x + bend * 0.3f, s.h - hgt * 0.6f, x + bend, s.h - hgt)
+            s.canvas.drawPath(p, s.stroke(s.color(0), 1.4f, s.i(40, 110)))
+            x += s.f(5f, 12f)
+        }
+    }
+}
+
+object LightTrails : Style("light_trails", "Light Trails", Category.LIGHT) {
+    override fun draw(s: Scene) {
+        repeat(s.count(6).coerceIn(2, 12)) { k ->
+            val color = s.color(k)
+            val sx = s.f(-100f, s.w + 100f)
+            val sy = s.f(0f, s.h)
+            val ex = s.f(-100f, s.w + 100f)
+            val ey = s.f(0f, s.h)
+            val c1x = s.f(-200f, s.w + 200f)
+            val c1y = s.f(0f, s.h)
+            val c2x = s.f(-200f, s.w + 200f)
+            val c2y = s.f(0f, s.h)
+            for (line in 0 until 3) {
+                val o = line * 5f
+                val p = Path()
+                p.moveTo(sx + o, sy)
+                p.cubicTo(c1x + o, c1y + o, c2x - o, c2y + o, ex + o, ey)
+                if (line == 0) s.canvas.drawPath(p, s.stroke(color, 9f, 70, 22f).apply { blendMode = BlendMode.PLUS })
+                s.canvas.drawPath(p, s.stroke(color, 1.6f, 230 - line * 60).apply { blendMode = BlendMode.PLUS })
+            }
+            repeat(8) { s.glowDot(ex + s.f(-30f, 30f), ey + s.f(-30f, 30f), s.f(0.8f, 2f), color, 5f) }
+        }
+    }
+}

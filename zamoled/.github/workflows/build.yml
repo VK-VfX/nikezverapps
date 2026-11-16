@@ -1,0 +1,138 @@
+name: Build APK
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+    # The Windows app has its own workflow, so changes only to it do not rebuild the phone app.
+    paths-ignore:
+      - 'tools/desktop/**'
+      - 'tools/preview/**'
+      - '.github/workflows/windows.yml'
+      - '**.md'
+      - '!release-notes/**'
+
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Signing: every build must use the same key, or Android refuses to install it as an update.
+      # 1) Repository secrets, if set, always win.
+      - name: Use signing key from secrets
+        id: secret_key
+        env:
+          KEYSTORE_B64: ${{ secrets.ZAMOLED_KEYSTORE_BASE64 }}
+          KEY_PASSWORD: ${{ secrets.ZAMOLED_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/zamoled.jks"
+            echo "::add-mask::$KEY_PASSWORD"
+            echo "ZAMOLED_KEYSTORE_PATH=$RUNNER_TEMP/zamoled.jks" >> "$GITHUB_ENV"
+            echo "ZAMOLED_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # 2) Otherwise CI keeps its own key in the repository's private Actions cache: created on the
+      #    first run, then reused. Pull requests (which may come from forks) never touch it.
+      - name: Restore CI signing key
+        id: key_cache
+        if: steps.secret_key.outputs.ready != 'true' && github.event_name != 'pull_request'
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.zamoled-signing
+          key: zamoled-signing-key-v1
+
+      - name: Create CI signing key
+        if: steps.secret_key.outputs.ready != 'true' && github.event_name != 'pull_request' && steps.key_cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/.zamoled-signing
+          openssl rand -hex 24 > ~/.zamoled-signing/password
+          PW="$(cat ~/.zamoled-signing/password)"
+          keytool -genkeypair -keystore ~/.zamoled-signing/zamoled.jks -storetype PKCS12 \
+            -alias zamoled -keyalg RSA -keysize 2048 -validity 36500 \
+            -storepass "$PW" -keypass "$PW" -dname "CN=Zamoled"
+
+      - name: Save CI signing key
+        if: steps.secret_key.outputs.ready != 'true' && github.event_name != 'pull_request' && steps.key_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.zamoled-signing
+          key: zamoled-signing-key-v1
+
+      - name: Use CI signing key
+        id: ci_key
+        if: steps.secret_key.outputs.ready != 'true' && github.event_name != 'pull_request'
+        run: |
+          PW="$(cat ~/.zamoled-signing/password)"
+          echo "::add-mask::$PW"
+          echo "ZAMOLED_KEYSTORE_PATH=$HOME/.zamoled-signing/zamoled.jks" >> "$GITHUB_ENV"
+          echo "ZAMOLED_KEY_PASSWORD=$PW" >> "$GITHUB_ENV"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      # Only the release build is made and published. A debuggable build is not something to hand out.
+      - name: Build the release APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Rename APKs
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk out/zamoled-release.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zamoled-apk
+          path: out/*.apk
+
+      - name: Read app version
+        id: version
+        run: echo "name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
+
+      # The notes, plus what is needed to check a download: its checksum and the certificate it is signed with.
+      - name: Write release notes
+        id: notes
+        run: |
+          f="release-notes/${{ steps.version.outputs.name }}.md"
+          [ -f "$f" ] || f="release-notes/default.md"
+          out="$RUNNER_TEMP/notes.md"
+          cp "$f" "$out"
+          APKSIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
+          SUM="$(sha256sum out/zamoled-release.apk | cut -d' ' -f1)"
+          CERT="$("$APKSIGNER" verify --print-certs out/zamoled-release.apk | grep -m1 'certificate SHA-256' | sed 's/.*: //')"
+          {
+            echo
+            echo "## Check your download"
+            echo "- APK SHA-256: \`$SUM\`"
+            echo "- Signing certificate SHA-256: \`$CERT\`"
+            echo "- Every release is signed with the same certificate; if it ever differs, do not install it."
+          } >> "$out"
+          echo "file=$out" >> "$GITHUB_OUTPUT"
+
+      # Tag pushes publish their own release; pushes to the release branch publish v<versionName>.
+      - name: Publish release
+        # Only publish APKs signed with the permanent key, so every release updates the last one.
+        if: (steps.secret_key.outputs.ready == 'true' || steps.ci_key.outputs.ready == 'true') && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/claude/hopeful-noether-lcc0fj')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', steps.version.outputs.name) }}
+          target_commitish: ${{ github.sha }}
+          name: Zamoled ${{ steps.version.outputs.name }}
+          make_latest: true
+          body_path: ${{ steps.notes.outputs.file }}
+          files: out/*.apk
