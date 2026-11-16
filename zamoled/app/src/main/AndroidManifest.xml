@@ -41,8 +41,14 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="zamoled" android:host="w" />
+                <data android:scheme="zamoled" android:host="weather" />
             </intent-filter>
         </activity>
         <receiver android:name=".data.InstallReceiver" android:exported="false" />
+        <!-- Read-only counts for the shared Cat Club (see docs/TRIO.md). -->
+        <provider
+            android:name=".data.CatClubProvider"
+            android:authorities="com.nikopick.zamoled.catclub"
+            android:exported="true" />
     </application>
 </manifest>

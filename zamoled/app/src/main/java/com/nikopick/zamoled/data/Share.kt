@@ -20,10 +20,28 @@ object ShareLink {
         val start = raw.indexOf("$SCHEME://")
         if (start >= 0) {
             val link = raw.substring(start).takeWhile { !it.isWhitespace() }
-            val key = runCatching { Uri.parse(link).getQueryParameter("k") }.getOrNull()
+            val uri = runCatching { Uri.parse(link) }.getOrNull() ?: return null
+            // zamoled://weather?mood=rain: a wallpaper for the weather, sent by Purrcast
+            if (uri.host == "weather") return weatherSpec(uri.getQueryParameter("mood"))
+            val key = uri.getQueryParameter("k")
             return key?.let { WallpaperSpec.fromKey(it) }?.takeIf { known(it) }
         }
         return WallpaperSpec.fromKey(raw)?.takeIf { known(it) }
+    }
+
+    /** A wallpaper that suits the weather, with quiet zones left for Purrcast's widgets. Unknown moods give null. */
+    fun weatherSpec(mood: String?): WallpaperSpec? {
+        val (style, palette) = when (mood) {
+            "rain" -> "wet_street" to "ocean"
+            "storm" -> "storm_strike" to "storm"
+            "cloudy" -> "storm_cell" to "storm"
+            "clear" -> "pixel_sunset" to "sunset"
+            "night" -> "moon_fisher" to "violet"
+            "snow" -> "contours" to "mono"
+            "fog" -> "orbits" to "ocean"
+            else -> return null
+        }
+        return WallpaperSpec(style, System.currentTimeMillis() and 0xFFFFFFL, palette, black = 0.25f, zone = 2).takeIf { known(it) }
     }
 
     private fun known(spec: WallpaperSpec): Boolean = spec.style.id == spec.styleId

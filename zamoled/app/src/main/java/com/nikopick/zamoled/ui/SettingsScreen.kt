@@ -37,6 +37,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import com.nikopick.zamoled.data.Trio
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -218,11 +220,27 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
         Spacer(Modifier.height(22.dp))
         SectionHead("05", "The trio")
         Spacer(Modifier.height(10.dp))
-        SiblingApp("Purrcast", "Cat-themed weather and widgets", "app.skypix.weather",
+        val latest by produceState(emptyMap<String, String>()) { value = Trio.latestVersions() }
+        val kept = remember { context.getSharedPreferences("zamoled", android.content.Context.MODE_PRIVATE).getStringSet("favorites", emptySet())?.size ?: 0 }
+        val purrStat = remember { Trio.stat(context, "app.skypix.weather.catclub") }
+        val mapStat = remember { Trio.stat(context, "app.mapsandcats.catclub") }
+        LeafCard(Modifier.fillMaxWidth(), shape = LeafSm) {
+            Column(Modifier.padding(horizontal = 18.dp, vertical = 14.dp)) {
+                Text("Cat Club", style = MaterialTheme.typography.titleMedium)
+                val parts = listOfNotNull(
+                    "$kept wallpapers kept",
+                    purrStat?.let { "${it.value} ${it.label}" },
+                    mapStat?.let { "${it.value} ${it.label}" },
+                )
+                Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        SiblingApp("Purrcast", "Cat-themed weather and widgets", Trio.PURRCAST, latest["purrcast"],
             "https://github.com/VK-VfX/nikezverapps/tree/main/purrcast/dist")
         Spacer(Modifier.height(12.dp))
-        SiblingApp("Maps and Cats", "Maps, navigation and cats to catch", "app.mapsandcats",
-            "https://github.com/VK-VfX/nikezverapps/tree/main/mapsandcats")
+        SiblingApp("Maps and Cats", "Maps, navigation and cats to catch", Trio.MAPS, latest["mapsandcats"],
+            "https://github.com/VK-VfX/nikezverapps/releases")
         Spacer(Modifier.height(40.dp))
     }
 }
@@ -240,11 +258,13 @@ private fun AboutLink(title: String, sub: String, url: String) {
     }
 }
 
-/** A sibling app: opens it when installed, otherwise its download page. */
+/** A sibling app: opens it when installed (and says when a newer version is out), otherwise its download page. */
 @Composable
-private fun SiblingApp(name: String, sub: String, pkg: String, url: String) {
+private fun SiblingApp(name: String, sub: String, pkg: String, latest: String?, url: String) {
     val context = LocalContext.current
     val installed = context.packageManager.getLaunchIntentForPackage(pkg) != null
+    val have = if (installed) Trio.installedVersion(context, pkg) else null
+    val outdated = have != null && latest != null && Trio.isNewer(latest, have)
     LeafCard(Modifier.fillMaxWidth().clickable {
         val launch = context.packageManager.getLaunchIntentForPackage(pkg)
         val intent = launch ?: Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -254,8 +274,15 @@ private fun SiblingApp(name: String, sub: String, pkg: String, url: String) {
             Column(Modifier.weight(1f)) {
                 Text(name, style = MaterialTheme.typography.titleMedium)
                 Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (have != null) {
+                    Text(
+                        if (outdated) "v$have · v$latest is out" else "v$have · up to date",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (outdated) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-            Text(if (installed) "Open" else "Get", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(if (!installed) "Get" else if (outdated) "Update" else "Open", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
         }
     }
 }

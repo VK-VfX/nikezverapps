@@ -92,7 +92,36 @@ public class MainActivity extends Activity {
 
     private void handleIntent(Intent i) {
         pendingScrollKind = i != null && i.hasExtra("from_widget") ? i.getIntExtra("from_widget", -1) : -1;
+        Uri d = i == null ? null : i.getData();
+        // purrcast://weather?lat=..&lon=..&name=..  (sent by Maps and Cats): save the place and fetch its forecast
+        if (d != null && "purrcast".equals(d.getScheme()) && "weather".equals(d.getHost())) {
+            try {
+                double lat = Double.parseDouble(d.getQueryParameter("lat")), lon = Double.parseDouble(d.getQueryParameter("lon"));
+                String name = d.getQueryParameter("name");
+                if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+                    boolean have = false;
+                    for (Places.Saved s : Places.list(this)) {
+                        double dy = (s.place.lat - lat) * 111.0, dx = (s.place.lon - lon) * 111.0 * Math.cos(Math.toRadians(lat));
+                        if (dx * dx + dy * dy < 2.25) have = true; // within 1.5 km
+                    }
+                    if (!have) {
+                        Place p = new Place();
+                        p.lat = lat;
+                        p.lon = lon;
+                        p.precise = false;
+                        p.provider = "link";
+                        p.fixTimeMs = System.currentTimeMillis();
+                        Places.add(this, name == null ? "" : name.length() > 40 ? name.substring(0, 40) : name, p);
+                        android.widget.Toast.makeText(this, "Saved " + (name == null || name.length() == 0 ? "the place" : name) + " from Maps and Cats", android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                    pendingRefresh = true;
+                }
+            } catch (Exception ignored) {
+            }
+        }
     }
+
+    private boolean pendingRefresh;
 
     private void applySystemBars() {
         boolean dark = Ui.isDark(this);
@@ -125,7 +154,8 @@ public class MainActivity extends Activity {
         Store.touchStreak(this);
         rebuild();
         Jobs.sync(this);
-        startRefresh(false);
+        startRefresh(pendingRefresh);
+        pendingRefresh = false;
         ui.postDelayed(ticker, 60000);
     }
 
@@ -686,7 +716,18 @@ public class MainActivity extends Activity {
                     rebuild();
                 }
             });
-            row(box, sp.name, sub, remove);
+            Ui.Btn maps = new Ui.Btn(this, "Maps", false);
+            maps.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    Trio.open(MainActivity.this, "mapsandcats://place?lat=" + sp.place.lat + "&lon=" + sp.place.lon + "&name=" + Uri.encode(sp.name),
+                            Trio.REPO + "/releases");
+                }
+            });
+            LinearLayout both = new LinearLayout(this);
+            both.setOrientation(LinearLayout.HORIZONTAL);
+            both.addView(maps, new LinearLayout.LayoutParams(-2, -2));
+            both.addView(remove, new LinearLayout.LayoutParams(-2, -2));
+            row(box, sp.name, sub, both);
         }
         Ui.Btn search = new Ui.Btn(this, "Search", true);
         search.setOnClickListener(new View.OnClickListener() {
@@ -881,16 +922,55 @@ public class MainActivity extends Activity {
         row(box, "Source and releases", "GitHub", g);
 
         LinearLayout trio = section("The trio", 0);
-        trioRow(trio, "Zamoled", "AMOLED wallpapers that make room for your widgets", "com.nikopick.zamoled",
-                "https://github.com/VK-VfX/nikezverapps/releases");
-        trioRow(trio, "Maps and Cats", "Maps, navigation and cats to catch", "app.mapsandcats",
-                "https://github.com/VK-VfX/nikezverapps/tree/main/mapsandcats");
+        Trio.refresh(new Trio.Done() {
+            @Override public void run() { ui.post(new Runnable() { @Override public void run() { rebuild(); } }); }
+        });
+        String zStat = Trio.stat(this, "com.nikopick.zamoled.catclub"), mStat = Trio.stat(this, "app.mapsandcats.catclub");
+        StringBuilder club = new StringBuilder(Store.streak(this) + " day streak");
+        if (zStat != null) club.append(" \u00b7 ").append(zStat);
+        if (mStat != null) club.append(" \u00b7 ").append(mStat);
+        row(trio, "Cat Club", club.toString(), null);
+        trioRow(trio, "Zamoled", "AMOLED wallpapers that make room for your widgets", Trio.ZAMOLED, "zamoled",
+                Trio.REPO + "/releases");
+        trioRow(trio, "Maps and Cats", "Maps, navigation and cats to catch", Trio.MAPS, "mapsandcats",
+                Trio.REPO + "/releases");
+        if (Trio.installed(this, Trio.ZAMOLED)) {
+            Ui.Btn wp = new Ui.Btn(this, "Make", false);
+            wp.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    Trio.open(MainActivity.this, "zamoled://weather?mood=" + currentMood(), Trio.REPO + "/releases");
+                }
+            });
+            row(trio, "Wallpaper for this weather", "Opens Zamoled with a " + currentMood() + " wallpaper, ready to save", wp);
+        }
     }
 
-    /** One sibling app: opens it when installed, otherwise its download page. */
-    private void trioRow(LinearLayout box, String name, String sub, final String pkg, final String url) {
-        boolean has = getPackageManager().getLaunchIntentForPackage(pkg) != null;
-        Ui.Btn b = new Ui.Btn(this, has ? "Open" : "Get", has);
+    /** One word for the weather right now, which Zamoled turns into a matching wallpaper. */
+    private String currentMood() {
+        try {
+            Cards.Data d = Store.data(this);
+            if (d.weather == null) return "clear";
+            Weather.Now n = d.weather.now(System.currentTimeMillis() / 1000L);
+            if (Wmo.isStorm(n.code)) return "storm";
+            if (Wmo.isSnow(n.code)) return "snow";
+            if (Wmo.isWet(n.code)) return "rain";
+            if (n.code == 45 || n.code == 48) return "fog";
+            if (n.code == 3) return "cloudy";
+            return n.isDay ? "clear" : "night";
+        } catch (Throwable t) {
+            return "clear";
+        }
+    }
+
+    /** One sibling app: its Cat Club-style version line, and Open / Update / Get. */
+    private void trioRow(LinearLayout box, String name, String sub, final String pkg, String key, final String url) {
+        boolean has = Trio.installed(this, pkg);
+        String have = has ? Trio.installedVersion(this, pkg) : null;
+        String latest = Trio.latest.get(key);
+        boolean outdated = have != null && latest != null && Trio.newer(latest, have);
+        String line = sub;
+        if (have != null) line += "\nv" + have + (outdated ? " \u00b7 v" + latest + " is out, open it to update" : " \u00b7 up to date");
+        Ui.Btn b = new Ui.Btn(this, !has ? "Get" : outdated ? "Update" : "Open", !has || outdated);
         b.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 Intent li = getPackageManager().getLaunchIntentForPackage(pkg);
@@ -900,7 +980,7 @@ public class MainActivity extends Activity {
                 open(url);
             }
         });
-        row(box, name, sub, b);
+        row(box, name, line, b);
     }
 
     private void addUpdates() {
