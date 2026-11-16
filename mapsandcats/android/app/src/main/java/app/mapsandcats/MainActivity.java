@@ -2,6 +2,7 @@ package app.mapsandcats;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -64,6 +65,24 @@ public class MainActivity extends Activity {
         int avail = tts.isLanguageAvailable(want);
         tts.setLanguage(avail >= TextToSpeech.LANG_AVAILABLE ? want : defaultLocale);
         tts.speak(s[0], TextToSpeech.QUEUE_FLUSH, null, "mc" + (ttsId++));
+    }
+    /** Exposed to the page as window.AndroidUpdater: in-app APK updates from this app's GitHub release. */
+    private class UpdateBridge {
+        @JavascriptInterface public boolean canInstall() { return ApkUpdater.canInstall(MainActivity.this); }
+        @JavascriptInterface public void openPermission() { runOnUiThread(() -> ApkUpdater.openInstallPermission(MainActivity.this)); }
+        @JavascriptInterface public void install(String url, String sha256) {
+            final Context app = getApplicationContext();
+            new Thread(() -> {
+                try {
+                    ApkUpdater.downloadAndInstall(app, url, sha256, text -> report(text));
+                } catch (Exception e) {
+                    report("Update failed: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage()));
+                }
+            }).start();
+        }
+        private void report(String text) {
+            runOnUiThread(() -> web.evaluateJavascript("window.__updProgress && window.__updProgress(" + JSONObject.quote(text) + ")", null));
+        }
     }
     /** Exposed to the page as window.AndroidApps: opens a sibling app (Purrcast, Zamoled), or its page when it isn't installed. */
     private class AppsBridge {
@@ -140,6 +159,7 @@ public class MainActivity extends Activity {
         initTts();
         web.addJavascriptInterface(new TtsBridge(), "AndroidTTS");
         web.addJavascriptInterface(new AppsBridge(), "AndroidApps");
+        web.addJavascriptInterface(new UpdateBridge(), "AndroidUpdater");
         web.loadUrl("https://" + HOST + "/index.html");
     }
 

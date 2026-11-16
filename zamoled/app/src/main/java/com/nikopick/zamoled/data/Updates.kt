@@ -25,7 +25,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
-data class UpdateInfo(val version: String, val apkUrl: String, val pageUrl: String, val notes: String = "", val size: Long = 0L)
+data class UpdateInfo(val version: String, val apkUrl: String, val pageUrl: String, val notes: String = "", val size: Long = 0L, val sha256: String = "")
 
 /** What a check for a new version came back with. */
 sealed interface UpdateResult {
@@ -75,15 +75,22 @@ object Updates {
             val assets = json.getJSONArray("assets")
             var apk: String? = null
             var size = 0L
+            var sha = ""
             for (i in 0 until assets.length()) {
                 val a = assets.getJSONObject(i)
                 if (a.getString("name") == assetName) {
                     apk = a.getString("browser_download_url")
                     size = a.optLong("size")
+                    sha = a.optString("digest").removePrefix("sha256:")
                 }
             }
             val page = json.optString("html_url")
-            UpdateResult.Available(UpdateInfo(version, apk ?: page, page, json.optString("body").trim(), size))
+            val body = json.optString("body")
+            // older releases list the checksum in their notes instead of on the asset
+            if (!Regex("^[0-9a-fA-F]{64}$").matches(sha)) {
+                sha = Regex("APK SHA-256: `([0-9a-fA-F]{64})`").find(body)?.groupValues?.get(1).orEmpty()
+            }
+            UpdateResult.Available(UpdateInfo(version, apk ?: page, page, body.trim(), size, sha))
         } catch (e: Exception) {
             UpdateResult.Failed
         }

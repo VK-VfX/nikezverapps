@@ -3,7 +3,7 @@
 (() => {
 'use strict';
 
-const APP_VERSION = '1.0.1';
+const APP_VERSION = '1.0.2';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const KL = [3.139, 101.687]; // [lat, lon] fallback view until we get a fix
@@ -954,11 +954,41 @@ $('#locateBtn').addEventListener('click', () => {
 $('#sheetHandle').addEventListener('click', () => $('#sheet').classList.toggle('collapsed'));
 new ResizeObserver(() => document.documentElement.style.setProperty('--sheet-h', ($('#sheet').hidden ? 0 : $('#sheet').offsetHeight) + 'px')).observe($('#sheet'));
 
-/* ================= OTA updates (service worker + version.json) ================= */
-let swReg = null, waitingSW = null;
+/* ================= updates =================
+   In the Android app: new APKs come from this project's GitHub releases and install in-app (Android asks to confirm).
+   In a browser: the service worker + version.json route. */
+const NATIVE_UPD = !!window.AndroidUpdater;
+const RELEASES_URL = 'https://api.github.com/repos/VK-VfX/nikezverapps/releases?per_page=30';
 const updStatus = t => $('#updStatus').textContent = t;
+const vNewer = (a, b) => { const x = a.split('.').map(n => +n || 0), y = b.split('.').map(n => +n || 0); for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+let pendingApk = null, installing = false;
+window.__updProgress = t => { updStatus(t); if (/^Update failed|^Install/.test(t)) installing = false; };
+
+async function checkNative(manual) {
+  if (manual) updStatus('Checking…');
+  try {
+    const rs = await (await fetch(RELEASES_URL, { headers: { Accept: 'application/vnd.github+json' } })).json();
+    const r = rs.find(x => /^mapsandcats-v/.test(x.tag_name) && !x.draft && !x.prerelease);
+    const v = r ? r.tag_name.replace('mapsandcats-v', '') : '';
+    const a = r && r.assets.find(x => x.name.endsWith('.apk'));
+    if (r && a && vNewer(v, APP_VERSION)) {
+      pendingApk = { url: a.browser_download_url, sha: (a.digest || '').replace('sha256:', ''), version: v };
+      $('#updateDot').hidden = false; $('#installUpd').hidden = false; $('#installUpd').textContent = 'Install v' + v;
+      updStatus(`v${v} is ready. Install updates the app in place; your places stay.`);
+    } else if (manual) updStatus(`You’re up to date (v${APP_VERSION}).`);
+  } catch { if (manual) updStatus('Couldn’t check — are you offline?'); }
+}
+function installNative() {
+  if (!pendingApk || installing) return;
+  if (!window.AndroidUpdater.canInstall()) { updStatus('Allow Maps and Cats to install apps, then tap Install again.'); window.AndroidUpdater.openPermission(); return; }
+  installing = true; updStatus('Downloading…');
+  window.AndroidUpdater.install(pendingApk.url, pendingApk.sha);
+}
+
+let swReg = null, waitingSW = null;
 function showUpdateReady() { $('#updateDot').hidden = false; $('#installUpd').hidden = false; updStatus('A new version is ready to install.'); }
 async function checkUpdates(manual) {
+  if (NATIVE_UPD) return checkNative(manual);
   if (manual) updStatus('Checking…');
   try {
     if (swReg) await swReg.update();
@@ -969,8 +999,10 @@ async function checkUpdates(manual) {
   } catch { if (manual) updStatus('Couldn’t check — are you offline?'); }
 }
 $('#checkUpd').addEventListener('click', () => checkUpdates(true));
-$('#installUpd').addEventListener('click', () => { updStatus('Installing…'); if (waitingSW) waitingSW.postMessage('SKIP_WAITING'); else location.reload(); });
-if ('serviceWorker' in navigator) {
+$('#installUpd').addEventListener('click', () => { if (NATIVE_UPD) return installNative(); updStatus('Installing…'); if (waitingSW) waitingSW.postMessage('SKIP_WAITING'); else location.reload(); });
+if (NATIVE_UPD) {
+  checkUpdates(false); setInterval(() => checkUpdates(false), 6 * 60 * 60 * 1000);
+} else if ('serviceWorker' in navigator) {
   let reloading = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloading) return; reloading = true; location.reload(); });
   navigator.serviceWorker.register('sw.js').then(reg => {

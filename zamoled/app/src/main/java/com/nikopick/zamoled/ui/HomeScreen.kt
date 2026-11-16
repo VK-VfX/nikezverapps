@@ -652,13 +652,13 @@ private fun UpdateBanner(ota: OtaState) {
                 }
                 Text("A new version is ready", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    "Download opens it in your browser; tap the finished file to install it over this version. Your favorites stay.",
+                    "Install updates the app in place. Your favorites stay.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(end = 10.dp),
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { ota.download() }) { Text("Download" + if (info.size > 0) "  ·  %.1f MB".format(info.size / 1_048_576f) else "") }
+                    Button(onClick = { ota.download() }, enabled = !ota.installing) { Text("Install" + if (info.size > 0) "  ·  %.1f MB".format(info.size / 1_048_576f) else "") }
                     TextButton(onClick = { ota.dismissed = true }) { Text("Not now") }
                 }
             }

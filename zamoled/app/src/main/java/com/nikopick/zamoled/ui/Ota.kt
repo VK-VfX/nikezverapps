@@ -7,6 +7,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.nikopick.zamoled.data.ApkInstaller
 import com.nikopick.zamoled.data.Prefs
 import com.nikopick.zamoled.data.UpdateInfo
 import com.nikopick.zamoled.data.UpdateResult
@@ -28,6 +29,12 @@ class OtaState(private val context: Context, private val scope: CoroutineScope, 
 
     /** The banner was closed for this session. */
     var dismissed by mutableStateOf(false)
+
+    /** True while the new version is downloading or being handed to Android's installer. */
+    var installing by mutableStateOf(false)
+        private set
+    var progress by mutableStateOf<String?>(null)
+        private set
 
     val available: Boolean get() = info != null && phase == OtaPhase.AVAILABLE
 
@@ -58,9 +65,31 @@ class OtaState(private val context: Context, private val scope: CoroutineScope, 
         runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 
-    /** Opens the new APK in the browser, which downloads it. Tapping the finished download installs it over this app. */
+    /** Downloads the new APK inside the app, checks it and hands it to Android's installer, which asks you to confirm. */
     fun download() {
-        info?.let { open(it.apkUrl) }
+        val i = info ?: return
+        if (installing) return
+        if (!ApkInstaller.canInstall(context)) {
+            message = "Allow Zamoled to install apps, then tap Install again."
+            ApkInstaller.openInstallPermission(context)
+            return
+        }
+        scope.launch {
+            installing = true
+            message = null
+            progress = "Downloading…"
+            try {
+                val file = ApkInstaller.download(context, i) { progress = "Downloading $it%" }
+                progress = "Installing…"
+                ApkInstaller.install(context, file)
+                progress = "Waiting for you to confirm the install"
+            } catch (e: Exception) {
+                progress = null
+                message = e.message ?: "The update did not finish."
+            } finally {
+                installing = false
+            }
+        }
     }
 
     fun openReleasePage() {

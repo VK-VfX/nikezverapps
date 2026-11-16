@@ -105,15 +105,17 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
                 val status = when (ota.phase) {
                     OtaPhase.CHECKING -> "Checking for a new version…"
                     OtaPhase.UP_TO_DATE -> "You are on the latest version."
-                    OtaPhase.AVAILABLE -> "A new version is ready${ota.info?.size?.let { if (it > 0) " (${mb(it)})" else "" }.orEmpty()}. Download opens it in your browser; tap the finished file to update. Your favorites stay."
+                    OtaPhase.AVAILABLE -> "A new version is ready${ota.info?.size?.let { if (it > 0) " (${mb(it)})" else "" }.orEmpty()}. Install updates the app in place and your favorites stay."
                     OtaPhase.ERROR -> ota.message ?: "Something went wrong."
                     OtaPhase.IDLE -> "Tap check to look for a new version."
                 }
                 Text(status, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                val extra = ota.progress ?: if (ota.phase == OtaPhase.AVAILABLE) ota.message else null
+                if (extra != null) Text(extra, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                 if (ota.phase == OtaPhase.CHECKING) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (ota.available) {
-                        Button(onClick = { ota.download() }) { Text("Download") }
+                        Button(onClick = { ota.download() }, enabled = !ota.installing) { Text(if (ota.installing) "Installing…" else "Install") }
                         TextButton(onClick = { ota.openReleasePage() }) { Text("Release page") }
                     } else {
                         Button(onClick = { ota.check(manual = true) }, enabled = ota.phase != OtaPhase.CHECKING) {
