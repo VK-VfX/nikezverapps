@@ -298,6 +298,13 @@ final class Ui {
             setBackground(null);
         }
 
+        /** There is no drawable to react to the checked state, so redraw ourselves or the switch looks stuck. */
+        @Override
+        public void setChecked(boolean checked) {
+            super.setChecked(checked);
+            invalidate();
+        }
+
         @Override
         protected void onMeasure(int w, int h) {
             setMeasuredDimension(dp(getContext(), 52), dp(getContext(), 48));

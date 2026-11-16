@@ -182,7 +182,7 @@ fun FloatingDock(tab: HomeTab, onTab: (HomeTab) -> Unit, favoriteCount: Int, mod
 /** A card that is only a hairline outline and a leaf shape. */
 @Composable
 fun LeafCard(modifier: Modifier = Modifier, shape: androidx.compose.ui.graphics.Shape = Leaf, content: @Composable () -> Unit) {
-    Surface(shape = shape, color = Color(0xFF08080A), border = hairline(0.1f), modifier = modifier) { content() }
+    Surface(shape = shape, color = Color(0xFF08080A), contentColor = MaterialTheme.colorScheme.onSurface, border = hairline(0.1f), modifier = modifier) { content() }
 }
 
 /** Quick settings for a slider: tap a name instead of dragging. */
