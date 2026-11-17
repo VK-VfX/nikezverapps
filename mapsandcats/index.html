@@ -42,7 +42,7 @@
     <div id="navText">—</div>
     <div id="navThen"></div>
   </div>
-  <button id="navMute" class="icon-btn small" aria-label="Toggle voice">🔊</button>
+  <button id="navMute" class="icon-btn small" aria-label="Toggle voice"><i data-i="speaker"></i></button>
   <button id="navStop" class="btn ghost">End</button>
 </div>
 
@@ -55,8 +55,8 @@
 </div>
 
 <div id="along" class="card" hidden>
-  <div class="along-head"><b>Stops along your route</b><button id="alongClose" class="icon-btn small" aria-label="Close">✕</button></div>
-  <div id="alongChips" class="chips"><button class="chip on" data-along="fuel">⛽ Fuel</button><button class="chip" data-along="coffee">☕ Coffee</button><button class="chip" data-along="rest">🚻 Rest</button></div>
+  <div class="along-head"><b>Stops along your route</b><button id="alongClose" class="icon-btn small" aria-label="Close"><i data-i="close"></i></button></div>
+  <div id="alongChips" class="chips"><button class="chip on" data-along="fuel"><i data-i="fuel"></i> Fuel</button><button class="chip" data-along="coffee"><i data-i="coffee"></i> Coffee</button><button class="chip" data-along="rest"><i data-i="rest"></i> Rest</button></div>
   <ul id="alongList" class="list compact"></ul>
 </div>
 
@@ -66,8 +66,8 @@
 
 <div id="fabs">
   <button id="view3dBtn" class="fab" aria-label="Switch between 3D and 2D view">3D</button>
-  <button id="overviewBtn" class="fab" aria-label="Show the whole route">🗺️</button>
-  <button id="alongBtn" class="fab" aria-label="Fuel, coffee and rest stops along the route">⛽</button>
+  <button id="overviewBtn" class="fab" aria-label="Show the whole route"><i data-i="map"></i></button>
+  <button id="alongBtn" class="fab" aria-label="Fuel, coffee and rest stops along the route"><i data-i="fuel"></i></button>
   <button id="locateBtn" class="fab" aria-label="Centre on my location">
     <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="3.2" fill="currentColor"/><circle cx="12" cy="12" r="7.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
   </button>
@@ -94,28 +94,28 @@
         <h2 id="destName">Destination</h2>
         <span id="destSub" class="muted"></span>
       </div>
-      <button id="savePlace" class="icon-btn small" aria-label="Save place">☆</button>
+      <button id="savePlace" class="icon-btn small" aria-label="Save place"><i data-i="star"></i></button>
       <button id="closeRoute" class="icon-btn small" aria-label="Close route">
         <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
       </button>
     </div>
     <div id="saveMenu" class="chips" hidden>
-      <button class="chip" data-save="home">🏠 Set as Home</button>
-      <button class="chip" data-save="work">💼 Set as Work</button>
-      <button class="chip" data-save="fav">⭐ Add to favorites</button>
+      <button class="chip" data-save="home"><i data-i="home"></i> Set as Home</button>
+      <button class="chip" data-save="work"><i data-i="work"></i> Set as Work</button>
+      <button class="chip" data-save="fav"><i data-i="star"></i> Add to favorites</button>
     </div>
     <div class="scroll">
       <div id="modeSwitch" class="seg">
-        <button data-mode="car">🚗 Drive</button>
-        <button data-mode="foot">🚶 Walk</button>
+        <button data-mode="car"><i data-i="car"></i> Drive</button>
+        <button data-mode="foot"><i data-i="walk"></i> Walk</button>
       </div>
       <div id="alts" class="alts"></div>
       <div class="chips">
-        <button id="avoidHw" class="chip">🛣️ Avoid highways</button>
-        <button id="addStop" class="chip">➕ Add stop</button>
-        <button id="alongChip" class="chip">⛽ Fuel &amp; stops</button>
-        <button id="weatherHere" class="chip" hidden>🌦️ Weather here</button>
-        <button id="optimizeStops" class="chip" hidden>🔀 Optimize order</button>
+        <button id="avoidHw" class="chip"><i data-i="road"></i> Avoid highways</button>
+        <button id="addStop" class="chip"><i data-i="plus"></i> Add stop</button>
+        <button id="alongChip" class="chip"><i data-i="fuel"></i> Fuel &amp; stops</button>
+        <button id="weatherHere" class="chip" hidden><i data-i="rain"></i> Weather here</button>
+        <button id="optimizeStops" class="chip" hidden><i data-i="shuffle"></i> Optimize order</button>
       </div>
       <ol id="stops" class="list stops" hidden></ol>
       <div id="routeSummary" class="summary"></div>
@@ -157,8 +157,8 @@
   <div class="group">
     <label class="group-title">Mode</label>
     <div id="themeSeg" class="seg three">
-      <button data-theme="dark">🌑 Dark</button>
-      <button data-theme="light">☀️ Light</button>
+      <button data-theme="dark"><i data-i="moon"></i> Dark</button>
+      <button data-theme="light"><i data-i="sun"></i> Light</button>
       <button data-theme="quest"><img class="em" src="assets/cats/paws.svg" alt="">Quest</button>
     </div>
     <p class="hint" id="themeHint"></p>
@@ -273,7 +273,7 @@
       <p><b>Rewards.</b> Level-up cheers here. Every 10 days of your Purrcast streak also earns a special wallpaper in Zamoled.</p>
     </details>
     <button class="btn ghost" id="openPurrcast" data-pkg="app.skypix.weather" data-url="https://github.com/VK-VfX/nikezverapps/tree/main/purrcast/dist" style="width:100%;margin-bottom:8px;text-align:left">🐱 Purrcast <span class="hint">· weather and widgets</span> <span class="hint" id="purrStat"></span></button>
-    <button class="btn ghost" id="openZamoled" data-pkg="com.nikopick.zamoled" data-url="https://github.com/VK-VfX/nikezverapps/releases" style="width:100%;text-align:left">🌑 Zamoled <span class="hint">· AMOLED wallpapers</span> <span class="hint" id="zamStat"></span></button>
+    <button class="btn ghost" id="openZamoled" data-pkg="com.nikopick.zamoled" data-url="https://github.com/VK-VfX/nikezverapps/releases" style="width:100%;text-align:left"><i data-i="moon"></i> Zamoled <span class="hint">· AMOLED wallpapers</span> <span class="hint" id="zamStat"></span></button>
   </div>
 
   <div class="group">
@@ -293,6 +293,7 @@
 </aside>
 
 <script src="vendor/maplibre/maplibre-gl.js"></script>
+<script src="icons.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

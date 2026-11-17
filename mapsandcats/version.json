@@ -1,1 +1,1 @@
-{ "version": "1.1.0", "notes": "Waze-style navigation (snaps to the road, smooth arrow, earlier voice prompts), open-source + web search, results as pins on the map, Quest walking mode" }
+{ "version": "2.0.0", "notes": "New look: one icon set (no more emoji), snappier taps, smoother sheets, brighter readable text (AAA contrast), 48px touch targets, teal trio rim" }

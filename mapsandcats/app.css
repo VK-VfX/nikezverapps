@@ -3,8 +3,8 @@
   --panel: #000;
   --panel-2: #0d0d10;
   --line: rgba(255,255,255,.1);
-  --text: #f2f2f3;
-  --muted: #8a8a92;
+  --text: #f4f4f6;
+  --muted: #aeaeb8;
   --accent: #3df5d0;
   --accent-ink: #00110d;
   --danger: #ff5c7a;
@@ -14,7 +14,7 @@
 }
 body[data-theme="light"] {
   --bg: #fbf6ec; --panel: #fffaf1; --panel-2: #f3ead9; --line: #e6d9c1;
-  --text: #2d2218; --muted: #7a6a58; --accent: #00796b; --accent-ink: #fff;
+  --text: #241a11; --muted: #54453a; --accent: #00574d; --accent-ink: #fff;
   --shadow: 0 8px 30px rgba(90,60,20,.18);
 }
 body[data-theme="quest"] {
@@ -299,3 +299,83 @@ body.navigating #resultStrip { display: none; }
 /* Quest mode has its own panel at the bottom, so the result cards sit above it */
 body.hud-on #resultStrip { bottom: calc(184px + var(--sab)); }
 body.hud-on.has-results #fabs { bottom: calc(344px + var(--sab)); }
+
+/* =====================================================================
+   Trio design layer (shared with Purrcast and Zamoled, see docs/DESIGN.md)
+   Raycast reference: black, compact, high contrast. WCAG AAA. Warm voice.
+   ===================================================================== */
+:root {
+  --ease: cubic-bezier(.2, .8, .2, 1);   /* snappy out, no overshoot */
+  --t-press: 90ms;                        /* tap feedback */
+  --t-fast: 160ms;                        /* chips, toggles, colour */
+  --t-sheet: 240ms;                       /* sheets, drawers, banners */
+  --target: 48px;                         /* AAA touch target */
+}
+
+/* icons from icons.js */
+.ic { width: 1.15em; height: 1.15em; flex: none; vertical-align: -.2em; }
+.ico .ic { width: 20px; height: 20px; }
+.ico { color: var(--accent); }
+.chip .ic, .btn .ic, .seg .ic, .rcard .ic { margin-right: 4px; }
+.fab .ic, .icon-btn .ic { width: 22px; height: 22px; margin: 0; vertical-align: 0; }
+.rnum .ic { width: 14px; height: 14px; margin: 0; vertical-align: 0; }
+.pin { color: var(--accent); }
+.pin .ic { width: 34px; height: 34px; stroke: #000; stroke-width: 1.6; vertical-align: 0; }
+.destwx .ic, #tripBar .ic { margin-right: 4px; }
+
+/* touch targets: 48px everywhere a finger lands */
+.icon-btn, .icon-btn.small { width: var(--target); height: var(--target); }
+.fab { width: 52px; height: 52px; }
+.chip { min-height: var(--target); display: inline-flex; align-items: center; padding: 0 16px; font-size: 14.5px; }
+.seg button { min-height: var(--target); display: inline-flex; align-items: center; justify-content: center; }
+.btn { min-height: var(--target); }
+.list li, #results li { min-height: var(--target); }
+.stops .x, .list .x { min-width: var(--target); min-height: var(--target); }
+.alt { min-height: var(--target); }
+
+/* focus: prominent, keyboard only */
+:focus { outline: none; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
+.switch input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+/* snappy press feedback: transform and opacity only */
+.fab, .icon-btn, .chip, .btn, .seg button, .alt, .rcard, .list li, #results li, .cluster, .result-pin {
+  transition: transform var(--t-press) var(--ease), background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), filter var(--t-fast) var(--ease);
+}
+.fab:active, .icon-btn:active, .chip:active, .btn:active, .seg button:active, .alt:active, .rcard:active { transform: scale(.94); }
+.list li:active, #results li:active { transform: scale(.985); }
+.chip.on, .seg button.on { transition-duration: var(--t-fast); }
+
+/* sheets and drawers glide, nothing bounces */
+#sheet { transition: transform var(--t-sheet) var(--ease); will-change: transform; }
+#drawer { transition: transform var(--t-sheet) var(--ease); will-change: transform; }
+#fabs, #scale, #speedo { transition: bottom var(--t-sheet) var(--ease); }
+#toast { transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease); }
+#scrim { animation: fade var(--t-fast) var(--ease); }
+#navBanner, #along, #resultStrip, #tripBar, #hud { animation: rise-in var(--t-sheet) var(--ease); }
+.list li, #results li { animation: row-in 200ms var(--ease) both; }
+.list li:nth-child(2) { animation-delay: 20ms; } .list li:nth-child(3) { animation-delay: 40ms; }
+.list li:nth-child(4) { animation-delay: 60ms; } .list li:nth-child(5) { animation-delay: 80ms; }
+.list li:nth-child(n+6) { animation-delay: 100ms; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(14px); } }
+@keyframes row-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* trio signature: a thin teal rim on the top edge of every floating card */
+#sheet::before, #hud::before, #navBanner::before, #along::before, #tripBar::before, #results::before {
+  content: ""; position: absolute; left: 28px; right: 28px; top: 0; height: 2px; border-radius: 0 0 2px 2px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: .8;
+}
+.handle::after { background: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.rcard.on { box-shadow: 0 0 0 1px var(--accent) inset; }
+
+/* captions: mono, readable, never dim */
+.muted, .hint, .li-sub, .li-dist, .group-title, #navText, #tripBar small, .hud-stats span { color: var(--muted); }
+.li-sub { font-size: 13px; }
+.li-dist { font-size: 13px; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; }
+.group-title { font-size: 12.5px; }
+
+/* respect the phone's reduced-motion setting */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
+}
