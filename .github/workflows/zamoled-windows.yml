@@ -23,6 +23,7 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -56,6 +57,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-test-pictures
+          retention-days: 7
           path: zamoled/tools/desktop/build/smoke/*.png
 
       - name: Add to the release
