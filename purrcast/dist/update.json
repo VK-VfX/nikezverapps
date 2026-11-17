@@ -1,7 +1,7 @@
 {
-  "versionCode": 19,
-  "versionName": "1.0.18",
+  "versionCode": 20,
+  "versionName": "2.0.0",
   "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
-  "sha256": "b8fc9d505e2709cf6786e3630e52e44e1733d8f19a5b00cf470f8a579d73c958",
-  "notes": "Small under-the-hood tidy-up. Nothing new to see, just a cleaner build."
+  "sha256": "094d60d6343153169fd87067cff172d10ae9ead1777961596968968cc74473de",
+  "notes": "New look: snappier taps, smoother cards that fade in, a teal edge on every card, and clearer text in light mode."
 }

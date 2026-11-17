@@ -7,9 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Bump both for every release; the in-app updater compares VERSION_CODE (it must always go up).
-VERSION_CODE=19
-VERSION_NAME=1.0.18
-RELEASE_NOTES="Small under-the-hood tidy-up. Nothing new to see, just a cleaner build."
+VERSION_CODE=20
+VERSION_NAME=2.0.0
+RELEASE_NOTES="New look: snappier taps, smoother cards that fade in, a teal edge on every card, and clearer text in light mode."
 UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist
 
 DEPS=build/deps
