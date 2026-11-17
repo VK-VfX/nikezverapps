@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Fails unless the eight hero cats exist in every app in the right format. Run after export.py."""
+"""Fails unless the ten hero cats exist in every app in the right format. Run after export.py."""
 import pathlib, sys, xml.dom.minidom
 from PIL import Image
 HERE = pathlib.Path(__file__).parent
 ROOT = HERE.parent.parent
-DESIGNS = ["classic", "sun", "rain", "night", "storm", "hot", "sleepy", "locked"]
+DESIGNS = ["smile", "grin", "smirk", "confident", "angry", "shocked", "sad", "scared", "loaf", "locked"]
 bad = []
 for n in DESIGNS:
     svg = HERE / f"hero-{n}.svg"
@@ -21,5 +21,5 @@ for n in DESIGNS:
         if p.stat().st_size > 60 * 1024: bad.append(f"{p.name}: {p.stat().st_size // 1024} KB over 60 KB")
     m = ROOT / f"mapsandcats/assets/hero/hero-{n}.svg"
     if not m.exists() or m.read_bytes() != svg.read_bytes(): bad.append(f"{m.name}: missing or not identical to the source")
-print("\n".join(bad) if bad else "OK 8 designs in 3 apps")
+print("\n".join(bad) if bad else "OK 10 designs in 3 apps")
 sys.exit(1 if bad else 0)

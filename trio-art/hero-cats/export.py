@@ -8,7 +8,7 @@ import pathlib, shutil, subprocess, tempfile
 from PIL import Image
 HERE = pathlib.Path(__file__).parent
 ROOT = HERE.parent.parent
-DESIGNS = ["classic", "sun", "rain", "night", "storm", "hot", "sleepy", "locked"]
+DESIGNS = ["smile", "grin", "smirk", "confident", "angry", "shocked", "sad", "scared", "loaf", "locked"]
 subprocess.run(["python3", str(HERE / "build.py")], check=True)
 tmp = pathlib.Path(tempfile.mkdtemp())
 subprocess.run(["node", str(HERE / "render.js"), str(tmp)], check=True)
