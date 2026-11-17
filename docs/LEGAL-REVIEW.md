@@ -63,7 +63,7 @@ The app icons (cat on a cloud, cat on a globe, the sparkle) and the hero cat art
 Free API access is for **non-commercial** use and is rate-limited; attribution (CC BY 4.0) is shown in Purrcast. If Purrcast ever carries ads, payment or heavy traffic, move to a paid plan or self-host.
 
 ## 10. Exported Cat Club providers
-Each app exposes day streak, best, last visit day (and Purrcast's mood) to any app on the phone. It is not sensitive, and it is how the trio works, but it is readable by other apps. State it in the privacy note, or protect it with a signature-level permission so only your three apps (same signing key... note: the three apps use different keys, so this needs care) can read it.
+Each app exposes day streak, best, last visit day (and Purrcast's mood) to any app on the phone. It is not sensitive, and it is how the trio works, but it is readable by other apps. State it in the privacy note, or protect it with a permission only your three apps hold (the apps are signed with different keys today, so that would need a shared key or a check by package and certificate).
 
 ## 11. Zamoled desktop and emoji
 The Android app draws emoji with the phone's own font (Noto Color Emoji). The Windows build must not ship a copy of Microsoft's Segoe UI Emoji or other proprietary fonts inside the zip; confirm which font it uses and ship Noto (Apache-2.0) instead if in doubt.
