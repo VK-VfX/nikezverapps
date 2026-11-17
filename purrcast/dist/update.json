@@ -1,7 +1,7 @@
 {
-  "versionCode": 18,
-  "versionName": "1.0.17",
+  "versionCode": 20,
+  "versionName": "2.0.0",
   "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
-  "sha256": "53be5baff92e2eb8af69355c68af57373e40405f4e25aca5ea2f2004180bcf3c",
-  "notes": "Weather refresh now retries when the weather service is briefly busy (503), instead of giving up."
+  "sha256": "094d60d6343153169fd87067cff172d10ae9ead1777961596968968cc74473de",
+  "notes": "New look: snappier taps, smoother cards that fade in, a teal edge on every card, and clearer text in light mode."
 }
