@@ -7,9 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Bump both for every release; the in-app updater compares VERSION_CODE (it must always go up).
-VERSION_CODE=20
-VERSION_NAME=2.0.0
-RELEASE_NOTES="New look: snappier taps, smoother cards that fade in, a teal edge on every card, and clearer text in light mode."
+VERSION_CODE=21
+VERSION_NAME=2.1.0
+RELEASE_NOTES="Your own streak and a Streak Shield that saves up to 7 missed days when all three apps are installed; the MET Malaysia alerts are gone; warnings now use plain wording and Open-Meteo only."
 UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist
 
 DEPS=build/deps

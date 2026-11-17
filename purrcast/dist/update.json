@@ -1,7 +1,7 @@
 {
-  "versionCode": 20,
-  "versionName": "2.0.0",
+  "versionCode": 21,
+  "versionName": "2.1.0",
   "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
-  "sha256": "094d60d6343153169fd87067cff172d10ae9ead1777961596968968cc74473de",
-  "notes": "New look: snappier taps, smoother cards that fade in, a teal edge on every card, and clearer text in light mode."
+  "sha256": "466b58cb65c4a53776602375afa4dc3ebf7e99bff4ddacd1e41798b1a73f801d",
+  "notes": "Your own streak and a Streak Shield that saves up to 7 missed days when all three apps are installed; the MET Malaysia alerts are gone; warnings now use plain wording and Open-Meteo only."
 }

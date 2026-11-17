@@ -6,6 +6,8 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 ## Purrcast
 
+- **2.1.0**: A day streak of your own plus the Streak Shield (saves up to 7 missed days when all three apps are installed). MET Malaysia alerts removed; warnings use plain wording from Open-Meteo only. Hero cat art and the weather mood are shared with the other two apps.
+- **2.0.0**: New look: snappier taps, smoother cards, a teal edge on every card, clearer text in light mode.
 - **1.0.18**: Small under-the-hood tidy-up. Nothing new to see.
 - **1.0.17**: Weather refresh retries (up to 3 tries, short back-off) when Open-Meteo is briefly busy (503, 429, timeouts) instead of giving up.
 - **1.0.16**: Streak wallpaper: every 10 days of Purrcast streak unlocks a special Zamoled wallpaper, and the streak count is no longer capped at 64 days. Explains how streak, Cat Club and rewards work.
@@ -15,6 +17,8 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 ## Zamoled
 
+- **8.1.0**: Your own day streak and the Streak Shield, shown in the Cat Club card. Hero cat art is bundled for what comes next.
+- **8.0.0**: Night Photos world, short editor tabs, calmer buttons, denser or airier doodles. "For Pixel" removed.
 - **6.5.0**: New Space world: Ascent (a shuttle climbing away from the planet's edge), Lone Satellite and Comet. Star field, one small subject, a thin edge of light, over 95% of pixels off.
 - **6.4.0**: The trio. Cat Club numbers shared with Purrcast and Maps and Cats, a wallpaper for the weather (sent by Purrcast), and a special Cat Club wallpaper for every 10 days of Purrcast streak.
 - **6.3.0**: Updates install inside the app: Settings → Check for updates → Install. Favorites stay.
@@ -27,6 +31,8 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 ## Maps and Cats
 
+- **2.2.0**: Your own day streak and the Streak Shield, shown in the Cat Club line. Hero cat art is bundled for what comes next.
+- **2.1.0**: Green Start and red End buttons, honest time ranges (no live traffic), 3D switch moved to Settings, clearer map buttons.
 - **1.1.0**: Waze-style navigation (snaps to the road, smooth arrow, earlier voice prompts, route-distance turns, speed-adaptive voice, turn zoom, auto re-center, overview, ETA from observed speed). Fully open-source search plus real web search (DuckDuckGo/Bing + Wikipedia) that reads coordinates off pages; paste coordinates or map links. Results as numbered pins on the map with a card strip. Quest mode gets the same search and navigation, and auto-enters walking mode when GPS detects walking.
 - **1.0.6**: 3D navigation arrow with a choice of vehicles (arrow, hatchback, sports car, plane, cat), stops along the route, speed limit sign, cat co-pilot voice, rain at the destination, speed-aware camera, trip bar.
 - **1.0.5**: Speedometer and a meow at 80 km/h (adjustable). Screen stays on during navigation and Quest walks.
