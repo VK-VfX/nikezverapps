@@ -3,7 +3,7 @@
 (() => {
 'use strict';
 
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.3.0';
 /* The log catcher: lines go to the shell's diagnostic log (shared only when you tap Share in About). No places, no searches. */
 const diag = (tag, msg) => { try { const t = window.AndroidTrio; if (t && t.diagLog) t.diagLog(tag, String(msg)); } catch {} };
 window.addEventListener('error', e => diag('js-error', (e.message || '') + ' @' + (e.filename || '').split('/').pop() + ':' + e.lineno));
@@ -840,16 +840,16 @@ function parseCoords(q) {
   return { name: `${lat.toFixed(5)}, ${lon.toFixed(5)}`, sub: 'Coordinates', lat, lon, cc: null, src: 'coords', icon: ic('pin') };
 }
 async function withRetry(fn) { try { return await fn(); } catch (e) { if (e?.name === 'AbortError') throw e; await new Promise(r => setTimeout(r, 400)); return fn(); } }
-async function blendSearch(q, signal) {
+/* Typing asks Photon only; Nominatim (whose usage policy forbids search-as-you-type) is asked when the person presses Enter. */
+async function blendSearch(q, signal, explicit = true) {
   const o = searchOrigin(), pin = parseCoords(q);
   if (pin) return [pin];
-  const [ph, nm] = (await Promise.allSettled([withRetry(() => photonSearch(q, o, signal)), withRetry(() => nominatimSearch(q, o, signal))])).map(r => r.status === 'fulfilled' ? r.value : null);
+  const [ph, nm] = (await Promise.allSettled([withRetry(() => photonSearch(q, o, signal)), explicit ? withRetry(() => nominatimSearch(q, o, signal)) : Promise.resolve(null)])).map(r => r.status === 'fulfilled' ? r.value : null);
   if (!ph && !nm) throw new Error('search providers failed');
   return mergeRank(q, o, [ph, nm]);
 }
 
-/* ================= web search: asks DuckDuckGo (or Bing) for the place, then reads the coordinates off the pages it finds =================
-   Nothing but the question leaves the phone. Pages are fetched by the Android shell (a page can't, CORS); Wikipedia answers directly. */
+/* ================= web search: asks Wikipedia for places that have an article, with coordinates ================= */
 const webCbs = {}; let webSeq = 0;
 window.__webGot = (id, status, url, body) => { const f = webCbs[id]; if (f) { delete webCbs[id]; f({ status, url, body }); } };
 function webGet(url, ms = 9000) {
@@ -866,23 +866,6 @@ function webGet(url, ms = 9000) {
 }
 const SKIP_HOST = /(^|\.)(facebook|instagram|tiktok|twitter|youtube|pinterest|linkedin|reddit|tripadvisor)\.[a-z.]+$|(^|\.)x\.com$|duckduckgo\.com|bing\.com|google\./;
 function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } }
-function ddgLinks(html) {
-  const doc = new DOMParser().parseFromString(html, 'text/html'), out = [];
-  doc.querySelectorAll('a.result__a, a.result-link').forEach(a => {
-    let h = a.getAttribute('href') || ''; const m = h.match(/[?&]uddg=([^&]+)/); if (m) { try { h = decodeURIComponent(m[1]); } catch {} } else if (h.startsWith('//')) h = 'https:' + h;
-    if (/^https:/.test(h) && !/duckduckgo\.com\/y\.js/.test(h)) out.push({ url: h, title: a.textContent.trim() });
-  });
-  return out;
-}
-function bingLinks(html) {
-  const doc = new DOMParser().parseFromString(html, 'text/html'), out = [];
-  doc.querySelectorAll('li.b_algo h2 a').forEach(a => {
-    let h = a.getAttribute('href') || ''; const m = h.match(/[?&]u=a1([^&]+)/);
-    if (m) { try { h = atob(m[1].replace(/-/g, '+').replace(/_/g, '/')); } catch {} }
-    if (/^https:/.test(h)) out.push({ url: h, title: a.textContent.trim() });
-  });
-  return out;
-}
 const okLL = (a, b) => isFinite(a) && isFinite(b) && Math.abs(a) <= 90 && Math.abs(b) <= 180 && !(a === 0 && b === 0);
 const cleanTitle = t => String(t || '').split(/\s[-–—|·•:]\s/)[0].trim().slice(0, 80);
 function pageCoords(html) { // structured data first, then map links, then meta tags
@@ -925,26 +908,11 @@ async function wikiSearch(q, signal) {
   const pages = Object.values(JSON.parse(r.body).query?.pages || {});
   return pages.filter(p => p.coordinates?.[0]).sort((a, b) => a.index - b.index).map(p => ({ name: p.title, sub: p.description || 'Wikipedia', lat: p.coordinates[0].lat, lon: p.coordinates[0].lon, src: 'web', icon: ic('globe'), host: 'wikipedia.org' }));
 }
-async function pageHunt(q, o, signal) {
-  const cc = S.country?.cc, query = encodeURIComponent(q + ' address'); let links = [];
-  try { links = ddgLinks((await webGet(`https://html.duckduckgo.com/html/?q=${query}${cc ? `&kl=${cc}-en` : ''}`)).body); } catch {}
-  if (links.length < 2) { try { links = links.concat(bingLinks((await webGet(`https://www.bing.com/search?q=${query}&setlang=en`)).body)); } catch {} }
-  const seen = new Set(), picks = [];
-  for (const l of links) { const h = hostOf(l.url); if (!h || SKIP_HOST.test(h) || seen.has(h) || /\.(pdf|docx?|xlsx?)(\?|$)/i.test(l.url)) continue; seen.add(h); picks.push({ ...l, host: h }); if (picks.length >= 6) break; }
-  if (!picks.length) throw new Error('no web results');
-  const got = await Promise.allSettled(picks.map(async p => { const c = pageCoords((await webGet(p.url, 9000)).body); return c ? { ...c, host: p.host, title: p.title } : null; }));
-  const out = []; let geocoded = 0;
-  for (const g of got) {
-    const c = g.status === 'fulfilled' ? g.value : null; if (!c) continue;
-    if (c.addr) { if (geocoded >= 2) continue; geocoded++; const pt = await geocodeAddress(c.addr.text, signal).catch(() => null); if (pt) out.push({ name: cleanTitle(c.addr.name) || c.host, sub: c.addr.text, ...pt, src: 'web', icon: ic('globe'), host: c.host }); continue; }
-    out.push({ name: c.name || cleanTitle(c.title) || c.host, sub: c.host, lat: c.lat, lon: c.lon, src: 'web', icon: ic('globe'), host: c.host });
-  }
-  return out;
-}
 async function webSearch(q, signal) {
   const o = searchOrigin();
-  const [wk, pg] = (await Promise.allSettled([wikiSearch(q, signal), pageHunt(q, o, signal)])).map(r => r.status === 'fulfilled' ? r.value : null);
-  if (!wk && !pg) throw new Error('web search failed');
+  const wk = await wikiSearch(q, signal).catch(() => null);
+  if (!wk) throw new Error('web search failed');
+  const pg = null;
   const keys = new Map(), out = [];
   for (const r of [...(pg || []), ...(wk || [])]) {
     const k = dedupeKey(r.lat, r.lon), ex = keys.get(k); if (ex) { ex.agree++; continue; }
@@ -982,12 +950,12 @@ qEl.addEventListener('input', () => {
 });
 qEl.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(searchT); doSearch(true); qEl.blur(); } });
 $('#clearQ').addEventListener('click', () => { clearResultsMap(); qEl.value = ''; $('#clearQ').hidden = true; qEl.focus(); showQuick(); });
-const webRow = text => ({ name: `Search the web for “${text}”`, sub: 'DuckDuckGo · finds the place on the internet and reads its coordinates', icon: ic('globe'), webAction: true });
+const webRow = text => ({ name: `Search the web for “${text}”`, sub: 'Wikipedia · finds places that have an article', icon: ic('globe'), webAction: true });
 async function doSearch(explicit = false) {
   const text = qEl.value.trim(); if (text.length < 2) return;
   searchAbort?.abort(); const ac = searchAbort = new AbortController();
   clearResultsMap(); showList([], 'Searching…');
-  let items = null; try { items = await blendSearch(text, ac.signal); } catch {}
+  let items = null; try { items = await blendSearch(text, ac.signal, explicit); } catch {}
   if (ac.signal.aborted) return;
   const weak = !items || !items.length || (items[0].rel < .5 && items[0].agree < 2);
   if (explicit && !weak) { showOnMap(items, text); return; }          // Enter: show where they all are
@@ -1640,6 +1608,6 @@ initMap().then(() => {
   if (S.theme === 'quest') setQuest(true);
   startLocation(); if (S.sim) setSim(true);
   window.__macCheckPending();
-  window.__mac = { map, S, nav, quest, onPos, selectPlace, catSay, limit, parseLimit, startNavTest: () => $('#startNav').click(), spawnCat, catchCat, segmentByScript, blendSearch, webSearch, pageCoords, ddgLinks, relevance, mergeRank, getMe: () => me };
+  window.__mac = { map, S, nav, quest, onPos, selectPlace, catSay, limit, parseLimit, startNavTest: () => $('#startNav').click(), spawnCat, catchCat, segmentByScript, blendSearch, webSearch, pageCoords, relevance, mergeRank, getMe: () => me };
 });
 })();

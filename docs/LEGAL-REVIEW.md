@@ -3,6 +3,9 @@
 Date: 2026-11-17. **This is an engineering review of what the code and files do, not legal advice.** Nothing here is a verdict from a lawyer;
 the "get a lawyer" items are marked. Everything below is read from the repo as it is today.
 
+## Status (2026-11-17)
+Done in the same update: repo `LICENSE` (all rights reserved) and `NOTICE.md`; `docs/PRIVACY.md` and reworded in-app text; Purrcast and Maps and Cats disclaimers; in-app Open-source notices in all three apps; DuckDuckGo/Bing scraping removed from Maps and Cats (Wikipedia only). Still open: write down where each icon came from (needs the owner), confirm the Zamoled Windows emoji font, and a lawyer's read if you ever charge money or use a store.
+
 ## Summary
 | # | Finding | App | Risk | Fix |
 |---|---|---|---|---|

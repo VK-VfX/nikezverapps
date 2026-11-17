@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import com.nikopick.zamoled.data.Trio
 import androidx.compose.runtime.mutableLongStateOf
@@ -218,6 +219,8 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
         Spacer(Modifier.height(12.dp))
         LogCard()
         Spacer(Modifier.height(12.dp))
+        NoticesCard()
+        Spacer(Modifier.height(12.dp))
         AboutLink("Source and releases", "GitHub", "https://github.com/VK-VfX/nikezverapps/releases")
         Spacer(Modifier.height(22.dp))
         SectionHead("05", "The trio")
@@ -314,5 +317,32 @@ private fun LogCard() {
             TextButton(onClick = { com.nikopick.zamoled.data.Diag.share(context) }) { Text("Share") }
             TextButton(onClick = { com.nikopick.zamoled.data.Diag.clear(); android.widget.Toast.makeText(context, "Log cleared", android.widget.Toast.LENGTH_SHORT).show() }) { Text("Clear") }
         }
+    }
+}
+
+/** Open-source notices: what Zamoled is built on. */
+@Composable
+private fun NoticesCard() {
+    var open by remember { mutableStateOf(false) }
+    LeafCard(Modifier.fillMaxWidth().clickable { open = true }, shape = LeafSm) {
+        Column(Modifier.padding(horizontal = 18.dp, vertical = 14.dp)) {
+            Text("Open-source notices", style = MaterialTheme.typography.titleMedium)
+            Text("What Zamoled is built on", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+    if (open) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { open = false },
+            confirmButton = { TextButton(onClick = { open = false }) { Text("OK") } },
+            title = { Text("Open-source notices") },
+            text = {
+                Text(
+                    "Night Photos: photographs from Unsplash (Jeremy Thomas, Hans, Arthur Osipyan, Theo, Adrian Balasoiu, Connor Carruthers), Unsplash License, changed to pure black.\n\n" +
+                        "Cat artwork: Noto Emoji, © Google, Apache-2.0 (via svgmoji, MIT).\n\n" +
+                        "AndroidX, Jetpack Compose, WorkManager, Kotlin and coroutines: Apache-2.0.\n\n" +
+                        "Full list: github.com/VK-VfX/nikezverapps, NOTICE.md",
+                )
+            },
+        )
     }
 }

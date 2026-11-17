@@ -1,7 +1,7 @@
 {
-  "versionCode": 21,
-  "versionName": "2.1.0",
+  "versionCode": 22,
+  "versionName": "2.2.0",
   "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
-  "sha256": "466b58cb65c4a53776602375afa4dc3ebf7e99bff4ddacd1e41798b1a73f801d",
-  "notes": "Your own streak and a Streak Shield that saves up to 7 missed days when all three apps are installed; the MET Malaysia alerts are gone; warnings now use plain wording and Open-Meteo only."
+  "sha256": "ecf75bcc582ba81218850015d8f87cfa3591c687293acc4ae56c984e76671b42",
+  "notes": "One shared streak: the highest across Purrcast, Zamoled and Maps and Cats. A log for bug reports in About, open-source notices, and clearer privacy and alert wording."
 }

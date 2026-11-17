@@ -325,7 +325,7 @@ public class MainActivity extends Activity {
         addAbout();
 
         TextView foot = new TextView(this);
-        foot.setText("Weather & air quality: Open-Meteo.com (CC BY 4.0)\nPlace names: © OpenStreetMap contributors\nCat emoji: Google Noto Emoji (Apache 2.0)\nNo accounts, no analytics, no Google services.");
+        foot.setText("Weather & air quality: Open-Meteo.com (CC BY 4.0)\nPlace names: © OpenStreetMap contributors\nCat emoji: Google Noto Emoji (Apache 2.0)\nNo accounts, no analytics, no Google services. We collect nothing: your location is sent to Open-Meteo only to get your forecast.\nAlerts are forecast-based nudges, not official warnings. In an emergency follow your local authorities (for example MET Malaysia and NADMA).");
         foot.setTextSize(12);
         foot.setTypeface(AndroidGfx.typeface(400));
         foot.setTextColor(Ui.onSurfaceVar(this));
@@ -926,6 +926,15 @@ public class MainActivity extends Activity {
             @Override public void onClick(View v) { Diag.clear(MainActivity.this); Toast.makeText(MainActivity.this, "Log cleared", Toast.LENGTH_SHORT).show(); }
         });
         row(box, "Clear the log", null, lc);
+        Ui.Btn nt = new Ui.Btn(this, "View", false);
+        nt.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                new android.app.AlertDialog.Builder(MainActivity.this).setTitle("Open-source notices")
+                        .setMessage("Cat emoji: Noto Emoji, © Google, Apache-2.0 (via svgmoji, MIT).\nWeather and air quality: Open-Meteo.com, CC BY 4.0.\nPlace names: © OpenStreetMap contributors, ODbL.\n\nFull list: github.com/VK-VfX/nikezverapps, NOTICE.md")
+                        .setPositiveButton("OK", null).show();
+            }
+        });
+        row(box, "Open-source notices", "What Purrcast is built on", nt);
         Ui.Btn g = new Ui.Btn(this, "Open", false);
         g.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { open("https://github.com/VK-VfX/nikezverapps/tree/main/purrcast"); }
