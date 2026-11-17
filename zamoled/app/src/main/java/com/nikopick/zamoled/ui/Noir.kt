@@ -31,6 +31,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -182,7 +185,28 @@ fun FloatingDock(tab: HomeTab, onTab: (HomeTab) -> Unit, favoriteCount: Int, mod
 /** A card that is only a hairline outline and a leaf shape. */
 @Composable
 fun LeafCard(modifier: Modifier = Modifier, shape: androidx.compose.ui.graphics.Shape = Leaf, content: @Composable () -> Unit) {
-    Surface(shape = shape, color = Color(0xFF08080A), contentColor = MaterialTheme.colorScheme.onSurface, border = hairline(0.1f), modifier = modifier) { content() }
+    Surface(shape = shape, color = Color(0xFF08080A), contentColor = MaterialTheme.colorScheme.onSurface, border = hairline(0.1f), modifier = modifier.tealRim()) { content() }
+}
+
+/** Trio signature: a 2dp teal line along the top edge that fades out at both ends. */
+@Composable
+fun Modifier.tealRim(): Modifier {
+    val accent = MaterialTheme.colorScheme.primary
+    return drawWithContent {
+        drawContent()
+        val inset = 28.dp.toPx()
+        if (size.width > inset * 2) {
+            drawLine(
+                brush = Brush.horizontalGradient(
+                    listOf(accent.copy(alpha = 0f), accent.copy(alpha = 0.8f), accent.copy(alpha = 0f)),
+                    startX = inset, endX = size.width - inset,
+                ),
+                start = Offset(inset, 1.dp.toPx()),
+                end = Offset(size.width - inset, 1.dp.toPx()),
+                strokeWidth = 2.dp.toPx(),
+            )
+        }
+    }
 }
 
 /** Quick settings for a slider: tap a name instead of dragging. */
