@@ -23,6 +23,9 @@ object Trio {
     private const val RELEASES = "https://api.github.com/repos/VK-VfX/nikezverapps/releases?per_page=30"
     private const val PURRCAST_UPDATE = "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/update.json"
 
+    /** True when Purrcast and Maps and Cats are both installed next to Zamoled. */
+    fun allInstalled(context: Context): Boolean = installedVersion(context, PURRCAST) != null && installedVersion(context, MAPS) != null
+
     fun installedVersion(context: Context, pkg: String): String? =
         runCatching { context.packageManager.getPackageInfo(pkg, 0).versionName }.getOrNull()
 

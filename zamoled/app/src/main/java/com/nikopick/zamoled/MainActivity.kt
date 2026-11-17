@@ -21,6 +21,11 @@ class MainActivity : ComponentActivity() {
     /** The key of a wallpaper that arrived by shared link and has not been shown yet. */
     private val linked = mutableStateOf<String?>(null)
 
+    override fun onStart() {
+        super.onStart()
+        com.nikopick.zamoled.data.StreakStore.touch(this)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -28,6 +33,7 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
         Screen.init(this)
+        com.nikopick.zamoled.data.StreakStore.touch(this)
         CodeSource.init(assets)
         com.nikopick.zamoled.gen.PhotoPack.init(assets)
         ThumbCache.init(this)

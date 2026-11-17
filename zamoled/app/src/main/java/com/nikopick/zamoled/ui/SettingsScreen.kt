@@ -227,16 +227,20 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
         LeafCard(Modifier.fillMaxWidth(), shape = LeafSm) {
             Column(Modifier.padding(horizontal = 18.dp, vertical = 14.dp)) {
                 Text("Cat Club", style = MaterialTheme.typography.titleMedium)
+                val streak = remember { com.nikopick.zamoled.data.StreakStore.read(context).count }
+                val shield = remember { com.nikopick.zamoled.data.StreakStore.shieldLine(context) }
                 val parts = listOfNotNull(
+                    "$streak day streak",
                     "$kept wallpapers kept",
                     purrStat?.let { "${it.value} ${it.label}" },
                     mapStat?.let { "${it.value} ${it.label}" },
                 )
                 Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (shield.isNotEmpty()) Text(shield, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "How it works: every wallpaper you heart counts as kept, and that is Zamoled's number in the Cat Club. " +
-                        "Purrcast adds its day streak and Maps and Cats its cats caught; each app shows the others' numbers when installed. " +
+                    "How it works: every app counts its own day streak, the same way, and each app shows the other two when installed. " +
+                        "Install all three and a Streak Shield switches on: it saves your streak once if you miss up to 7 days, then recharges after 7 days in a row. " +
                         "Nothing is uploaded. Every 10 days of your Purrcast streak earns a special Cat Club wallpaper here: Purrcast tells you when one is ready.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

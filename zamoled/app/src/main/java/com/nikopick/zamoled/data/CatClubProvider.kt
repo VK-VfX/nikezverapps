@@ -8,7 +8,7 @@ import android.database.MatrixCursor
 import android.net.Uri
 
 /**
- * Zamoled's number for the shared Cat Club: how many wallpapers you have kept as favourites. Read-only, counts only;
+ * Zamoled's number for the shared Cat Club: its day streak, with the shield state in the label. Read-only, counts only;
  * Purrcast and Maps and Cats show it next to their own. Nothing else about you is exposed.
  */
 class CatClubProvider : ContentProvider() {
@@ -16,8 +16,7 @@ class CatClubProvider : ContentProvider() {
 
     override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor {
         val ctx: Context = context ?: return MatrixCursor(arrayOf("value", "label"))
-        val kept = ctx.getSharedPreferences("zamoled", Context.MODE_PRIVATE).getStringSet("favorites", emptySet())?.size ?: 0
-        return MatrixCursor(arrayOf("value", "label")).apply { addRow(arrayOf<Any>(kept, "wallpapers kept")) }
+        return MatrixCursor(arrayOf("value", "label")).apply { addRow(arrayOf<Any>(StreakStore.read(ctx).count, StreakStore.label(ctx))) }
     }
 
     override fun getType(uri: Uri): String = "vnd.android.cursor.item/vnd.com.nikopick.zamoled.catclub"
