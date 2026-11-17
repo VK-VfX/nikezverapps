@@ -3,7 +3,7 @@
 (() => {
 'use strict';
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '2.0.0';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const KL = [3.139, 101.687]; // [lat, lon] fallback view until we get a fix
@@ -416,9 +416,9 @@ async function overpass(q) {
 
 /* Stops along the way: fuel, coffee and rest areas near the part of the route still ahead of you. One tap adds one as a stop. */
 const STOP_KINDS = {
-  fuel: { icon: '⛽', label: 'Fuel', sel: ['[amenity=fuel]'] },
-  coffee: { icon: '☕', label: 'Coffee', sel: ['[amenity=cafe]'] },
-  rest: { icon: '🚻', label: 'Rest', sel: ['[highway=rest_area]', '[amenity=toilets]', '[highway=services]'] },
+  fuel: { icon: ic('fuel'), label: 'Fuel', sel: ['[amenity=fuel]'] },
+  coffee: { icon: ic('coffee'), label: 'Coffee', sel: ['[amenity=cafe]'] },
+  rest: { icon: ic('rest'), label: 'Rest', sel: ['[highway=rest_area]', '[amenity=toilets]', '[highway=services]'] },
 };
 let alongHits = [];
 function routeAhead(maxPts = 45) {
@@ -449,7 +449,7 @@ async function showAlong(kind) {
   list.innerHTML = '<li class="empty">Looking along your route…</li>';
   try {
     alongHits = await findStops(kind);
-    list.innerHTML = alongHits.length ? alongHits.map((p, i) => `<li data-i="${i}"><div class="ico">${p.icon}</div><div class="li-main"><div class="li-title">${esc(p.name)}</div><div class="li-sub">${fmtDist(p.ahead)} ahead · ${fmtDist(p.off)} off the route${p.sub ? ' · ' + esc(p.sub) : ''}</div></div><button class="chip" data-add="${i}">➕ Add</button></li>`).join('')
+    list.innerHTML = alongHits.length ? alongHits.map((p, i) => `<li data-i="${i}"><div class="ico">${p.icon}</div><div class="li-main"><div class="li-title">${esc(p.name)}</div><div class="li-sub">${fmtDist(p.ahead)} ahead · ${fmtDist(p.off)} off the route${p.sub ? ' · ' + esc(p.sub) : ''}</div></div><button class="chip" data-add="${i}">${ic('plus')} Add</button></li>`).join('')
       : '<li class="empty">Nothing found near the route</li>';
   } catch { list.innerHTML = '<li class="empty">Couldn’t search right now — check your connection</li>'; }
 }
@@ -499,7 +499,7 @@ async function destWeather() {
     const pop = Math.round(j.hourly.precipitation_probability[best] ?? 0), code = j.hourly.weather_code[best], t = Math.round(j.hourly.temperature_2m[best]);
     const rain = pop >= 50 || (code >= 51 && code <= 67) || (code >= 80 && code <= 99), storm = code >= 95;
     nav.wx = { rain, pop, t };
-    el.textContent = rain ? `${storm ? '⛈️' : '🌧️'} Rain likely when you arrive · ${pop}% · ${t}°` : `${code <= 1 ? '☀️' : '⛅'} ${t}° and dry when you arrive${pop >= 20 ? ` (${pop}% chance of rain)` : ''}`;
+    el.innerHTML = rain ? `${ic('rain')} Rain likely when you arrive · ${pop}% · ${t}°` : `${ic(code <= 1 ? 'sun' : 'cloud')} ${t}° and dry when you arrive${pop >= 20 ? ` (${pop}% chance of rain)` : ''}`;
     el.classList.toggle('wet', rain); $('#tripWx').textContent = `${pop}%`; $('#tripWx').parentElement.classList.toggle('wet', rain);
   } catch { el.textContent = ''; }
 }
@@ -629,7 +629,7 @@ function walkCamera(duration = 900) {
 function setWalking(on) {
   if (quest.walking === on) return; quest.walking = on; document.body.classList.toggle('walking', on);
   if (!meMarker) return; meMarker.getElement().classList.toggle('arrow', on && !nav.active); meMarker.setRotation(on ? heading : 0);
-  if (on) { toast('Walking mode 🐾', 1800); following = true; $('#locateBtn').classList.add('on'); walkCamera(700); }
+  if (on) { toast('Walking mode 😸', 1800); following = true; $('#locateBtn').classList.add('on'); walkCamera(700); }
   else if (!nav.active) { map.easeTo({ bearing: 0, pitch: 0, padding: NO_PAD, duration: 700 }); }
 }
 function walkWatch(cur) { // is the phone really walking? ~10 m at a walking pace within 20 s
@@ -687,9 +687,9 @@ function setSim(on) {
 }
 
 /* ================= nearby (vector-tile POIs: no extra service) ================= */
-const CATS_UI = [{ id: 'all', label: 'All', icon: '✨' }, { id: 'food', label: 'Food', icon: '🍜' }, { id: 'coffee', label: 'Coffee', icon: '☕' },
-  { id: 'park', label: 'Parks', icon: '🌳' }, { id: 'sight', label: 'Sights', icon: '📸' }, { id: 'shop', label: 'Shops', icon: '🛍️' }];
-const ICON = { coffee: '☕', food: '🍜', park: '🌳', sight: '📸', shop: '🛍️' };
+const CATS_UI = [{ id: 'all', label: 'All', icon: ic('all') }, { id: 'food', label: 'Food', icon: ic('food') }, { id: 'coffee', label: 'Coffee', icon: ic('coffee') },
+  { id: 'park', label: 'Parks', icon: ic('park') }, { id: 'sight', label: 'Sights', icon: ic('sight') }, { id: 'shop', label: 'Shops', icon: ic('shop') }];
+const ICON = { coffee: ic('coffee'), food: ic('food'), park: ic('park'), sight: ic('sight'), shop: ic('shop') };
 let nearby = [], nearbyFilter = 'all', nearbyAt = null, nearbyTries = 0;
 
 function maybeNearbyFromTiles() {
@@ -709,12 +709,12 @@ function maybeNearbyFromTiles() {
   nearby = out.sort((a, b) => a.d - b.d); nearbyAt = here; renderNearby();
 }
 function renderNearby() {
-  const savedChips = [S.saved.home && ['home', '🏠 Home'], S.saved.work && ['work', '💼 Work']].filter(Boolean);
+  const savedChips = [S.saved.home && ['home', ic('home') + ' Home'], S.saved.work && ['work', ic('work') + ' Work']].filter(Boolean);
   $('#chips').innerHTML = savedChips.map(([k, l]) => `<button class="chip" data-saved="${k}">${l}</button>`).join('') +
     CATS_UI.map(c => `<button class="chip ${c.id === nearbyFilter ? 'on' : ''}" data-c="${c.id}">${c.icon} ${c.label}</button>`).join('');
   let html;
   if (!me) html = '<li class="empty">Allow location to see places near you.<br>You can still search above.</li>';
-  else if (!nearby.length) html = '<li class="empty">Sniffing out places nearby… 🐾</li>';
+  else if (!nearby.length) html = '<li class="empty">Sniffing out places nearby… 😸</li>';
   else {
     const list = nearby.filter(p => nearbyFilter === 'all' || p.cat === nearbyFilter).slice(0, 40);
     html = list.length ? list.map(p => `<li data-id="${esc(p.id)}"><div class="ico">${ICON[p.cat]}</div><div class="li-main"><div class="li-title">${esc(p.name)}</div><div class="li-sub">${esc(p.kind)}</div></div><div class="li-dist">${fmtDist(dist([me.lat, me.lon], [p.lat, p.lon]))}</div></li>`).join('')
@@ -801,7 +801,7 @@ function parseCoords(q) {
   if (!m) m = q.match(/^\(?\s*(-?\d{1,2}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)\s*\)?$/);
   if (!m) return null;
   const lat = +m[1], lon = +m[2]; if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
-  return { name: `${lat.toFixed(5)}, ${lon.toFixed(5)}`, sub: 'Coordinates', lat, lon, cc: null, src: 'coords', icon: '📌' };
+  return { name: `${lat.toFixed(5)}, ${lon.toFixed(5)}`, sub: 'Coordinates', lat, lon, cc: null, src: 'coords', icon: ic('pin') };
 }
 async function withRetry(fn) { try { return await fn(); } catch (e) { if (e?.name === 'AbortError') throw e; await new Promise(r => setTimeout(r, 400)); return fn(); } }
 async function blendSearch(q, signal) {
@@ -887,7 +887,7 @@ async function wikiSearch(q, signal) {
   const lang = UI_LANG.slice(0, 2).replace(/[^a-z]/g, '') || 'en';
   const r = await webGet(`https://${lang}.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(q)}&gsrlimit=6&prop=coordinates|description&colimit=6`);
   const pages = Object.values(JSON.parse(r.body).query?.pages || {});
-  return pages.filter(p => p.coordinates?.[0]).sort((a, b) => a.index - b.index).map(p => ({ name: p.title, sub: p.description || 'Wikipedia', lat: p.coordinates[0].lat, lon: p.coordinates[0].lon, src: 'web', icon: '🌐', host: 'wikipedia.org' }));
+  return pages.filter(p => p.coordinates?.[0]).sort((a, b) => a.index - b.index).map(p => ({ name: p.title, sub: p.description || 'Wikipedia', lat: p.coordinates[0].lat, lon: p.coordinates[0].lon, src: 'web', icon: ic('globe'), host: 'wikipedia.org' }));
 }
 async function pageHunt(q, o, signal) {
   const cc = S.country?.cc, query = encodeURIComponent(q + ' address'); let links = [];
@@ -900,8 +900,8 @@ async function pageHunt(q, o, signal) {
   const out = []; let geocoded = 0;
   for (const g of got) {
     const c = g.status === 'fulfilled' ? g.value : null; if (!c) continue;
-    if (c.addr) { if (geocoded >= 2) continue; geocoded++; const pt = await geocodeAddress(c.addr.text, signal).catch(() => null); if (pt) out.push({ name: cleanTitle(c.addr.name) || c.host, sub: c.addr.text, ...pt, src: 'web', icon: '🌐', host: c.host }); continue; }
-    out.push({ name: c.name || cleanTitle(c.title) || c.host, sub: c.host, lat: c.lat, lon: c.lon, src: 'web', icon: '🌐', host: c.host });
+    if (c.addr) { if (geocoded >= 2) continue; geocoded++; const pt = await geocodeAddress(c.addr.text, signal).catch(() => null); if (pt) out.push({ name: cleanTitle(c.addr.name) || c.host, sub: c.addr.text, ...pt, src: 'web', icon: ic('globe'), host: c.host }); continue; }
+    out.push({ name: c.name || cleanTitle(c.title) || c.host, sub: c.host, lat: c.lat, lon: c.lon, src: 'web', icon: ic('globe'), host: c.host });
   }
   return out;
 }
@@ -926,15 +926,15 @@ function kindLabel(r) { // "Fuel · address" — helps tell apart ten places wit
 }
 function showList(items, emptyMsg) {
   resEl.hidden = false; resEl._data = items;
-  resEl.innerHTML = items.length ? items.map((r, i) => `<li data-i="${i}"><div class="ico">${r.icon || '📍'}</div><div class="li-main"><div class="li-title">${esc(r.name)}</div><div class="li-sub">${esc(kindLabel(r))}${esc(r.sub)}</div></div><div class="li-dist">${r.d != null ? fmtDist(r.d) : ''}</div></li>`).join('')
+  resEl.innerHTML = items.length ? items.map((r, i) => `<li data-i="${i}"><div class="ico">${r.icon || ic('pin')}</div><div class="li-main"><div class="li-title">${esc(r.name)}</div><div class="li-sub">${esc(kindLabel(r))}${esc(r.sub)}</div></div><div class="li-dist">${r.d != null ? fmtDist(r.d) : ''}</div></li>`).join('')
     : `<li class="empty">${emptyMsg}</li>`;
 }
 function showQuick() {
   const items = [];
-  if (S.saved.home) items.push({ ...S.saved.home, icon: '🏠', sub: 'Home' });
-  if (S.saved.work) items.push({ ...S.saved.work, icon: '💼', sub: 'Work' });
-  S.saved.favs.forEach(f => items.push({ ...f, icon: '⭐' }));
-  S.recents.forEach(r => items.push({ ...r, icon: '🕘' }));
+  if (S.saved.home) items.push({ ...S.saved.home, icon: ic('home'), sub: 'Home' });
+  if (S.saved.work) items.push({ ...S.saved.work, icon: ic('work'), sub: 'Work' });
+  S.saved.favs.forEach(f => items.push({ ...f, icon: ic('star') }));
+  S.recents.forEach(r => items.push({ ...r, icon: ic('clock') }));
   if (items.length) showList(items, ''); else resEl.hidden = true;
 }
 qEl.addEventListener('focus', () => { if (!qEl.value.trim()) showQuick(); });
@@ -946,7 +946,7 @@ qEl.addEventListener('input', () => {
 });
 qEl.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(searchT); doSearch(true); qEl.blur(); } });
 $('#clearQ').addEventListener('click', () => { clearResultsMap(); qEl.value = ''; $('#clearQ').hidden = true; qEl.focus(); showQuick(); });
-const webRow = text => ({ name: `Search the web for “${text}”`, sub: 'DuckDuckGo · finds the place on the internet and reads its coordinates', icon: '🌐', webAction: true });
+const webRow = text => ({ name: `Search the web for “${text}”`, sub: 'DuckDuckGo · finds the place on the internet and reads its coordinates', icon: ic('globe'), webAction: true });
 async function doSearch(explicit = false) {
   const text = qEl.value.trim(); if (text.length < 2) return;
   searchAbort?.abort(); const ac = searchAbort = new AbortController();
@@ -959,7 +959,7 @@ async function doSearch(explicit = false) {
   await runWeb(text, items || [], ac, true, explicit);
 }
 async function runWeb(text, base, ac, webFirst, toMap = false) {
-  showList([...base, { name: 'Searching the web…', sub: 'Reading coordinates from the pages it finds', icon: '🌐', busy: true }], '');
+  showList([...base, { name: 'Searching the web…', sub: 'Reading coordinates from the pages it finds', icon: ic('globe'), busy: true }], '');
   let web = []; try { web = await webSearch(text, ac.signal); } catch {}
   if (ac.signal.aborted) return;
   const seen = new Set(), all = [];
@@ -988,7 +988,7 @@ function showOnMap(items, text, fromWeb) {
   if (!resList.length) { showList([], 'No results. Try a different spelling.'); return; }
   const strip = $('#resultStrip'), o = searchOrigin();
   strip.innerHTML = resList.map((r, i) => `<div class="rcard" data-i="${i}"><div class="rtop"><span class="rnum">${i + 1}</span><b>${esc(r.name)}</b></div><small>${esc(kindLabel(r))}${esc(r.sub)}</small><div class="rbot"><span>${fmtDist(r.d != null ? r.d : dist(o, [r.lat, r.lon]))}</span><button class="go" data-i="${i}">Go</button></div></div>`).join('')
-    + (fromWeb ? '' : '<div class="rcard web"><div class="rtop"><span class="rnum">🌐</span><b>Search the web</b></div><small>Not here? Look it up on the internet</small></div>');
+    + (fromWeb ? '' : '<div class="rcard web"><div class="rtop"><span class="rnum">'+ic('globe')+'</span><b>Search the web</b></div><small>Not here? Look it up on the internet</small></div>');
   strip._q = text; strip.hidden = false; document.body.classList.add('has-results'); strip.scrollLeft = 0;
   resList.forEach((r, i) => {
     const el = document.createElement('div'); el.className = 'result-pin'; el.textContent = i + 1;
@@ -1035,7 +1035,7 @@ function drawMarkers() {
   nav.marks.forEach(m => m.remove()); nav.marks = [];
   if (!nav.dest) return;
   nav.wps.forEach((w, i) => { const el = document.createElement('div'); el.className = 'stop-pin'; el.textContent = i + 1; nav.marks.push(new maplibregl.Marker({ element: el }).setLngLat([w.lon, w.lat]).addTo(map)); });
-  const el = document.createElement('div'); el.className = 'pin'; el.textContent = '📍';
+  const el = document.createElement('div'); el.className = 'pin'; el.innerHTML = ic('pin-fill');
   nav.marks.push(new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([nav.dest.lon, nav.dest.lat]).addTo(map));
 }
 function syncModeSeg() {
@@ -1050,7 +1050,7 @@ $('#addStop').addEventListener('click', () => { addingStop = !addingStop; $('#ad
 function addWaypoint(p) { nav.wps.push(p); renderStops(); drawMarkers(); fetchRoute(); }
 function renderStops() {
   const ol = $('#stops'); ol.hidden = !nav.wps.length;
-  ol.innerHTML = nav.wps.map((w, i) => `<li><div class="stop-pin" style="position:static">${i + 1}</div><div class="li-main"><div class="li-title">${esc(w.name)}</div></div><button class="x" data-rm="${i}" aria-label="Remove stop">✕</button></li>`).join('');
+  ol.innerHTML = nav.wps.map((w, i) => `<li><div class="stop-pin" style="position:static">${i + 1}</div><div class="li-main"><div class="li-title">${esc(w.name)}</div></div><button class="x" data-rm="${i}" aria-label="Remove stop">${ic('close')}</button></li>`).join('');
   $('#optimizeStops').hidden = nav.wps.length < 1;
 }
 $('#stops').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (!b) return; nav.wps.splice(+b.dataset.rm, 1); renderStops(); drawMarkers(); fetchRoute(); });
@@ -1061,7 +1061,7 @@ $('#optimizeStops').addEventListener('click', () => {
   while (pool.length) { let bi = 0, bd = Infinity; pool.forEach((p, i) => { const d = dist(cur, [p.lat, p.lon]); if (d < bd) { bd = d; bi = i; } }); const p = pool.splice(bi, 1)[0]; order.push(p); cur = [p.lat, p.lon]; }
   nav.dest = order.pop(); nav.wps = order;
   $('#destName').textContent = nav.dest.name; $('#destSub').textContent = nav.dest.sub || '';
-  renderStops(); drawMarkers(); fetchRoute(); toast('Stops reordered 🔀');
+  renderStops(); drawMarkers(); fetchRoute(); toast('Stops reordered');
 });
 
 /* fetch + cache */
@@ -1169,7 +1169,7 @@ function instr(s) {
 }
 function arrow(s) {
   const m = s.maneuver || {}, mod = m.modifier || '';
-  if (m.type === 'arrive') return '🏁'; if (m.type === 'depart') return '🚀'; if (m.type === 'roundabout' || m.type === 'rotary') return '⟳';
+  if (m.type === 'arrive') return '⚑'; if (m.type === 'depart') return '↑'; if (m.type === 'roundabout' || m.type === 'rotary') return '⟳';
   return { left: '←', 'sharp left': '↰', 'slight left': '↖', right: '→', 'sharp right': '↱', 'slight right': '↗', uturn: '↩', straight: '↑' }[mod] || '↑';
 }
 $('#toggleSteps').addEventListener('click', () => { const s = $('#steps'); s.hidden = !s.hidden; });
@@ -1224,7 +1224,7 @@ function navTick() {
   nav.dNext = dNext;
   const next = steps[Math.min(nav.idx + 1, steps.length - 1)], nl = next.maneuver.location;
   if (next.maneuver.type === 'arrive' && dNext < 25) {
-    haptic(80); setTimeout(() => haptic(80), 200); speak(catSay('arrive')); toast('🎉 You have arrived!', 3500); clearRoute(); return;
+    haptic(80); setTimeout(() => haptic(80), 200); speak(catSay('arrive')); toast('😻 You have arrived!', 3500); clearRoute(); return;
   }
   $('#navArrow').textContent = arrow(next); $('#navDist').textContent = fmtDist(dNext);
   $('#navText').textContent = instr(next);
@@ -1324,17 +1324,17 @@ function speak(text, force) {
 if (TTS) { loadVoices(); TTS.addEventListener?.('voiceschanged', loadVoices); setTimeout(loadVoices, 800); } else loadVoices();
 $('#voiceSel').addEventListener('change', e => { S.voice.name = e.target.value; save(); }); // selecting never speaks; use Test voice
 $('#testVoice').addEventListener('click', () => {
-  unlockTts(); if (speak('In 200 metres, turn left onto Jalan Ampang. 你好 東京 서울 Москва', true)) toast(voices.length ? '🔊 Playing… (check volume and the silent switch)' : '🔊 Playing with the system voice… (check volume and the silent switch)', 3200);
+  unlockTts(); if (speak('In 200 metres, turn left onto Jalan Ampang. 你好 東京 서울 Москва', true)) toast(voices.length ? 'Playing… (check volume and the silent switch)' : 'Playing with the system voice… (check volume and the silent switch)', 3200);
 });
 $('#voiceToggle').addEventListener('change', e => { S.voice.on = e.target.checked; save(); syncMute(); });
 $('#navMute').addEventListener('click', () => { S.voice.on = !S.voice.on; save(); syncMute(); if (!S.voice.on) stopSpeech(); });
-function syncMute() { $('#navMute').textContent = S.voice.on ? '🔊' : '🔇'; $('#voiceToggle').checked = S.voice.on; }
+function syncMute() { $('#navMute').innerHTML = S.voice.on ? ic('speaker') : ic('mute'); $('#voiceToggle').checked = S.voice.on; }
 
 /* ================= personalization (localStorage only) ================= */
 function syncSaveStar() {
   const d = nav.dest; if (!d) return;
   const k = dedupeKey(d.lat, d.lon), is = [S.saved.home, S.saved.work, ...S.saved.favs].some(p => p && dedupeKey(p.lat, p.lon) === k);
-  $('#savePlace').textContent = is ? '★' : '☆';
+  $('#savePlace').innerHTML = is ? ic('star-fill') : ic('star');
 }
 $('#savePlace').addEventListener('click', () => { $('#saveMenu').hidden = !$('#saveMenu').hidden; });
 $('#saveMenu').addEventListener('click', e => {
@@ -1345,15 +1345,15 @@ $('#saveMenu').addEventListener('click', e => {
     if (S.saved.favs.length >= 5) return toast('Favorites are full (5). Remove one in Settings.', 2600);
     S.saved.favs.push(p);
   } else S.saved[b.dataset.save] = p;
-  save(); haptic(20); $('#saveMenu').hidden = true; syncSaveStar(); renderSaved(); renderNearby(); toast('Saved ⭐');
+  save(); haptic(20); $('#saveMenu').hidden = true; syncSaveStar(); renderSaved(); renderNearby(); toast('Saved');
 });
 function renderSaved() {
   const rows = [];
-  if (S.saved.home) rows.push(['home', '🏠', 'Home', S.saved.home.name]); if (S.saved.work) rows.push(['work', '💼', 'Work', S.saved.work.name]);
-  S.saved.favs.forEach((f, i) => rows.push([`fav${i}`, '⭐', f.name, f.sub || '']));
-  $('#savedList').innerHTML = rows.length ? rows.map(r => `<li data-go="${r[0]}"><div class="ico">${r[1]}</div><div class="li-main"><div class="li-title">${esc(r[2])}</div><div class="li-sub">${esc(r[3])}</div></div><button class="x" data-del="${r[0]}" aria-label="Remove">✕</button></li>`).join('') : '<li class="empty">Nothing saved yet. Open a place and tap ☆.</li>';
-  $('#recentList').innerHTML = S.recents.length ? S.recents.map((r, i) => `<li data-rec="${i}"><div class="ico">🕘</div><div class="li-main"><div class="li-title">${esc(r.name)}</div><div class="li-sub">${esc(r.sub)}</div></div></li>`).join('') : '<li class="empty">No recent searches.</li>';
-  $('#tripList').innerHTML = S.trips.length ? S.trips.map(t => `<li><div class="ico">${t.mode === 'foot' ? '🚶' : '🚗'}</div><div class="li-main"><div class="li-title">${esc(t.name)}</div><div class="li-sub">${new Date(t.ts).toLocaleDateString()} · ${fmtDist(t.dist)}</div></div></li>`).join('') : '<li class="empty">No trips yet.</li>';
+  if (S.saved.home) rows.push(['home', ic('home'), 'Home', S.saved.home.name]); if (S.saved.work) rows.push(['work', ic('work'), 'Work', S.saved.work.name]);
+  S.saved.favs.forEach((f, i) => rows.push([`fav${i}`, ic('star'), f.name, f.sub || '']));
+  $('#savedList').innerHTML = rows.length ? rows.map(r => `<li data-go="${r[0]}"><div class="ico">${r[1]}</div><div class="li-main"><div class="li-title">${esc(r[2])}</div><div class="li-sub">${esc(r[3])}</div></div><button class="x" data-del="${r[0]}" aria-label="Remove">${ic('close')}</button></li>`).join('') : '<li class="empty">Nothing saved yet. Open a place and tap the star.</li>';
+  $('#recentList').innerHTML = S.recents.length ? S.recents.map((r, i) => `<li data-rec="${i}"><div class="ico">${ic('clock')}</div><div class="li-main"><div class="li-title">${esc(r.name)}</div><div class="li-sub">${esc(r.sub)}</div></div></li>`).join('') : '<li class="empty">No recent searches.</li>';
+  $('#tripList').innerHTML = S.trips.length ? S.trips.map(t => `<li><div class="ico">${t.mode === 'foot' ? ic('walk') : ic('car')}</div><div class="li-main"><div class="li-title">${esc(t.name)}</div><div class="li-sub">${new Date(t.ts).toLocaleDateString()} · ${fmtDist(t.dist)}</div></div></li>`).join('') : '<li class="empty">No trips yet.</li>';
 }
 const savedBy = id => id === 'home' ? S.saved.home : id === 'work' ? S.saved.work : S.saved.favs[+id.slice(3)];
 $('#savedList').addEventListener('click', e => {
@@ -1372,8 +1372,8 @@ const CAT_TYPES = [
   { img: 'grin-smile-cat', xp: 20, w: 10, r: 1 }, { img: 'smirk-cat', xp: 25, w: 8, r: 1 }, { img: 'black-cat', xp: 40, w: 8, r: 2 },
   { img: 'kissing-cat', xp: 60, w: 4, r: 2 }, { img: 'heart-eyes-cat', xp: 90, w: 2, r: 3 },
 ];
-const TAP_MSGS = ['Meow! 🐾', 'Purr… purr… 😽', 'Let’s catch them all! 🐱', 'Mrrp?', 'Nyaa~ ♥', 'Meeeow!', 'Prrrrr 💤', 'Gotcha, floof! 😸'];
-const PASS_MSGS = ['A cat brushed past your leg! 🐾', 'Paws crossed — caught one!', 'Sneaky kitty joined you 😼', 'Purrfect timing!'];
+const TAP_MSGS = ['Meow! 😸', 'Purr… purr… 😽', 'Let’s catch them all! 🐱', 'Mrrp?', 'Nyaa~ ♥', 'Meeeow!', 'Prrrrr 😽', 'Gotcha, floof! 😸'];
+const PASS_MSGS = ['A cat brushed past your leg! 😸', 'Paws crossed — caught one!', 'Sneaky kitty joined you 😼', 'Purrfect timing!'];
 const quest = { on: false, cats: [], timer: null, wobble: null };
 const levelOf = xp => 1 + Math.floor(Math.sqrt(xp / 60));
 
@@ -1387,7 +1387,7 @@ function renderHud() {
 }
 function addXp(n) {
   const before = levelOf(S.xp); S.xp += n; save();
-  if (levelOf(S.xp) > before) { toast(`🎉 Level ${levelOf(S.xp)}! The cats are impressed.`, 2800); haptic(60); }
+  if (levelOf(S.xp) > before) { toast(`😻 Level ${levelOf(S.xp)}! The cats are impressed.`, 2800); haptic(60); }
   renderHud();
 }
 function purr() {
@@ -1430,7 +1430,7 @@ function questTick(prev, cur) {
   if (cur.acc <= 50 && d >= 5) {
     const v = d / Math.max(.5, (cur.ts - a.ts) / 1000); session.anchor = cur;
     if (v <= 3.2) { session.dist += d; session.xpRem += d; if (session.xpRem >= 25) { const n = Math.floor(session.xpRem / 25); session.xpRem -= n * 25; addXp(n); } }
-    else if (Date.now() - session.lastSlow > 20000) { session.lastSlow = Date.now(); toast('Whoa, speedy! Quest counts walking only 🚶'); }
+    else if (Date.now() - session.lastSlow > 20000) { session.lastSlow = Date.now(); toast('Whoa, speedy! Quest counts walking only'); }
   }
   for (const c of [...quest.cats]) if (dist([cur.lat, cur.lon], c.pos) < 20) catchCat(c, false);
   renderHud();
@@ -1444,7 +1444,7 @@ function setQuest(on) {
     quest.timer = setInterval(topUpCats, 8000);
     // cats wobble: sine-wave rotation re-applied every 140 ms
     quest.wobble = setInterval(() => { const t = Date.now() / 320; for (const c of quest.cats) if (!c.gone) c.span.style.transform = `rotate(${(Math.sin(t + c.phase) * 11).toFixed(1)}deg)`; }, 140);
-    toast('Quest mode on — go find some cats! 🐾', 2600);
+    toast('Quest mode on — go find some cats! 😸', 2600);
   } else { quest.cats.forEach(c => c.marker.remove()); quest.cats = []; setWalking(false); quest.wAnchor = null; }
   syncModeSeg(); syncPanels();
 }
@@ -1504,7 +1504,7 @@ $('#catVoiceToggle').addEventListener('change', e => { S.catVoice = e.target.che
 $('#limitToggle').addEventListener('change', e => { S.limitSign = e.target.checked; save(); limit.at = 0; renderSpeedo(); });
 $('#speedoToggle').addEventListener('change', e => { S.speedo = e.target.checked; save(); renderSpeedo(); });
 $('#meowAt').addEventListener('change', e => { const v = Math.min(300, Math.max(0, Math.round(+e.target.value || 0))); S.meowAt = v; e.target.value = v; meowArmed = true; save(); renderSpeedo(); toast(v ? `Meow at ${v} km/h 😼` : 'Meow off'); });
-$('#simToggle').addEventListener('change', e => { setSim(e.target.checked); toast(e.target.checked ? 'Simulating a stroll 🚶' : 'Simulation off'); });
+$('#simToggle').addEventListener('change', e => { setSim(e.target.checked); toast(e.target.checked ? 'Simulating a stroll' : 'Simulation off'); });
 
 function sync3dBtn() { const b = $('#view3dBtn'); b.textContent = view3d ? '3D' : '2D'; b.classList.toggle('on', view3d); }
 $('#view3dBtn').addEventListener('click', () => {

@@ -7,8 +7,8 @@ android {
         applicationId = "app.mapsandcats"
         minSdk = 24
         targetSdk = 34
-        versionCode = 8
-        versionName = "1.1.0"
+        versionCode = 9
+        versionName = "2.0.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -42,7 +42,7 @@ android {
 // Bundle the PWA (repo root) into the APK so it runs offline.
 val copyWeb by tasks.registering(Copy::class) {
     from(rootProject.projectDir.parentFile) {
-        include("index.html", "app.css", "app.js", "manifest.webmanifest", "favicon-*.png", "icon-*.png", "version.json", "vendor/**", "assets/**")
+        include("index.html", "app.css", "app.js", "icons.js", "manifest.webmanifest", "favicon-*.png", "icon-*.png", "version.json", "vendor/**", "assets/**")
     }
     into(layout.buildDirectory.dir("web"))
 }
