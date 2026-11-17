@@ -85,6 +85,8 @@ fun ZamoledTheme(content: @Composable () -> Unit) {
             surfaceContainerHigh = Color(0xFF151519),
             surfaceContainerHighest = Color(0xFF1E1E24),
             outlineVariant = Color.White.copy(alpha = 0.14f),
+            // AAA: every caption at 9:1 or better on black
+            onSurfaceVariant = Color(0xFFAEAEB8),
             // the family accent shared with Purrcast and Maps and Cats
             primary = Color(0xFF3DF5D0),
             onPrimary = Color(0xFF00110D),

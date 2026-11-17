@@ -31,8 +31,9 @@ import kotlinx.coroutines.delay
 
 /** Spring tokens in the spirit of the Material 3 expressive motion scheme. */
 object Motion {
-    fun <T> spatial(): SpringSpec<T> = spring(dampingRatio = 0.8f, stiffness = 380f)
-    fun <T> bouncy(): SpringSpec<T> = spring(dampingRatio = 0.55f, stiffness = 420f)
+    // trio feel: snappy and settled. No overshoot, no wobble.
+    fun <T> spatial(): SpringSpec<T> = spring(dampingRatio = 1f, stiffness = 700f)
+    fun <T> bouncy(): SpringSpec<T> = spring(dampingRatio = 0.9f, stiffness = 900f)
     fun <T> effects(): SpringSpec<T> = spring(dampingRatio = 1f, stiffness = 1600f)
 }
 
@@ -42,7 +43,12 @@ fun lerpF(a: Float, b: Float, t: Float): Float = a + (b - a) * t
 @Composable
 fun Modifier.pressScale(interaction: InteractionSource, pressed: Float = 0.94f): Modifier {
     val isPressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (isPressed) pressed else 1f, Motion.bouncy(), label = "press")
+    // 90 ms down, 120 ms back: transform only
+    val scale by animateFloatAsState(
+        if (isPressed) pressed else 1f,
+        tween(if (isPressed) 90 else 120, easing = androidx.compose.animation.core.CubicBezierEasing(0.2f, 0.8f, 0.2f, 1f)),
+        label = "press",
+    )
     return graphicsLayer {
         scaleX = scale
         scaleY = scale
