@@ -27,6 +27,9 @@ final class Trio {
     private static volatile long fetchedAt;
     private static volatile boolean fetching;
 
+    /** True when Zamoled and Maps and Cats are both installed next to Purrcast. */
+    static boolean allInstalled(Context c) { return installed(c, ZAMOLED) && installed(c, MAPS); }
+
     static boolean installed(Context c, String pkg) {
         return c.getPackageManager().getLaunchIntentForPackage(pkg) != null;
     }

@@ -403,13 +403,15 @@ final class Ui {
     static final class StreakCard extends View {
         private final int streak, best;
         private final long mask;
+        private final String shield;
         private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-        StreakCard(Context c, int streak, int best, long mask) {
+        StreakCard(Context c, int streak, int best, long mask, String shield) {
             super(c);
             this.streak = streak;
             this.best = best;
             this.mask = mask;
+            this.shield = shield == null ? "" : shield;
             setContentDescription(streak + " day streak. Best " + best + " days.");
         }
 
@@ -424,7 +426,7 @@ final class Ui {
 
         @Override
         protected void onMeasure(int w, int h) {
-            setMeasuredDimension(MeasureSpec.getSize(w), dp(getContext(), 92));
+            setMeasuredDimension(MeasureSpec.getSize(w), dp(getContext(), shield.isEmpty() ? 92 : 112));
         }
 
         @Override
@@ -440,6 +442,7 @@ final class Ui {
             app.skypix.core.Glyphs.draw(g, cat, 16 * u, (h - 56 * u) / 2f, 56 * u, -1);
             g.text(streak + (streak == 1 ? " day streak" : " day streak"), 86 * u, 38 * u, 20 * u, Gfx.FONT_MEDIUM, Gfx.LEFT, onSurface(c));
             g.text(cheer(streak) + (best > streak ? "  \u00b7  best " + best : ""), 86 * u, 60 * u, 13 * u, Gfx.FONT_REGULAR, Gfx.LEFT, onSurfaceVar(c));
+            if (!shield.isEmpty()) g.text(shield, 86 * u, 100 * u, 12.5f * u, Gfx.FONT_MEDIUM, Gfx.LEFT, primary(c));
             // last 7 days, oldest to today
             float dot = 7 * u, gap = 7 * u;
             float x0 = 86 * u, y = 76 * u;

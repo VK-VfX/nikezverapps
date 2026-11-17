@@ -282,7 +282,7 @@ public class MainActivity extends Activity {
         head.addView(refresh, new LinearLayout.LayoutParams(-2, -2));
         content.addView(head, lp(-1, -2, 0));
 
-        Ui.StreakCard streakCard = new Ui.StreakCard(this, Store.streak(this), Store.bestStreak(this), Store.streakMask(this));
+        Ui.StreakCard streakCard = new Ui.StreakCard(this, Store.streak(this), Store.bestStreak(this), Store.streakMask(this), Store.shieldLine(this));
         streakCard.setClickable(true);
         streakCard.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { showCatClubHelp(); }
@@ -946,7 +946,7 @@ public class MainActivity extends Activity {
             @Override public void run() { ui.post(new Runnable() { @Override public void run() { rebuild(); } }); }
         });
         String zStat = Trio.stat(this, "com.nikopick.zamoled.catclub"), mStat = Trio.stat(this, "app.mapsandcats.catclub");
-        StringBuilder club = new StringBuilder(Store.streak(this) + " day streak");
+        StringBuilder club = new StringBuilder(Store.streak(this) + " " + Store.streakLabel(this));
         if (zStat != null) club.append(" \u00b7 ").append(zStat);
         if (mStat != null) club.append(" \u00b7 ").append(mStat);
         Ui.Btn how = new Ui.Btn(this, "How it works", false);

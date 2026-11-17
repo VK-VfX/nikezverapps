@@ -108,24 +108,42 @@ final class Store {
         return (now + java.util.TimeZone.getDefault().getOffset(now)) / 86400000L;
     }
 
-    /** Call when the app comes to the front. Keeps a 64-day bit history (bit 0 = today) and an unlimited day count. */
+    /** Call when the app comes to the front. The rules live in {@link app.skypix.core.Streak} (shared with the other two apps). */
     static synchronized void touchStreak(Context c) {
         SharedPreferences p = sp(c);
-        long today = dayNumber();
-        long last = p.getLong("streak_last", 0);
+        app.skypix.core.Streak.State s = streakState(p);
+        app.skypix.core.Streak.State n = app.skypix.core.Streak.step(s, dayNumber(), shieldOn(c));
+        if (n == s) return;
+        p.edit().putLong("streak_last", n.last).putLong("streak_mask", n.mask).putInt("streak_count", n.count)
+                .putInt("streak_best", n.best).putBoolean("shield_ready", n.ready).putInt("shield_charge", n.charge).apply();
+    }
+
+    private static app.skypix.core.Streak.State streakState(SharedPreferences p) {
         long mask = p.getLong("streak_mask", 0);
-        if (last == today && mask != 0) return;
-        long delta = last == 0 ? 64 : Math.max(0, today - last);
-        mask = delta >= 64 ? 0 : (mask << delta);
-        mask |= 1L;
-        int run = 0;
-        while (run < 64 && ((mask >>> run) & 1L) != 0) run++;
-        // the real count has no 64-day ceiling; older installs start from what the history showed
         int count = p.getInt("streak_count", -1);
-        if (count < 0) count = run;
-        else count = (last != 0 && today - last == 1) ? count + 1 : 1;
-        int best = Math.max(count, p.getInt("streak_best", 0));
-        p.edit().putLong("streak_last", today).putLong("streak_mask", mask).putInt("streak_count", count).putInt("streak_best", best).apply();
+        app.skypix.core.Streak.State s = count < 0 ? app.skypix.core.Streak.fromLegacy(mask) : new app.skypix.core.Streak.State();
+        if (count >= 0) { s.count = count; s.mask = mask; }
+        s.best = Math.max(p.getInt("streak_best", 0), s.best);
+        s.last = p.getLong("streak_last", 0);
+        s.ready = p.getBoolean("shield_ready", true);
+        s.charge = p.getInt("shield_charge", 0);
+        return s;
+    }
+
+    /** True while all three apps are installed on this phone: the Streak Shield and the hero cat work. */
+    static boolean shieldOn(Context c) { return Trio.allInstalled(c); }
+
+    /** What the Cat Club shows next to the streak: "day streak" plus the shield state when it is on. */
+    static String streakLabel(Context c) {
+        boolean on = shieldOn(c);
+        String shield = app.skypix.core.Streak.label(streakState(sp(c)), on);
+        return shield.isEmpty() ? "day streak" : "day streak \u00b7 " + shield;
+    }
+
+    /** "Shield ready" / "Shield recharging, N days to go", or "" when it is off. For the streak card. */
+    static String shieldLine(Context c) {
+        String s = app.skypix.core.Streak.label(streakState(sp(c)), shieldOn(c));
+        return s.isEmpty() ? "" : Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     static int streak(Context c) {
