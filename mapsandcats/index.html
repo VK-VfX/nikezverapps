@@ -43,13 +43,13 @@
     <div id="navThen"></div>
   </div>
   <button id="navMute" class="icon-btn small" aria-label="Toggle voice"><i data-i="speaker"></i></button>
-  <button id="navStop" class="btn ghost">End</button>
+  <button id="navStop" class="btn stop"><i data-i="stop-fill"></i> End</button>
 </div>
 
 <!-- Floating buttons -->
 <div id="tripBar" class="card" hidden>
-  <div><b id="tripEta">—</b><small>arrive</small></div>
-  <div><b id="tripLeft">—</b><small>left</small></div>
+  <div><b id="tripEta">—</b><small>est. arrive</small></div>
+  <div><b id="tripLeft">—</b><small>est. left</small></div>
   <div><b id="tripDist">—</b><small>to go</small></div>
   <div class="wx"><b id="tripWx">—</b><small>rain</small></div>
 </div>
@@ -65,11 +65,14 @@
 <div id="speedo" hidden aria-label="Current speed"><b id="speedoNum">0</b><small>km/h</small></div>
 
 <div id="fabs">
-  <button id="view3dBtn" class="fab" aria-label="Switch between 3D and 2D view">3D</button>
+  <button id="compassBtn" class="fab small" aria-label="Face north and flatten the map" hidden>
+    <svg id="compassNeedle" viewBox="0 0 24 24" width="22" height="22"><path d="M12 3l4 9h-8z" fill="#e5484d"/><path d="M12 21l-4-9h8z" fill="currentColor" opacity=".55"/></svg>
+  </button>
   <button id="overviewBtn" class="fab" aria-label="Show the whole route"><i data-i="map"></i></button>
   <button id="alongBtn" class="fab" aria-label="Fuel, coffee and rest stops along the route"><i data-i="fuel"></i></button>
   <button id="locateBtn" class="fab" aria-label="Centre on my location">
-    <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="3.2" fill="currentColor"/><circle cx="12" cy="12" r="7.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg class="cross" viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="3.2" fill="currentColor"/><circle cx="12" cy="12" r="7.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg class="arrow" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l7 17-7-4-7 4z"/></svg>
   </button>
 </div>
 
@@ -119,9 +122,10 @@
       </div>
       <ol id="stops" class="list stops" hidden></ol>
       <div id="routeSummary" class="summary"></div>
+      <div id="estNote" class="est-note"></div>
       <div id="destWx" class="destwx"></div>
       <div class="row">
-        <button id="startNav" class="btn primary grow">Start</button>
+        <button id="startNav" class="btn go grow"><i data-i="go-fill"></i> Start</button>
         <button id="toggleSteps" class="btn ghost">Steps</button>
       </div>
       <ol id="steps" class="list steps" hidden></ol>
@@ -152,6 +156,17 @@
     <button id="closeDrawer" class="icon-btn small" aria-label="Close settings">
       <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
     </button>
+  </div>
+
+  <div class="group">
+    <label class="group-title">Map view</label>
+    <div class="switch-row">
+      <div>
+        <div class="label">3D map</div>
+        <div class="hint">Tilts the map, raises the buildings and drives navigation in 3D. Turn it off for a flat map. The compass button flattens it any time.</div>
+      </div>
+      <label class="switch"><input id="view3dToggle" type="checkbox"><span></span></label>
+    </div>
   </div>
 
   <div class="group">

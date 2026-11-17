@@ -29,6 +29,8 @@
     rain: '<path d="M7 15a4 4 0 0 1 .5-8A5.5 5.5 0 0 1 18 8.5a3.3 3.3 0 0 1-.5 6.5H7zM9 18l-1 2.5M13 18l-1 2.5M17 18l-1 2.5"/>',
     cloud: '<path d="M7 18a4 4 0 0 1 .5-8A5.5 5.5 0 0 1 18 11.5a3.3 3.3 0 0 1-.5 6.5H7z"/>',
     flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    go: '<path d="M20 4 4 11l7 2 2 7z"/>',
+    stop: '<rect x="6.5" y="6.5" width="11" height="11" rx="2.4"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>'
   };
   /* ic('star') outline, ic('star-fill') filled. Extra class optional. */

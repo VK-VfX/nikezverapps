@@ -3,7 +3,7 @@
 (() => {
 'use strict';
 
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const KL = [3.139, 101.687]; // [lat, lon] fallback view until we get a fix
@@ -46,6 +46,11 @@ function distToSeg(p, a, b) {
   return Math.hypot(px - t * bx, py - t * by);
 }
 const fmtDist = m => m < 1000 ? `${Math.round(m / 10) * 10 || Math.round(m)} m` : `${(m / 1000).toFixed(m < 10000 ? 1 : 0)} km`;
+/* The route engine knows distances and typical speeds, not live traffic. For driving we say so and show a range. */
+const fmtEst = (s, mode) => mode === 'foot' ? fmtTime(s) : (() => {
+  const lo = Math.max(1, Math.round(s / 60)), hi = Math.max(lo + 1, Math.round(s * 1.3 / 60));
+  return hi < 60 ? `${lo}\u2013${hi} min` : `${fmtTime(s)}+`;
+})();
 const fmtTime = s => { const m = Math.max(1, Math.round(s / 60)); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`; };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -96,7 +101,7 @@ const MAP_THEME = {
       railway_transit: { 'line-color': '#2a2a30' }, railway_transit_dashline: { 'line-color': '#000' }, railway_minor: { 'line-color': '#2a2a30' }, railway_minor_dashline: { 'line-color': '#000' },
       railway: { 'line-color': '#2a2a30' }, railway_dashline: { 'line-color': '#000' },
     },
-    extrusion: '#23232c', extrusionOpacity: .98, light: { anchor: 'viewport', color: '#ffffff', intensity: .6, position: [1.2, 210, 40] },
+    extrusion: '#2c2c36', extrusionLow: '#1c1c22', extrusionOpacity: .98, light: { anchor: 'viewport', color: '#ffffff', intensity: .6, position: [1.2, 210, 40] },
   },
   light: {
     bg: '#f6efe3', text: '#4a382a', halo: '#f6efe3', road: '#7a6652', water: '#4f7f8a', boundary: '#c9b79a',
@@ -115,7 +120,7 @@ const MAP_THEME = {
       railway_transit: { 'line-color': '#d8ccb6' }, railway_transit_dashline: { 'line-color': '#f6efe3' }, railway_service: { 'line-color': '#d8ccb6' }, railway_service_dashline: { 'line-color': '#f6efe3' },
       railway: { 'line-color': '#d8ccb6' }, railway_dashline: { 'line-color': '#f6efe3' },
     },
-    extrusion: '#e3d4ba', extrusionOpacity: .93, light: { anchor: 'viewport', color: '#fff4e0', intensity: .35, position: [1.2, 200, 50] },
+    extrusion: '#ddcdaf', extrusionLow: '#efe6d4', extrusionOpacity: .86, light: { anchor: 'viewport', color: '#fff4e0', intensity: .35, position: [1.2, 200, 50] },
   },
 };
 function restyle(s, dark) {
@@ -137,7 +142,7 @@ function restyle(s, dark) {
   s.layers.splice(at < 0 ? s.layers.length : at, 0, {
     id: 'building-3d', type: 'fill-extrusion', source: 'openmaptiles', 'source-layer': 'building', minzoom: 15,
     paint: {
-      'fill-extrusion-color': T.extrusion, 'fill-extrusion-opacity': T.extrusionOpacity,
+      'fill-extrusion-color': ['interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 6], 0, T.extrusionLow, 70, T.extrusion], 'fill-extrusion-opacity': T.extrusionOpacity,
       'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 6], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
     },
   });
@@ -172,8 +177,9 @@ function onStyleLoad() {
   map.addSource('routes', { type: 'geojson', data: nav.fc || emptyFC });
   const before = map.getLayer('poi-dots') ? 'poi-dots' : undefined, acc = getAccent();
   map.addLayer({ id: 'route-alt', type: 'line', source: 'routes', filter: ['==', ['get', 'sel'], 0], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#7b8190', 'line-width': 5, 'line-opacity': .85 } }, before);
+  map.addLayer({ id: 'route-casing', type: 'line', source: 'routes', filter: ['==', ['get', 'sel'], 1], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': S.theme === 'light' ? '#ffffff' : '#000000', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 7, 16, 13, 19, 20] } }, before);
   map.addLayer({ id: 'route-glow', type: 'line', source: 'routes', filter: ['==', ['get', 'sel'], 1], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': acc, 'line-width': 14, 'line-opacity': .25, 'line-blur': 3 } }, before);
-  map.addLayer({ id: 'route-main', type: 'line', source: 'routes', filter: ['==', ['get', 'sel'], 1], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': acc, 'line-width': 6 } }, before);
+  map.addLayer({ id: 'route-main', type: 'line', source: 'routes', filter: ['==', ['get', 'sel'], 1], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': acc, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 4, 16, 8, 19, 13] } }, before);
   // your car-arrow while navigating: a real 3D object in the map (white base plate under a coloured arrow)
   map.addSource('me3d', { type: 'geojson', data: emptyFC });
   map.addLayer({ id: 'me-arrow', type: 'fill-extrusion', source: 'me3d', paint: { 'fill-extrusion-color': ['get', 'c'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'b'], 'fill-extrusion-opacity': 1 } });
@@ -251,6 +257,7 @@ async function initMap() {
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
   map.on('style.load', onStyleLoad);
   map.on('zoom', update3dArrow);
+  map.on('rotate', syncCompass); map.on('pitch', syncCompass);
   map.on('dragstart', () => { following = false; $('#locateBtn').classList.remove('on'); if (nav.active || quest.walking) scheduleRecenter(); });
   map.on('move', updateScale);
   map.on('moveend', () => { updateClusters(); });
@@ -614,11 +621,13 @@ const navZoom = () => Math.min(18.2, 17.4 - Math.min(1.6, speedMs * 3.6 / 70) + 
 // while navigating, hide the shop dots and names so the road, the route and the next turn stand out
 function navDeclutter(on) {
   for (const id of ['poi-dots', 'poi-labels']) { try { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'none' : 'visible'); } catch {} }
+  // buildings step back so the route and the next turn read clearly
+  try { if (map.getLayer('building-3d')) map.setPaintProperty('building-3d', 'fill-extrusion-opacity', on ? 0.5 : (S.theme === 'light' ? 0.86 : 0.98)); } catch {}
 }
 function navCamera(duration = 900) {
   if (!map || !me) return;
   const c = nav.pose ? nav.pose.to : me;
-  if (view3d) map.easeTo({ center: [c.lon, c.lat], bearing: heading, pitch: 60, zoom: navZoom(), padding: { top: Math.round(innerHeight * .38), bottom: 0, left: 0, right: 0 }, duration, easing: t => t });
+  if (view3d) map.easeTo({ center: [c.lon, c.lat], bearing: heading, pitch: nav.dNext < 140 ? 50 : 60, zoom: navZoom(), padding: { top: Math.round(innerHeight * .38), bottom: 0, left: 0, right: 0 }, duration, easing: t => t });
   else map.easeTo({ center: [c.lon, c.lat], bearing: 0, pitch: 0, zoom: 17, padding: NO_PAD, duration });
 }
 /* Quest walking mode: as soon as the GPS sees you walking, the map tilts, turns to face where you are heading and follows you. */
@@ -1027,7 +1036,7 @@ async function selectPlace(place, opts = {}) {
   $('#destName').textContent = place.name; $('#destSub').textContent = place.sub || '';
   $('#nearbyView').hidden = true; $('#navView').hidden = false; $('#steps').hidden = true; $('#saveMenu').hidden = true;
   $('#sheet').classList.remove('collapsed');
-  $('#alts').innerHTML = ''; $('#routeSummary').innerHTML = '';
+  $('#alts').innerHTML = ''; $('#routeSummary').innerHTML = ''; $('#estNote').textContent = '';
   drawMarkers(); syncModeSeg(); syncPanels(); syncSaveStar();
   if (me) await fetchRoute(); else map.easeTo({ center: [place.lon, place.lat], zoom: 16 });
 }
@@ -1142,14 +1151,15 @@ function routeVia(r) {
 }
 function renderAlts() {
   $('#alts').innerHTML = nav.routes.length < 2 ? '' : nav.routes.map((r, i) =>
-    `<button class="alt ${i === nav.sel ? 'on' : ''}" data-i="${i}"><div><b>${fmtTime(r.duration)}</b><small>${fmtDist(r.distance)} ${esc(routeVia(r))}</small></div>${i === 0 ? '<span class="tag">Fastest</span>' : ''}</button>`).join('');
+    `<button class="alt ${i === nav.sel ? 'on' : ''}" data-i="${i}"><div><b>${fmtEst(r.duration, nav.mode)}</b><small>${fmtDist(r.distance)} ${esc(routeVia(r))}</small></div>${i === 0 ? '<span class="tag">Fastest</span>' : ''}</button>`).join('');
 }
 $('#alts').addEventListener('click', e => { const b = e.target.closest('.alt'); if (b) selectAlt(+b.dataset.i); });
 function selectAlt(i, silent) {
   if (!nav.routes[i]) return; nav.sel = i; const r = nav.routes[i];
   if (!silent) { drawRoutes(false); renderAlts(); haptic(10); }
   nav.steps = r.legs.flatMap(l => l.steps);
-  $('#routeSummary').innerHTML = `${fmtTime(r.duration)} <small>${fmtDist(r.distance)} · ${nav.mode === 'foot' ? 'walking' : 'driving'}${nav.wps.length ? ` · ${nav.wps.length + 1} stops` : ''}</small>`;
+  $('#routeSummary').innerHTML = `${fmtEst(r.duration, nav.mode)} <small>${fmtDist(r.distance)} · ${nav.mode === 'foot' ? 'walking' : 'driving'}${nav.wps.length ? ` · ${nav.wps.length + 1} stops` : ''}</small>`;
+  $('#estNote').textContent = nav.mode === 'foot' ? '' : 'No live traffic in this estimate. Allow extra time in the rush hour.';
   destWeather();
   $('#steps').innerHTML = nav.steps.map(s => `<li><div class="ico">${arrow(s)}</div><div class="li-main"><div class="li-title">${esc(instr(s))}</div><div class="li-sub">${s.distance ? fmtDist(s.distance) : ''}</div></div></li>`).join('');
 }
@@ -1506,13 +1516,20 @@ $('#speedoToggle').addEventListener('change', e => { S.speedo = e.target.checked
 $('#meowAt').addEventListener('change', e => { const v = Math.min(300, Math.max(0, Math.round(+e.target.value || 0))); S.meowAt = v; e.target.value = v; meowArmed = true; save(); renderSpeedo(); toast(v ? `Meow at ${v} km/h 😼` : 'Meow off'); });
 $('#simToggle').addEventListener('change', e => { setSim(e.target.checked); toast(e.target.checked ? 'Simulating a stroll' : 'Simulation off'); });
 
-function sync3dBtn() { const b = $('#view3dBtn'); b.textContent = view3d ? '3D' : '2D'; b.classList.toggle('on', view3d); }
-$('#view3dBtn').addEventListener('click', () => {
-  if (nav.active) view3d = !view3d;
-  else { const tilt = map.getPitch() < 10; map.easeTo({ pitch: tilt ? 58 : 0, zoom: tilt ? Math.max(map.getZoom(), 16.5) : map.getZoom(), duration: 700 }); view3d = tilt; }
-  S.view3d = view3d; save(); sync3dBtn(); if (nav.active) navCamera(500);
+function sync3dBtn() { $('#view3dToggle').checked = view3d; }
+$('#view3dToggle').addEventListener('change', e => {
+  view3d = e.target.checked;
+  if (nav.active) navCamera(500);
+  else map.easeTo({ pitch: view3d ? 58 : 0, zoom: view3d ? Math.max(map.getZoom(), 16.5) : map.getZoom(), duration: 700 });
+  S.view3d = view3d; save(); toast(view3d ? '3D map on' : 'Flat map');
 });
 sync3dBtn();
+/* Compass: shows only when the map is turned or tilted. One tap faces north and flattens it. */
+function syncCompass() {
+  const b = $('#compassBtn'), off = Math.abs(map.getBearing()) > 2 || map.getPitch() > 4;
+  b.hidden = !off; $('#compassNeedle').style.transform = `rotate(${-map.getBearing()}deg)`;
+}
+$('#compassBtn').addEventListener('click', () => { following = false; $('#locateBtn').classList.remove('on'); resetCamera(); });
 $('#locateBtn').addEventListener('click', () => {
   if (!me) { startLocation(); return toast('Looking for you…'); }
   following = true; $('#locateBtn').classList.add('on'); if (nav.active) navCamera(600); else map.easeTo({ center: [me.lon, me.lat], zoom: Math.max(map.getZoom(), 16) });

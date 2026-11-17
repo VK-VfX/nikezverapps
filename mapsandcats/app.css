@@ -379,3 +379,62 @@ body.hud-on.has-results #fabs { bottom: calc(344px + var(--sab)); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
 }
+
+/* =====================================================================
+   Maps and Cats 2.1: clearer controls, honest estimates, calmer 3D map
+   ===================================================================== */
+:root {
+  /* Start is green, End is red. Both pass AAA with their label on top. */
+  --go: #3ddc84;   --go-ink: #00210e;
+  --stop: #ff6b6b; --stop-ink: #2b0000;
+}
+body[data-theme="light"] { --go: #0a6b34; --go-ink: #ffffff; --stop: #a4161a; --stop-ink: #ffffff; }
+
+.btn.go, .btn.stop { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; font-size: 17px; font-weight: 800; letter-spacing: .01em; min-height: 52px; border-radius: 16px; }
+.btn.go { background: var(--go); color: var(--go-ink); }
+.btn.stop { background: var(--stop); color: var(--stop-ink); min-height: 48px; padding: 0 20px; }
+.btn.go .ic, .btn.stop .ic { width: 20px; height: 20px; margin: 0; }
+.btn.go:active, .btn.stop:active { filter: brightness(.9); }
+.est-note { color: var(--muted); font-size: 12.5px; margin: -6px 0 10px; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; }
+.est-note:empty { display: none; }
+.summary { white-space: nowrap; flex-wrap: wrap; }
+
+/* Floating map buttons: bigger, solid, and they say what state they are in */
+.fab { width: 56px; height: 56px; border-radius: 20px; background: var(--panel); color: var(--text); border: 1.5px solid color-mix(in srgb, var(--text) 22%, transparent); box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+.fab.small { width: 46px; height: 46px; border-radius: 16px; margin-left: auto; }
+.fab .ic { color: var(--text); }
+#locateBtn svg { width: 26px; height: 26px; }
+#locateBtn .arrow { display: none; }
+#locateBtn { color: var(--accent); }
+/* following you: filled, so it is obvious the map is locked on */
+#locateBtn.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+/* while navigating the button becomes the direction arrow */
+body.navigating #locateBtn .cross { display: none; }
+body.navigating #locateBtn .arrow { display: block; }
+#compassBtn[hidden] { display: none; }
+#compassBtn svg { transition: transform .15s ease-out; }
+#fabs { gap: 12px; }
+
+/* The sheet peeks as a clean header only: no half-cut chips */
+#sheet.collapsed { transform: translateY(calc(100% - 66px - var(--sab))); }
+#sheet.collapsed .chips, #sheet.collapsed .list { visibility: hidden; }
+
+/* Map labels sit on a stronger halo so they stay readable over buildings */
+.maplibregl-canvas { outline: none; }
+
+/* navigation: a calmer banner, a trip bar that fits, and quieter side buttons */
+#navThen { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+#navBanner .grow { min-width: 0; }
+#tripBar { right: 88px; }
+#tripBar small { white-space: nowrap; font-size: 10.5px; letter-spacing: .03em; }
+body.navigating .fab:not(#locateBtn) { width: 46px; height: 46px; border-radius: 16px; margin-left: auto; }
+@media (min-width: 700px) { #tripBar { right: auto; } }
+
+/* AAA hit targets (48px) for everything the audit flagged; the artwork keeps its size */
+.fab.small, body.navigating .fab:not(#locateBtn) { width: 48px; height: 48px; }
+.handle { height: 48px; }
+.handle::after { top: 22px; }
+#sheet.collapsed { transform: translateY(calc(100% - 84px - var(--sab))); }
+.switch input { top: -9px; bottom: -9px; height: auto; width: 100%; }
+.linkbtn { min-height: 48px; padding: 0 8px; margin: -14px -8px -14px 0; display: inline-flex; align-items: center; }
+#drawer summary, details > summary { min-height: 48px; display: flex; align-items: center; cursor: pointer; }
