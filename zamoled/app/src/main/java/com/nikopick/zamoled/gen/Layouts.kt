@@ -40,13 +40,25 @@ enum class DoodleLayout(val id: String, val label: String) {
  * One doodle slot. [scale] multiplies the style's own size range, [rot] is an extra rotation in degrees
  * and [t] runs 0..1 along the arrangement, for gradients.
  */
-class Spot(val x: Float, val y: Float, val scale: Float = 1f, val rot: Float = 0f, val t: Float = 0.5f)
+class Spot(val x: Float, val y: Float, val scale: Float = 1f, val rot: Float = 0f, val t: Float = 0.5f, val kind: Int = MID) {
+    companion object {
+        /** A tiny mark for the gaps: sparkle, dot, heart, squiggle. */
+        const val FILL = 0
+        /** A normal doodle. */
+        const val MID = 1
+        /** A big doodle that anchors the picture. */
+        const val HERO = 2
+    }
+}
 
 /**
  * Builds the spots for [layout]. [baseCell] is the style's natural spacing at density 1, so a style with
  * big doodles passes a big cell. Spots come back in draw order and already account for scene density.
  */
-fun Scene.spots(layout: DoodleLayout, baseCell: Float): List<Spot> {
+/** How much a doodle shrinks as Density rises, and grows as it falls. Cat Club already scales with the cell and divides this out. */
+internal fun Scene.fit(): Float = (1f / sqrt(density)).pow(0.45f)
+
+fun Scene.spots(layout: DoodleLayout, baseCell: Float, size: Float = 0.30f): List<Spot> {
     // Structured arrangements need negative space, or the pattern disappears into texture.
     val breathe = when (layout) {
         DoodleLayout.BURST -> 1.5f
@@ -56,8 +68,8 @@ fun Scene.spots(layout: DoodleLayout, baseCell: Float): List<Spot> {
         else -> 1f
     }
     val cell = baseCell * breathe / sqrt(density)
-    return when (layout) {
-        DoodleLayout.AUTO, DoodleLayout.SCATTER -> scatterSpots(cell)
+    if (layout == DoodleLayout.AUTO || layout == DoodleLayout.SCATTER) return scatterSpots(cell, size)
+    val base = when (layout) {
         DoodleLayout.GRID -> gridSpots(cell)
         DoodleLayout.RINGS -> ringSpots(cell)
         DoodleLayout.SPIRAL -> spiralSpots(cell)
@@ -66,43 +78,118 @@ fun Scene.spots(layout: DoodleLayout, baseCell: Float): List<Spot> {
         DoodleLayout.BURST -> burstSpots(cell)
         DoodleLayout.DIAGONAL -> diagonalSpots(cell)
         DoodleLayout.FRAME -> frameSpots(cell)
-        DoodleLayout.SHAPE -> shapeSpots(cell)
+        else -> shapeSpots(cell)
     }
+    return withFillers(base, cell, size)
+}
+
+/**
+ * The structured arrangements keep their own skeleton. They get the same density rules as Scatter: doodles are drawn a
+ * little smaller as it gets denser, and tiny filler marks go only where there is genuinely empty room, never on a doodle.
+ */
+private fun Scene.withFillers(base: List<Spot>, cell: Float, size: Float): List<Spot> {
+    val fit = fit()
+    val gap = (1.2f - 0.27f * density).coerceIn(0.7f, 1.1f)
+    val main = base.map { Spot(it.x, it.y, it.scale * fit, it.rot, it.t, it.kind) }
+    val grid = cell * 0.65f
+    val cols = (w / grid).toInt() + 6
+    val taken = HashMap<Int, MutableList<Spot>>()
+    val radius = HashMap<Spot, Float>()
+    fun add(sp: Spot, r: Float) {
+        radius[sp] = r
+        taken.getOrPut(((sp.y / grid).toInt() + 2) * cols + (sp.x / grid).toInt() + 2) { ArrayList() }.add(sp)
+    }
+    for (sp in main) add(sp, cell * size * sp.scale)
+    val out = ArrayList<Spot>(main)
+    val want = ((w + cell) * (h + cell) / (cell * cell) * 0.9f).toInt().coerceIn(4, 900)
+    var made = 0
+    var tries = 0
+    while (made < want && tries < want * 30 && out.size < 1400) {
+        tries++
+        val x = f(-cell * 0.2f, w + cell * 0.2f)
+        val y = f(-cell * 0.2f, h + cell * 0.2f)
+        val sc = f(0.38f, 0.55f) * fit
+        val r = cell * size * sc
+        val gx = (x / grid).toInt() + 2
+        val gy = (y / grid).toInt() + 2
+        var ok = true
+        loop@ for (dy in -2..2) for (dx in -2..2) {
+            val near = taken[(gy + dy) * cols + (gx + dx)] ?: continue
+            for (p in near) {
+                val need = (r + radius[p]!!) * gap * 1.05f
+                val ddx = p.x - x
+                val ddy = p.y - y
+                if (ddx * ddx + ddy * ddy < need * need) { ok = false; break@loop }
+            }
+        }
+        if (!ok) continue
+        val sp = Spot(x, y, sc, f(-180f, 180f), (x / w + y / h) / 2f, Spot.FILL)
+        add(sp, r)
+        out.add(sp)
+        made++
+    }
+    return out.sortedBy { it.kind }
 }
 
 private fun Scene.target(cell: Float, fill: Float = 1f): Int =
     ((w + cell) * (h + cell) / (cell * cell) * fill).toInt().coerceIn(6, 1400)
 
-/** Loose random placement that keeps a minimum distance, so nothing overlaps badly. */
-private fun Scene.scatterSpots(cell: Float): List<Spot> {
-    val n = target(cell, 1.05f)
-    val minDist = cell * 0.68f
-    val gridSize = minDist
-    val cols = (w / gridSize).toInt() + 2
+/**
+ * Loose placement that knows how big things are. Three size classes, like the hand-drawn patterns it is modelled on:
+ * a few big HERO doodles, a body of MID ones, and many tiny FILL marks that go in the gaps. Each spot has a radius
+ * from its size, and two spots keep [gap] times the sum of their radii apart. Density moves two things together:
+ * the cell shrinks (more of them) and the gap tightens, so at the top of the slider doodles sit shoulder to shoulder
+ * and may overlap a little, while at the bottom they float with room around them.
+ */
+private fun Scene.scatterSpots(cell: Float, size: Float): List<Spot> {
+    // Denser means each one is drawn a little smaller; sparser means bigger statements.
+    val fit = fit()
+    // 1.0 and above keeps a clear gap; below 1.0 the neighbours crumple into each other.
+    val gap = (1.2f - 0.27f * density).coerceIn(0.7f, 1.1f)
+    val area = (w + cell) * (h + cell)
+    val c2 = cell * cell
+    val plan = listOf(
+        Triple(Spot.HERO, (area / c2 * 0.075f).toInt().coerceAtLeast(1), 1.55f to 1.95f),
+        Triple(Spot.MID, (area / c2 * 0.62f).toInt().coerceAtLeast(3), 0.92f to 1.2f),
+        Triple(Spot.FILL, (area / c2 * 1.1f).toInt().coerceAtLeast(4), 0.38f to 0.55f),
+    )
+    val grid = cell * 0.65f
+    val cols = (w / grid).toInt() + 6
     val taken = HashMap<Int, MutableList<Spot>>()
-    val out = ArrayList<Spot>(n)
-    var tries = 0
-    while (out.size < n && tries < n * 14) {
-        tries++
-        val x = f(-cell * 0.3f, w + cell * 0.3f)
-        val y = f(-cell * 0.3f, h + cell * 0.3f)
-        val gx = (x / gridSize).toInt()
-        val gy = (y / gridSize).toInt()
-        var ok = true
-        loop@ for (dy in -1..1) for (dx in -1..1) {
-            val near = taken[(gy + dy) * cols + (gx + dx)] ?: continue
-            for (p in near) {
-                val ddx = p.x - x
-                val ddy = p.y - y
-                if (ddx * ddx + ddy * ddy < minDist * minDist) { ok = false; break@loop }
+    val radius = HashMap<Spot, Float>()
+    val placed = ArrayList<Spot>()
+    for ((kind, want, range) in plan) {
+        var made = 0
+        var tries = 0
+        while (made < want && tries < want * 40 && placed.size < 1400) {
+            tries++
+            val x = f(-cell * 0.3f, w + cell * 0.3f)
+            val y = f(-cell * 0.3f, h + cell * 0.3f)
+            val base = f(range.first, range.second)
+            val r = cell * size * base * fit
+            val gx = (x / grid).toInt() + 2
+            val gy = (y / grid).toInt() + 2
+            var ok = true
+            loop@ for (dy in -2..2) for (dx in -2..2) {
+                val near = taken[(gy + dy) * cols + (gx + dx)] ?: continue
+                for (p in near) {
+                    val need = (r + radius[p]!!) * gap
+                    val ddx = p.x - x
+                    val ddy = p.y - y
+                    if (ddx * ddx + ddy * ddy < need * need) { ok = false; break@loop }
+                }
             }
+            if (!ok) continue
+            val tilt = when (kind) { Spot.HERO -> 12f; Spot.MID -> 28f; else -> 180f }
+            val s = Spot(x, y, base * fit, f(-tilt, tilt), (x / w + y / h) / 2f, kind)
+            radius[s] = r
+            placed.add(s)
+            taken.getOrPut(gy * cols + gx) { ArrayList() }.add(s)
+            made++
         }
-        if (!ok) continue
-        val s = Spot(x, y, f(0.75f, 1.3f), f(-28f, 28f), (x / w + y / h) / 2f)
-        out.add(s)
-        taken.getOrPut(gy * cols + gx) { ArrayList() }.add(s)
     }
-    return out
+    // Small marks first, big ones last, so a hero is never buried under a speck.
+    return placed.sortedBy { it.kind }
 }
 
 /** The original staggered rows. */

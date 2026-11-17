@@ -19,6 +19,7 @@ class AutoWallpaperWorker(context: Context, params: WorkerParameters) : Coroutin
         val context = applicationContext
         val prefs = context.getSharedPreferences("zamoled", Context.MODE_PRIVATE)
         if (!prefs.getBoolean(Prefs.AUTO_ON, false)) return Result.success()
+        com.nikopick.zamoled.gen.PhotoPack.init(context.assets)
         val source = prefs.getString(Prefs.AUTO_SOURCE, AUTO_SOURCE_ALL) ?: AUTO_SOURCE_ALL
         val target = WallpaperTarget.entries.getOrElse(prefs.getInt(Prefs.AUTO_TARGET, WallpaperTarget.BOTH.ordinal)) { WallpaperTarget.BOTH }
         val spec = AutoWallpaper.pick(source, prefs.getStringSet("favorites", emptySet()).orEmpty()) ?: return Result.success()

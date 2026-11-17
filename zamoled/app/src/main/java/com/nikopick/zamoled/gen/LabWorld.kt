@@ -686,8 +686,11 @@ private class LabStyle(id: String, name: String, private val icons: List<LabIcon
         val colors = s.palette.colors
         val order = icons.shuffled(s.rnd)
         var n = 0
-        val cell = 160f / sqrt(s.density)
-        for (p in s.spots(s.layout, 160f)) {
+        for (p in s.spots(s.layout, 160f, size = 0.46f)) {
+            if (p.kind == Spot.FILL) {
+                s.filler(p.x, p.y, lighten(colors[s.i(0, colors.size)], 0.35f), 2f, 200, p.scale * 1.7f)
+                continue
+            }
             val icon = order[n++ % order.size]
             val shift = s.i(0, colors.size)
             val fills = intArrayOf(colors[shift % colors.size], colors[(shift + 1) % colors.size], colors[(shift + 2) % colors.size], CREAM, METAL, NIGHT)
@@ -700,17 +703,6 @@ private class LabStyle(id: String, name: String, private val icons: List<LabIcon
                     }
                     1 -> icon(Pen(s, LAB_INK, 3.6f / size, fills, shaded = true, look = PenLook.PAINTED))
                     else -> icon(Pen(s, Color.rgb(244, 242, 236), 3.2f / size, fills, look = PenLook.CHALK))
-                }
-            }
-            // A speck of something between icons: a dot, a plus or a tiny ring.
-            repeat(2) {
-                val x = p.x + s.f(-cell / 2f, cell / 2f)
-                val y = p.y + s.f(-cell / 2f, cell / 2f)
-                val c = lighten(colors[s.i(0, colors.size)], 0.35f)
-                when (s.i(0, 3)) {
-                    0 -> s.dot(x, y, s.f(2f, 3.6f), c, 200)
-                    1 -> { s.canvas.drawLine(x - 6f, y, x + 6f, y, s.stroke(c, 2f, 200)); s.canvas.drawLine(x, y - 6f, x, y + 6f, s.stroke(c, 2f, 200)) }
-                    else -> s.canvas.drawCircle(x, y, s.f(4f, 7f), s.stroke(c, 1.8f, 200))
                 }
             }
         }

@@ -23,6 +23,7 @@ class RenderAll {
         val align = System.getProperty("preview.align")?.toIntOrNull() ?: 1
         val vpos = System.getProperty("preview.vpos")?.toIntOrNull() ?: 1
         CodeSource.init(File("../../app/src/main/java/com/nikopick/zamoled/gen"))
+        PhotoPack.init(File("../../app/src/main/assets/photos"))
         val styles = if (only.isEmpty()) Styles.all else only.map { Styles.byId(it) }
         for (style in styles) for (seed in seeds) for (layout in layouts) {
             val t0 = System.nanoTime()

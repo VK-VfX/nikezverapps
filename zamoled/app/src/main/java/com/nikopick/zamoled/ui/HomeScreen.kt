@@ -382,7 +382,7 @@ private fun ExploreTab(state: HomeState, favorites: FavoritesStore, prefs: Prefs
                     )
                 }
                 if (shared != null) {
-                    Button(onClick = { onOpen(shared) }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    SoftButton(onClick = { onOpen(shared) }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                         Text("Open shared wallpaper: ${shared.style.name}")
                     }
                 }
@@ -658,7 +658,7 @@ private fun UpdateBanner(ota: OtaState) {
                     modifier = Modifier.padding(end = 10.dp),
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { ota.download() }, enabled = !ota.installing) { Text("Install" + if (info.size > 0) "  ·  %.1f MB".format(info.size / 1_048_576f) else "") }
+                    SoftButton(onClick = { ota.download() }, enabled = !ota.installing) { Text("Install" + if (info.size > 0) "  ·  %.1f MB".format(info.size / 1_048_576f) else "") }
                     TextButton(onClick = { ota.dismissed = true }) { Text("Not now") }
                 }
             }

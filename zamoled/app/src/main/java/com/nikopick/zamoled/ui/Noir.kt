@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -233,3 +234,36 @@ fun PresetRow(items: List<Pair<String, Float>>, value: Float, onPick: (Float) ->
         }
     }
 }
+
+/**
+ * The app's main button: a deep teal fill with soft light text and a thin teal edge, not a block of bright teal. Easier on
+ * the eyes on a black screen, and still clearly the main action.
+ */
+@Composable
+fun SoftButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+    content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit,
+) {
+    androidx.compose.material3.Button(
+        onClick = onClick,
+        modifier = modifier.androidx_heightIn48(),
+        enabled = enabled,
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(20.dp),
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = if (enabled) 0.35f else 0.1f)),
+        contentPadding = contentPadding,
+        content = content,
+    )
+}
+
+private fun Modifier.androidx_heightIn48(): Modifier = this.then(Modifier.heightIn(min = 48.dp))

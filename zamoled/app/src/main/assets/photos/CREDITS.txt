@@ -1,0 +1,9 @@
+Night Photos pack. Photographs from Unsplash (https://unsplash.com), used under the Unsplash License and
+converted to pure black (everything below a brightness threshold set to #000000) for AMOLED screens.
+
+Milky Way   Jeremy Thomas        https://unsplash.com/photos/kFy1Aip0eEo
+Aurora      Hans                 https://unsplash.com/photos/hZDtZkdXtek
+Skyline     Arthur Osipyan       https://unsplash.com/photos/ApW5ueh85jY
+Moon        Theo                 https://unsplash.com/photos/bo7nMRirqTM
+Neon        Adrian Balasoiu      https://unsplash.com/photos/M0CDEYAxCnA
+Jellyfish   Connor Carruthers    https://unsplash.com/photos/2XlRNChm2rg

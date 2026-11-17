@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
         )
         Screen.init(this)
         CodeSource.init(assets)
+        com.nikopick.zamoled.gen.PhotoPack.init(assets)
         ThumbCache.init(this)
         Updates.schedule(this, getSharedPreferences("zamoled", MODE_PRIVATE).getBoolean(Prefs.AUTO_UPDATE, true))
         if (savedInstanceState == null) readLink(intent)

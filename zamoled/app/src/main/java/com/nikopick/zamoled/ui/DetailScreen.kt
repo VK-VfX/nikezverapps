@@ -26,6 +26,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.nikopick.zamoled.gen.Styles
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -314,17 +318,17 @@ fun DetailScreen(initial: WallpaperSpec, favorites: FavoritesStore, onBack: () -
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             Surface(
-                shape = RoundedCornerShape(36.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
                 shadowElevation = 12.dp,
                 modifier = Modifier
                     .navigationBarsPadding()
                     .imePadding()
-                    .padding(horizontal = 12.dp, vertical = 12.dp)
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
                     .fillMaxWidth(),
             ) {
-                Column(Modifier.animateContentSize(Motion.spatial()).padding(10.dp)) {
+                Column(Modifier.animateContentSize(Motion.spatial()).padding(8.dp)) {
                     AnimatedVisibility(
                         visible = rendering || busy,
                         enter = expandVertically() + fadeIn(),
@@ -344,6 +348,7 @@ fun DetailScreen(initial: WallpaperSpec, favorites: FavoritesStore, onBack: () -
                             spec = spec,
                             detail = detail,
                             resolution = resolution,
+                            onStyle = { spec = spec.copy(styleId = it) },
                             onPalette = { spec = spec.copy(paletteId = it) },
                             onDetail = { detail = it },
                             onDetailDone = { spec = spec.copy(density = (detail * 10).roundToInt() / 10f) },
@@ -394,12 +399,12 @@ fun DetailScreen(initial: WallpaperSpec, favorites: FavoritesStore, onBack: () -
                         }
                         Spacer(Modifier.weight(1f))
                         val applyInteraction = remember { MutableInteractionSource() }
-                        Button(
+                        SoftButton(
                             onClick = { showApply = true },
                             enabled = !busy && !rendering,
                             interactionSource = applyInteraction,
                             contentPadding = PaddingValues(horizontal = 18.dp),
-                            modifier = Modifier.height(52.dp).pressScale(applyInteraction),
+                            modifier = Modifier.height(48.dp).pressScale(applyInteraction),
                         ) {
                             Icon(Icons.Rounded.Wallpaper, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
@@ -504,11 +509,18 @@ fun DetailScreen(initial: WallpaperSpec, favorites: FavoritesStore, onBack: () -
     }
 }
 
+private enum class EditTab(val label: String) { DESIGN("Design"), COLOR("Color"), TUNE("Tune"), WORDS("Words"), SAVE("Save") }
+
+/**
+ * The editor: five small tabs and one short strip under them, so the wallpaper stays in view. Design, Color and Tune
+ * (Detail and Black level) are there for every wallpaper in every category.
+ */
 @Composable
 private fun CustomizePanel(
     spec: WallpaperSpec,
     detail: Float,
     resolution: Resolution,
+    onStyle: (String) -> Unit,
     onPalette: (String) -> Unit,
     onDetail: (Float) -> Unit,
     onDetailDone: () -> Unit,
@@ -530,148 +542,203 @@ private fun CustomizePanel(
     onShare: () -> Unit,
     onMore: () -> Unit,
 ) {
+    var picked by rememberSaveable { mutableStateOf(EditTab.TUNE.name) }
+    val tabs = EditTab.entries.filter { it != EditTab.WORDS || spec.style.usesText }
+    val tab = tabs.firstOrNull { it.name == picked } ?: EditTab.TUNE
     Column(
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.padding(horizontal = 4.dp).padding(top = 2.dp, bottom = 8.dp),
     ) {
-        if (spec.style.usesPalette) {
-            SectionLabel("Palette")
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 2.dp)) {
-                item(key = "auto") {
-                    PaletteSwatch(null, selected = spec.paletteId == "auto") { onPalette("auto") }
-                }
-                items(Palettes.choices, key = { it.id }) { p ->
-                    PaletteSwatch(p, selected = spec.paletteId == p.id) { onPalette(p.id) }
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
+            tabs.forEach { t ->
+                val on = t == tab
+                Surface(
+                    onClick = { picked = t.name },
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (on) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                    modifier = Modifier.weight(1f).heightIn(min = 44.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            t.label,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (on) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
-        // Arrangement only changes styles that lay doodles out across the page.
-        if (spec.style.category == Category.DOODLE || spec.style.category == Category.LAB) {
-            SectionLabel("Arrangement")
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 2.dp)) {
-                items(DoodleLayout.choices, key = { it.id }) { l ->
-                    val selected = spec.layoutId == l.id
-                    FilterChip(
-                        selected = selected,
-                        onClick = { onLayout(l.id) },
-                        label = { Text(l.label) },
-                        leadingIcon = if (l == DoodleLayout.AUTO) {
-                            { Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
-                        } else {
-                            { LayoutGlyph(l, if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant) }
-                        },
-                        shape = CircleShape,
+        // One short strip. If a tab has more than fits, it scrolls here instead of covering the wallpaper.
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.heightIn(max = 176.dp).verticalScroll(rememberScrollState()).padding(horizontal = 6.dp),
+        ) {
+            when (tab) {
+                EditTab.DESIGN -> {
+                    val designs = remember(spec.style.category) { Styles.of(spec.style.category) }
+                    SectionLabel("Design  /  ${spec.style.category.label}")
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 2.dp)) {
+                        items(designs, key = { it.id }) { st ->
+                            FilterChip(
+                                selected = st.id == spec.styleId,
+                                onClick = { onStyle(st.id) },
+                                label = { Text(st.name) },
+                                shape = RoundedCornerShape(16.dp),
+                            )
+                        }
+                    }
+                    // Arrangement only changes styles that lay doodles out across the page.
+                    if (spec.style.category == Category.DOODLE || spec.style.category == Category.LAB) {
+                        SectionLabel("Arrangement")
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 2.dp)) {
+                            items(DoodleLayout.choices, key = { it.id }) { l ->
+                                val selected = spec.layoutId == l.id
+                                FilterChip(
+                                    selected = selected,
+                                    onClick = { onLayout(l.id) },
+                                    label = { Text(l.label) },
+                                    leadingIcon = if (l == DoodleLayout.AUTO) {
+                                        { Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+                                    } else {
+                                        { LayoutGlyph(l, if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant) }
+                                    },
+                                    shape = RoundedCornerShape(16.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+                EditTab.COLOR -> {
+                    SectionLabel("Palette")
+                    if (spec.style.usesPalette) {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 2.dp)) {
+                            item(key = "auto") { PaletteSwatch(null, selected = spec.paletteId == "auto") { onPalette("auto") } }
+                            items(Palettes.choices, key = { it.id }) { p -> PaletteSwatch(p, selected = spec.paletteId == p.id) { onPalette(p.id) } }
+                        }
+                    } else {
+                        Text("This design has its own fixed colours.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    // Widget-safe moves the picture below the launcher clock and weather; some styles are already built that way.
+                    val built = spec.style.widgetSafe
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            SectionLabel("Widget-safe")
+                            Text(
+                                if (built) "Already keeps its focus clear of the widgets." else "Keeps the picture below your clock and weather.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(checked = built || spec.safe, onCheckedChange = onSafe, enabled = !built)
+                    }
+                    SectionLabel("Make room for Purrcast")
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        Zones.NAMES.forEachIndexed { k, label ->
+                            SegmentedButton(selected = spec.zone == k, onClick = { onZone(k) }, shape = SegmentedButtonDefaults.itemShape(k, Zones.COUNT)) { Text(label) }
+                        }
+                    }
+                }
+                EditTab.TUNE -> {
+                    TuneRow(
+                        label = "Detail",
+                        valueText = if (spec.style.usesDetail) "%.1f\u00d7".format(detail) else "Fixed",
+                        value = detail, range = 0.4f..1.8f, enabled = spec.style.usesDetail,
+                        onChange = onDetail, onDone = onDetailDone,
+                        presets = listOf("Minimal" to 0.6f, "Normal" to 1f, "Rich" to 1.4f, "Dense" to 1.8f), onPreset = onDetailPreset,
+                    )
+                    TuneRow(
+                        label = "Black",
+                        valueText = if (black < 0.03f) "Off" else "${(black * 100).roundToInt()}%",
+                        value = black, range = 0f..1f, enabled = true,
+                        onChange = onBlack, onDone = onBlackDone,
+                        presets = listOf("Off" to 0f, "Soft" to 0.25f, "Deep" to 0.5f, "Pure" to 0.85f), onPreset = onBlackPreset,
                     )
                 }
-            }
-        }
-        if (spec.style.usesDetail) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                SectionLabel("Detail", Modifier.weight(1f))
-                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
-                    Text(
-                        "%.1f×".format(detail),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                EditTab.WORDS -> {
+                    OutlinedTextField(
+                        value = words,
+                        onValueChange = onWords,
+                        singleLine = true,
+                        placeholder = { Text("Type something, then press Done") },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { onWordsDone() }),
+                        trailingIcon = { IconButton(onClick = onWordsDone) { Icon(Icons.Rounded.CheckCircle, contentDescription = "Use these words") } },
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
                     )
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        SegmentedButton(selected = !spec.white, onClick = { onWhite(false) }, shape = SegmentedButtonDefaults.itemShape(0, 2)) { Text("Red") }
+                        SegmentedButton(selected = spec.white, onClick = { onWhite(true) }, shape = SegmentedButtonDefaults.itemShape(1, 2)) { Text("White") }
+                    }
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        listOf("Left", "Center", "Right").forEachIndexed { k, label ->
+                            SegmentedButton(selected = spec.align == k, onClick = { onAlign(k) }, shape = SegmentedButtonDefaults.itemShape(k, 3)) { Text(label) }
+                        }
+                    }
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        listOf("Top", "Middle", "Bottom").forEachIndexed { k, label ->
+                            SegmentedButton(selected = spec.vpos == k, onClick = { onVpos(k) }, shape = SegmentedButtonDefaults.itemShape(k, 3)) { Text(label) }
+                        }
+                    }
+                }
+                EditTab.SAVE -> {
+                    SectionLabel("Save resolution")
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        Resolution.entries.forEachIndexed { index, res ->
+                            SegmentedButton(
+                                selected = resolution == res,
+                                onClick = { onResolution(res) },
+                                shape = SegmentedButtonDefaults.itemShape(index, Resolution.entries.size),
+                            ) { Text(res.label) }
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilledTonalButton(onClick = onShare, shape = RoundedCornerShape(16.dp), modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                            Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Share")
+                        }
+                        FilledTonalButton(onClick = onMore, shape = RoundedCornerShape(16.dp), modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                            Icon(Icons.Rounded.GridView, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("More like this")
+                        }
+                    }
                 }
             }
-            Slider(value = detail, onValueChange = onDetail, onValueChangeFinished = onDetailDone, valueRange = 0.4f..1.8f)
-            PresetRow(listOf("Minimal" to 0.6f, "Normal" to 1f, "Rich" to 1.4f, "Dense" to 1.8f), detail, onDetailPreset)
         }
-        if (spec.style.usesText) {
-            SectionLabel("Your words")
-            OutlinedTextField(
-                value = words,
-                onValueChange = onWords,
-                singleLine = true,
-                placeholder = { Text("Type something, then press Done") },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { onWordsDone() }),
-                trailingIcon = { IconButton(onClick = onWordsDone) { Icon(Icons.Rounded.CheckCircle, contentDescription = "Use these words") } },
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            SectionLabel("Highlight")
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                SegmentedButton(selected = !spec.white, onClick = { onWhite(false) }, shape = SegmentedButtonDefaults.itemShape(0, 2)) { Text("Red") }
-                SegmentedButton(selected = spec.white, onClick = { onWhite(true) }, shape = SegmentedButtonDefaults.itemShape(1, 2)) { Text("White") }
-            }
-            SectionLabel("Alignment")
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                listOf("Left", "Center", "Right").forEachIndexed { k, label ->
-                    SegmentedButton(selected = spec.align == k, onClick = { onAlign(k) }, shape = SegmentedButtonDefaults.itemShape(k, 3)) { Text(label) }
-                }
-            }
-            SectionLabel("Position")
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                listOf("Top", "Middle", "Bottom").forEachIndexed { k, label ->
-                    SegmentedButton(selected = spec.vpos == k, onClick = { onVpos(k) }, shape = SegmentedButtonDefaults.itemShape(k, 3)) { Text(label) }
-                }
-            }
-        }
-        // Widget-safe moves the picture below the launcher clock and weather; some styles are already built that way.
-        val built = spec.style.widgetSafe
+    }
+}
+
+/** A slider on one line (name, slider, value) with its quick presets under it. */
+@Composable
+private fun TuneRow(
+    label: String,
+    valueText: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    enabled: Boolean,
+    onChange: (Float) -> Unit,
+    onDone: () -> Unit,
+    presets: List<Pair<String, Float>>,
+    onPreset: (Float) -> Unit,
+) {
+    Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                SectionLabel("Widget-safe")
+            SectionLabel(label, Modifier.width(54.dp))
+            Slider(value = value, onValueChange = onChange, onValueChangeFinished = onDone, valueRange = range, enabled = enabled, modifier = Modifier.weight(1f))
+            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.width(60.dp)) {
                 Text(
-                    if (built) "This design already keeps its focus clear of the widgets." else "Keeps the picture below your clock and weather widgets.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Switch(checked = built || spec.safe, onCheckedChange = onSafe, enabled = !built)
-        }
-        SectionLabel("Make room for Purrcast")
-        Text(
-            "Dims soft quiet zones where Purrcast's clock and weather cards sit on your home screen.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            Zones.NAMES.forEachIndexed { k, label ->
-                SegmentedButton(selected = spec.zone == k, onClick = { onZone(k) }, shape = SegmentedButtonDefaults.itemShape(k, Zones.COUNT)) { Text(label) }
-            }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SectionLabel("Black level", Modifier.weight(1f))
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
-                Text(
-                    if (black < 0.03f) "Off" else "${(black * 100).roundToInt()}%",
+                    valueText,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
                 )
             }
         }
-        Slider(value = black, onValueChange = onBlack, onValueChangeFinished = onBlackDone, valueRange = 0f..1f)
-        PresetRow(listOf("Off" to 0f, "Soft" to 0.25f, "Deep" to 0.5f, "Pure" to 0.85f), black, onBlackPreset)
-        SectionLabel("Save resolution")
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            Resolution.entries.forEachIndexed { index, res ->
-                SegmentedButton(
-                    selected = resolution == res,
-                    onClick = { onResolution(res) },
-                    shape = SegmentedButtonDefaults.itemShape(index, Resolution.entries.size),
-                ) { Text(res.label) }
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilledTonalButton(onClick = onShare, modifier = Modifier.weight(1f)) {
-                Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Share")
-            }
-            FilledTonalButton(onClick = onMore, modifier = Modifier.weight(1f)) {
-                Icon(Icons.Rounded.GridView, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("More like this")
-            }
-        }
+        if (enabled) PresetRow(presets, value, onPreset)
     }
 }
 

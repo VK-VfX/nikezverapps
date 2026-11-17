@@ -722,28 +722,95 @@ object Doodles {
 }
 
 /** Small filler marks used between doodles: squiggles, zigzags, rings, dots and symbols. */
-private fun Scene.filler(x: Float, y: Float, color: Int, width: Float, alpha: Int) {
-    val paint = stroke(color, width, alpha)
-    when (i(0, 6)) {
-        0 -> canvas.drawCircle(x, y, f(4f, 8f), paint)
-        1 -> dot(x, y, f(2f, 3.5f), color, alpha)
+/**
+ * A tiny mark for the gaps between doodles, drawn at (x, y) and [k] times its natural size. The kinds come from
+ * hand-drawn doodle sheets: sparkles, hearts, bolts, cloud puffs, coils, hatch patches and dot clusters.
+ */
+internal fun Scene.filler(x: Float, y: Float, color: Int, width: Float, alpha: Int, k: Float = 1f) {
+    val paint = stroke(color, width / k.coerceAtLeast(0.3f), alpha)
+    canvas.save()
+    canvas.translate(x, y)
+    canvas.rotate(f(-180f, 180f))
+    canvas.scale(k, k)
+    when (i(0, 14)) {
+        0 -> canvas.drawCircle(0f, 0f, f(4f, 8f), paint)
+        1 -> dot(0f, 0f, f(2f, 3.5f), color, alpha)
         2 -> {
             val p = Path()
-            p.moveTo(x - 18f, y)
-            for (k in 1..6) p.lineTo(x - 18f + k * 6f, y + if (k % 2 == 0) 0f else -6f)
-            canvas.save(); canvas.rotate(f(-40f, 40f), x, y); canvas.drawPath(p, paint); canvas.restore()
+            p.moveTo(-18f, 0f)
+            for (n in 1..6) p.lineTo(-18f + n * 6f, if (n % 2 == 0) 0f else -6f)
+            canvas.drawPath(p, paint)
         }
         3 -> {
             val p = Path()
-            p.moveTo(x - 20f, y)
-            p.cubicTo(x - 10f, y - 12f, x, y + 12f, x + 10f, y)
-            p.cubicTo(x + 15f, y - 6f, x + 18f, y - 6f, x + 22f, y)
-            canvas.save(); canvas.rotate(f(-60f, 60f), x, y); canvas.drawPath(p, paint); canvas.restore()
+            p.moveTo(-20f, 0f)
+            p.cubicTo(-10f, -12f, 0f, 12f, 10f, 0f)
+            p.cubicTo(15f, -6f, 18f, -6f, 22f, 0f)
+            canvas.drawPath(p, paint)
         }
         4 -> {
             val r = f(5f, 9f)
-            canvas.drawLine(x - r, y, x + r, y, paint)
-            canvas.drawLine(x, y - r, x, y + r, paint)
+            canvas.drawLine(-r, 0f, r, 0f, paint)
+            canvas.drawLine(0f, -r, 0f, r, paint)
+        }
+        5 -> {
+            // four-point sparkle
+            val r = f(8f, 13f)
+            val p = Path()
+            p.moveTo(0f, -r); p.quadTo(0f, 0f, r, 0f); p.quadTo(0f, 0f, 0f, r); p.quadTo(0f, 0f, -r, 0f); p.quadTo(0f, 0f, 0f, -r)
+            canvas.drawPath(p, paint)
+        }
+        6 -> {
+            // heart outline
+            val r = f(7f, 11f)
+            val p = Path()
+            p.moveTo(0f, r * 0.9f)
+            p.cubicTo(-r * 1.6f, -r * 0.2f, -r * 0.6f, -r * 1.3f, 0f, -r * 0.4f)
+            p.cubicTo(r * 0.6f, -r * 1.3f, r * 1.6f, -r * 0.2f, 0f, r * 0.9f)
+            canvas.drawPath(p, paint)
+        }
+        7 -> {
+            // lightning bolt
+            val r = f(9f, 13f)
+            val p = Path()
+            p.moveTo(r * 0.3f, -r); p.lineTo(-r * 0.5f, r * 0.1f); p.lineTo(r * 0.1f, r * 0.1f); p.lineTo(-r * 0.3f, r)
+            canvas.drawPath(p, paint)
+        }
+        8 -> {
+            // cloud puff: three bumps on a flat base
+            val r = f(5f, 7f)
+            val p = Path()
+            p.moveTo(-r * 2.2f, r * 0.8f)
+            p.cubicTo(-r * 3.2f, -r * 0.6f, -r * 1.2f, -r * 1.8f, -r * 0.5f, -r * 0.6f)
+            p.cubicTo(0f, -r * 2.2f, r * 1.8f, -r * 1.6f, r * 1.4f, -r * 0.2f)
+            p.cubicTo(r * 3f, -r * 0.4f, r * 2.8f, r * 0.8f, r * 2f, r * 0.8f)
+            p.close()
+            canvas.drawPath(p, paint)
+        }
+        9 -> {
+            // coil: a small loose spiral
+            val p = Path()
+            var a = 0f
+            var rad = 1.5f
+            p.moveTo(0f, 0f)
+            while (a < 9f) { a += 0.35f; rad += 0.55f; p.lineTo(cos(a) * rad, sin(a) * rad) }
+            canvas.drawPath(p, paint)
+        }
+        10 -> {
+            // hatch patch: three short parallel strokes
+            for (n in -1..1) canvas.drawLine(-9f + n * 3f, -8f, 3f + n * 3f, 8f, paint)
+        }
+        11 -> {
+            // dot cluster
+            dot(-6f, 2f, 2.4f, color, alpha); dot(2f, -5f, 2.8f, color, alpha); dot(7f, 4f, 2.2f, color, alpha)
+        }
+        12 -> {
+            // tiny flower: five petals round a centre
+            for (n in 0 until 5) {
+                val a = n * 2f * PI.toFloat() / 5f
+                canvas.drawCircle(cos(a) * 6f, sin(a) * 6f, 3.6f, paint)
+            }
+            dot(0f, 0f, 2.2f, color, alpha)
         }
         else -> {
             val symbols = arrayOf("π", "Ω", "zZz", "42", "♪", "∞", "✦", "♥", "?!", "★")
@@ -754,9 +821,10 @@ private fun Scene.filler(x: Float, y: Float, color: Int, width: Float, alpha: In
                 typeface = Typeface.DEFAULT_BOLD
                 textAlign = Paint.Align.CENTER
             }
-            canvas.drawText(symbols[i(0, symbols.size)], x, y + tp.textSize / 3f, tp)
+            canvas.drawText(symbols[i(0, symbols.size)], 0f, tp.textSize / 3f, tp)
         }
     }
+    canvas.restore()
 }
 
 // ---------- Styles ----------
@@ -765,10 +833,10 @@ private fun Scene.filler(x: Float, y: Float, color: Int, width: Float, alpha: In
 object DoodleScatter : Style("doodle_scatter", "Doodle Scatter", Category.DOODLE) {
     override fun draw(s: Scene) {
         for (p in s.spots(s.layout, 150f)) {
-            if (s.chance(0.78f)) {
-                Doodles.draw(s, s.i(0, Doodles.count), p.x, p.y, s.f(24f, 42f) * p.scale, p.rot, s.anyColor(), 3f * p.scale.coerceAtMost(1.6f))
-            } else {
-                s.filler(p.x, p.y, s.anyColor(), 2.4f, 200)
+            if (p.kind == Spot.FILL) {
+                s.filler(p.x, p.y, s.anyColor(), 2.4f, 200, p.scale * 1.8f)
+            } else if (s.chance(0.92f)) {
+                Doodles.draw(s, s.i(0, Doodles.count), p.x, p.y, s.f(24f, 42f) * p.scale, p.rot, s.anyColor(), 3f * p.scale.coerceIn(0.7f, 1.6f))
             }
         }
     }
@@ -780,14 +848,14 @@ object DoodlePattern : Style("doodle_pattern", "Doodle Wall", Category.DOODLE) {
 
     override fun draw(s: Scene) {
         val diagonal = s.chance(0.5f)
-        val cell = 92f / sqrt(s.density)
         for (p in s.spots(s.layout, 92f)) {
             val t = if (diagonal) (p.x / s.w + (1f - p.y / s.h)) / 2f else p.t
             val color = s.grad(t)
-            if (s.chance(0.82f)) {
+            if (p.kind == Spot.FILL) {
+                s.filler(p.x, p.y, color, 1.8f, 190, p.scale * 1.5f)
+            } else if (s.chance(0.9f)) {
                 Doodles.draw(s, s.i(0, Doodles.count), p.x, p.y, s.f(20f, 30f) * p.scale, p.rot, color, 2.3f, alpha = 235)
             }
-            repeat(2) { s.filler(p.x + s.f(-cell / 2f, cell / 2f), p.y + s.f(-cell / 2f, cell / 2f), color, 1.8f, 190) }
         }
     }
 }
@@ -803,6 +871,7 @@ object DoodleSpotlight : Style("doodle_spotlight", "Doodle Spotlight", Category.
             val dx = p.x - x
             val dy = p.y - y
             if (dx * dx + dy * dy < (orbit - 60f) * (orbit - 60f)) continue
+            if (p.kind == Spot.FILL) { s.filler(p.x, p.y, s.anyColor(), 2f, 190, p.scale * 1.4f); continue }
             Doodles.draw(s, s.i(0, Doodles.count), p.x, p.y, s.f(12f, 24f) * p.scale, p.rot, s.anyColor(), 2.4f, alpha = 210)
         }
         val dash = s.stroke(s.color(1), 2f, 70).apply { pathEffect = DashPathEffect(floatArrayOf(6f, 14f), 0f) }
@@ -817,15 +886,15 @@ object DoodleStickers : Style("doodle_stickers", "Doodle Stickers", Category.DOO
 
     override fun draw(s: Scene) {
         val fills = s.palette.colors
-        val cell = 175f / sqrt(s.density)
         for (p in s.spots(s.layout, 175f)) {
-            if (s.chance(0.8f)) {
+            if (p.kind == Spot.FILL) {
+                s.filler(p.x, p.y, Color.WHITE, 2f, 200, p.scale * 1.7f)
+            } else if (s.chance(0.9f)) {
                 // Rotate the fill order so neighbours differ.
                 val shift = s.i(0, fills.size)
                 val rotated = IntArray(fills.size) { fills[(it + shift) % fills.size] }
                 Doodles.draw(s, s.i(0, Doodles.count), p.x, p.y, s.f(34f, 52f) * p.scale, p.rot, Color.WHITE, 3.2f, rotated)
             }
-            repeat(2) { s.filler(p.x + s.f(-cell / 2f, cell / 2f), p.y + s.f(-cell / 2f, cell / 2f), Color.WHITE, 2f, 200) }
         }
     }
 }

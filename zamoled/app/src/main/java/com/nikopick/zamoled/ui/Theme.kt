@@ -92,6 +92,9 @@ fun ZamoledTheme(content: @Composable () -> Unit) {
             onPrimary = Color(0xFF00110D),
             primaryContainer = Color(0xFF0A4A3F),
             onPrimaryContainer = Color(0xFFBFFFF0),
+            // calm tonal colours for chips, segmented buttons and tonal buttons: dim teal, soft text
+            secondaryContainer = Color(0xFF123A33),
+            onSecondaryContainer = Color(0xFFD9F7F0),
         ).also {
             Palettes.you = Palette(
                 "you", "Material You",

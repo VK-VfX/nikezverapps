@@ -54,7 +54,7 @@ object StickerBomb : Style("sticker_bomb", "Sticker Bomb", Category.DOODLE) {
     override fun draw(s: Scene) {
         val colors = s.palette.colors
         // A shuffled order means overlaps differ from sticker to sticker, as they do on a real wall.
-        for (p in s.spots(s.layout, 128f).shuffled(s.rnd)) {
+        for (p in s.spots(s.layout, 128f, size = 0.5f).shuffled(s.rnd)) {
             val shift = s.i(0, colors.size)
             val fills = IntArray(colors.size + 2) { k -> if (k < colors.size) colors[(k + shift) % colors.size] else if (k == colors.size) CREAM else Color.rgb(255, 214, 120) }
             Doodles.sticker(s, s.i(0, Doodles.count), p.x, p.y, s.f(58f, 92f) * p.scale, p.rot + s.f(-14f, 14f), fills, STICKER_INK)
@@ -68,14 +68,14 @@ object Gouache : Style("gouache", "Gouache", Category.DOODLE) {
 
     override fun draw(s: Scene) {
         val colors = s.palette.colors
-        val cell = 190f / sqrt(s.density)
-        for (p in s.spots(s.layout, 190f)) {
-            if (s.chance(0.82f)) {
+        for (p in s.spots(s.layout, 190f, size = 0.34f)) {
+            if (p.kind == Spot.FILL) {
+                s.dab(p.x, p.y, colors[s.i(0, colors.size)])
+            } else if (s.chance(0.9f)) {
                 val shift = s.i(0, colors.size)
                 val fills = IntArray(colors.size + 1) { k -> if (k < colors.size) colors[(k + shift) % colors.size] else CREAM }
                 Doodles.painted(s, s.i(0, Doodles.count), p.x, p.y, s.f(66f, 108f) * p.scale, p.rot, fills, CREAM)
             }
-            repeat(3) { s.dab(p.x + s.f(-cell / 2f, cell / 2f), p.y + s.f(-cell / 2f, cell / 2f), colors[s.i(0, colors.size)]) }
         }
     }
 }
@@ -86,7 +86,7 @@ object Chalk : Style("chalk", "Chalk", Category.DOODLE) {
 
     override fun draw(s: Scene) {
         val colors = s.palette.colors
-        for (p in s.spots(s.layout, 132f)) {
+        for (p in s.spots(s.layout, 132f, size = 0.36f)) {
             val ink = if (s.chance(0.7f)) Color.rgb(244, 242, 236) else lighten(colors[s.i(0, colors.size)], 0.35f)
             val fills = IntArray(colors.size) { colors[(it + s.i(0, colors.size)) % colors.size] }
             Doodles.chalked(s, s.i(0, Doodles.count), p.x, p.y, s.f(46f, 70f) * p.scale, p.rot, fills, ink)

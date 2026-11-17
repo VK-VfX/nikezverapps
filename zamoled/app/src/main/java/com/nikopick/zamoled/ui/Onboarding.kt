@@ -72,7 +72,7 @@ fun OnboardingScreen(onDone: (Set<String>) -> Unit) {
                 }
             }
         }
-        Button(onClick = { onDone(picked) }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+        SoftButton(onClick = { onDone(picked) }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
             Text(if (picked.isEmpty()) "Show me everything" else "Continue with ${picked.size}")
         }
         TextButton(onClick = { onDone(emptySet()) }, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Skip") }

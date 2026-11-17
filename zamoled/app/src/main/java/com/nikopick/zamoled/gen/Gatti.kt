@@ -479,11 +479,16 @@ object Gatti : Style("gatti", "Cat Club", Category.DOODLE) {
         val cell = 215f / sqrt(s.density)
         s.catTexture(90)
         var n = 0
-        for (p in s.spots(s.layout, 215f)) {
-            if (s.chance(0.86f)) {
+        val fit = s.fit()
+        for (p in s.spots(s.layout, 215f, size = 0.36f)) {
+            if (p.kind == Spot.FILL) {
+                s.catExtras(p.x, p.y, cell * s.f(0.12f, 0.18f))
+                continue
+            }
+            if (s.chance(0.9f)) {
                 // Cats scale with the cell, so more Detail means more, smaller cats rather than a pile-up.
-                val hero = s.chance(0.16f)
-                val size = cell * s.f(0.31f, 0.38f) * p.scale * (if (hero) 1.3f else 1f)
+                val hero = p.kind == Spot.HERO
+                val size = cell * s.f(0.31f, 0.38f) * (p.scale / fit)
                 val b = breeds[n++ % breeds.size]
                 val pose = if (s.chance(0.6f)) 0 else 1
                 CatArt.cat(s, p.x, p.y, size, p.rot + s.f(-6f, 6f), b, pose, s.i(0, 6), size > 52f && s.chance(0.8f))

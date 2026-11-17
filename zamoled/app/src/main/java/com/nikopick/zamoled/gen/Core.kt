@@ -80,6 +80,7 @@ enum class Category(val label: String) {
     LIGHT("Light"),
     GOTHIC("Gothic"),
     SPACE("Space"),
+    PHOTO("Night Photos"),
 }
 
 data class WallpaperSpec(
@@ -329,6 +330,9 @@ abstract class Style(val id: String, val name: String, val category: Category) {
 
     /** True for styles already composed around the launcher widgets, so Widget-safe has nothing to add. */
     open val widgetSafe: Boolean get() = false
+
+    /** The least Black level this style is always drawn with (0 to 1): photographs need their faint noise cleared to true black. */
+    open val minBlack: Float get() = if (category == Category.DOODLE || category == Category.LAB) 0.12f else 0f
     abstract fun draw(s: Scene)
 }
 
@@ -381,7 +385,8 @@ object Renderer {
             canvas.restoreToCount(layer)
         }
         if (spec.zone > 0) Zones.dim(canvas, spec.zone, widthPx, heightPx)
-        if (spec.black > 0.01f) crush(bmp, spec.black)
+        val black = maxOf(spec.black, spec.style.minBlack)
+        if (black > 0.01f) crush(bmp, black)
         return bmp
     }
 
@@ -442,15 +447,18 @@ object Renderer {
 
 object Styles {
     /** Styles shown in the app, grouped by world. */
-    val all: List<Style> = listOf(
+    private val base: List<Style> = listOf(
         StickerBomb, Gouache, Chalk, SpaceDoodles, Gatti,
-        M3Bloom, M3Cookies, M3Waves, M3Pills, M3Arches, M3Blobs, M3Ribbons, M3Components, M3Aura, M3Overlap,
         LoneTree, KoiPond, MoonFisher, LineConstellation, OneLine, Contours, Orbits, Glance,
         Rooftops, Skyline, NightHighway,
         DataRain,
         PixelCastle, PixelQuest, PixelSunset, PixelGalaxy, PixelLighthouse,
         LanternFestival, Candles, Jellyfish, Fireflies,
     ) + NatureWorld.styles + GlitchWorld.styles + LabWorld.styles + WordsWorld.styles + SpaceWorld.styles
+
+    /** Every style shown in the app; the Night Photos only when their images are bundled (not in the Windows app). */
+    val all: List<Style> get() = if (PhotoPack.ready) allWithPhotos else base
+    private val allWithPhotos: List<Style> by lazy { base + PhotoWorld.styles }
 
     /** Retired styles: hidden from browsing but still able to open saved favourites. */
     private val retired: List<Style> = listOf(
@@ -462,6 +470,8 @@ object Styles {
         DoodleScatter, DoodlePattern, DoodleSpotlight, DoodleStickers,
         Aurora, MoonlitForest, MountainLake, NightBloom, GlitchBust, ErrorWindows,
         PixelSpace, PixelCity, PixelLandscape,
+        // the whole "For Pixel" category was removed from browsing; saved favourites still open
+        M3Bloom, M3Cookies, M3Waves, M3Pills, M3Arches, M3Blobs, M3Ribbons, M3Components, M3Aura, M3Overlap,
     )
 
     /** Retired ids that now open as their replacement. */
@@ -503,7 +513,7 @@ object Styles {
 
     fun byId(id: String): Style {
         val key = aliases[id] ?: id
-        return all.firstOrNull { it.id == key } ?: retired.firstOrNull { it.id == key } ?: all[0]
+        return all.firstOrNull { it.id == key } ?: retired.firstOrNull { it.id == key } ?: PhotoWorld.styles.firstOrNull { it.id == key }?.takeIf { PhotoPack.ready } ?: all[0]
     }
     fun of(category: Category): List<Style> = all.filter { it.category == category }
 

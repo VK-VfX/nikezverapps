@@ -4,13 +4,12 @@ An Android wallpaper app that **generates** pitch-black AMOLED wallpapers on you
 
 ## Features
 
-- **74 wallpapers across 11 worlds**, each with its own art direction
+- **70 wallpapers across 11 worlds**, each with its own art direction
   | World     | Styles |
   |-----------|--------|
   | Doodle    | Sticker Bomb, Gouache, Chalk, Space Doodles and Cat Club (twelve breeds, from tabby and British Shorthair to Bengal, Siamese, calico, Sphynx, Maine Coon and Scottish Fold, each with its own markings and a different mood) |
   | Lab       | Science emoji as stickers, gouache or chalk: Physics, Maths, Chemistry, Biology, Psychology, Philosophy, History, Space, Spirals & Radiation, and Everything |
   | Words     | Your own words on black, typed in the editor: Bold, Quiet, Quote, Echo, Marker |
-  | For Pixel | Material 3 Expressive on pure black, in your phone's own Material You colours: Bloom, Cookies, Blobs, Waves, Flow, Pills, Arches, Components (switches, sliders, chips, FAB and cards), Aura, Overlap |
   | Minimal   | Ink (Lone Tree, Koi Pond, Moon Fisher), Lines (Constellation, One Line, Contours, Orbits: a few hairlines on black) and Always-on (Glance: one small dim mark, over 99% of pixels off) |
   | Nature    | Sky and land (Northern Lights, Moonlit Peaks, Starry Pines, Moon Path), Fire (Campfire, Embers, Inferno, Volcano, Flame) and Storm (Lightning Strike, Storm Cell) |
   | City      | Rooftops, Skyline, Night Highway |
@@ -18,8 +17,11 @@ An Android wallpaper app that **generates** pitch-black AMOLED wallpapers on you
   | Pixel Bits | Pixel Castle, Pixel Quest, Pixel Sunset, Pixel Galaxy, Pixel Lighthouse |
   | Light     | Lanterns, Candlelight, Jellyfish, Fireflies |
   | Space     | Ascent (a shuttle climbing away from the planet's edge), Lone Satellite, Comet |
+  | Night Photos | Six Unsplash photographs, pushed to pure black and bundled in the app: Milky Way, Aurora, Skyline, Moon, Neon, Jellyfish. Detail is the exposure; credits are in `app/src/main/assets/photos/CREDITS.txt`. Android only |
 
-  Older styles that were retired from browsing (for example Halo, Silk, Aurora, Pixel City) still open if you saved them as a favourite.
+  **How Doodle and Lab fill the screen.** Every arrangement places three sizes: a few big hero doodles, a body of medium ones and many tiny filler marks (sparkles, hearts, bolts, cloud puffs, coils, hatch patches, dot clusters) that sit only in genuinely empty gaps. Density changes how close things get: at the low end doodles are drawn larger and keep clear space around them, around 1x they just touch, and toward the top of the slider they are drawn smaller and are allowed to overlap and crumple into each other. Everything is drawn on pure black, and the Doodle and Lab styles always clear faint haze to true #000000.
+
+  Older styles that were retired from browsing (for example Halo, Silk, Aurora, Pixel City, and the whole "For Pixel" world) still open if you saved them as a favourite.
 - **True black backgrounds.** Every wallpaper starts from `#000000`, and the editor shows a live **Pitch black %**: the share of pixels your OLED screen can switch off completely.
 - **Material 3 / Material You.** It uses the dynamic colour theme (Android 12+) with surfaces forced to true black. There's also a **Material You palette** that tints wallpapers with your system colours.
 - **16 palettes plus Material You** (Mono, Neon Cyan, Sunset, Aurora, Sakura, Lava, Ocean, Acid, Violet, Gold, Candy, Graffiti, Hue Shift, Fire, Storm, Cyberpunk), or Auto, which picks palettes that suit each style.

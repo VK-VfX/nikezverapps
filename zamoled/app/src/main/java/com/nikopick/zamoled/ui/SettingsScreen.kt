@@ -117,10 +117,10 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
                 if (ota.phase == OtaPhase.CHECKING) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (ota.available) {
-                        Button(onClick = { ota.download() }, enabled = !ota.installing) { Text(if (ota.installing) "Installing…" else "Install") }
+                        SoftButton(onClick = { ota.download() }, enabled = !ota.installing) { Text(if (ota.installing) "Installing…" else "Install") }
                         TextButton(onClick = { ota.openReleasePage() }) { Text("Release page") }
                     } else {
-                        Button(onClick = { ota.check(manual = true) }, enabled = ota.phase != OtaPhase.CHECKING) {
+                        SoftButton(onClick = { ota.check(manual = true) }, enabled = ota.phase != OtaPhase.CHECKING) {
                             Text(if (ota.phase == OtaPhase.ERROR) "Check again" else "Check for updates")
                         }
                     }
