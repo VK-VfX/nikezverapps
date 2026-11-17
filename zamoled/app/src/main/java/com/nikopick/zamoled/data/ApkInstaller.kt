@@ -42,6 +42,7 @@ object ApkInstaller {
         try {
             conn.connectTimeout = 15000
             conn.readTimeout = 30000
+            Diag.log("update", "download ${info.version} HTTP ${conn.responseCode}")
             if (conn.responseCode != 200) throw IOException("HTTP ${conn.responseCode}")
             val total = conn.contentLengthLong
             val md = MessageDigest.getInstance("SHA-256")
@@ -70,8 +71,10 @@ object ApkInstaller {
             val hex = md.digest().joinToString("") { "%02x".format(it) }
             if (info.sha256.isNotEmpty() && !hex.equals(info.sha256, ignoreCase = true)) {
                 out.delete()
+                Diag.log("update", "checksum mismatch: got ${hex.take(12)}, wanted ${info.sha256.take(12)}")
                 throw IOException("The download didn't match its checksum. Try again in a few minutes.")
             }
+            Diag.log("update", "downloaded ${out.length()} bytes, sha256 ${hex.take(12)} ok")
         } finally {
             conn.disconnect()
         }
@@ -93,6 +96,7 @@ object ApkInstaller {
             var flags = PendingIntent.FLAG_UPDATE_CURRENT
             if (Build.VERSION.SDK_INT >= 31) flags = flags or PendingIntent.FLAG_MUTABLE
             val callback = Intent(context, InstallReceiver::class.java).setPackage(context.packageName)
+            Diag.log("update", "install session $id committed")
             session.commit(PendingIntent.getBroadcast(context, id, callback, flags).intentSender)
         } catch (e: Exception) {
             session.abandon()
@@ -111,6 +115,7 @@ class InstallReceiver : BroadcastReceiver() {
         else intent.getParcelableExtra(Intent.EXTRA_INTENT)
 
     override fun onReceive(context: Context, intent: Intent) {
+        Diag.log("installer", "status ${intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)} ${intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)}")
         when (intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
             PackageInstaller.STATUS_PENDING_USER_ACTION ->
                 confirmIntent(intent)?.let { context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }

@@ -216,6 +216,8 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
         Spacer(Modifier.height(12.dp))
         AboutLink("Telegram", "@xnzvix", "https://t.me/xnzvix")
         Spacer(Modifier.height(12.dp))
+        LogCard()
+        Spacer(Modifier.height(12.dp))
         AboutLink("Source and releases", "GitHub", "https://github.com/VK-VfX/nikezverapps/releases")
         Spacer(Modifier.height(22.dp))
         SectionHead("05", "The trio")
@@ -295,6 +297,22 @@ private fun SiblingApp(name: String, sub: String, pkg: String, latest: String?, 
                 }
             }
             Text(if (!installed) "Get" else if (outdated) "Update" else "Open", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+/** The log catcher: share or clear the diagnostic log (kept on the phone, never sent anywhere by itself). */
+@Composable
+private fun LogCard() {
+    val context = LocalContext.current
+    LeafCard(Modifier.fillMaxWidth(), shape = LeafSm) {
+        Row(Modifier.padding(horizontal = 18.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Log for bug reports", style = MaterialTheme.typography.titleMedium)
+                Text("Stays on this phone until you share it. No places or searches.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            TextButton(onClick = { com.nikopick.zamoled.data.Diag.share(context) }) { Text("Share") }
+            TextButton(onClick = { com.nikopick.zamoled.data.Diag.clear(); android.widget.Toast.makeText(context, "Log cleared", android.widget.Toast.LENGTH_SHORT).show() }) { Text("Clear") }
         }
     }
 }

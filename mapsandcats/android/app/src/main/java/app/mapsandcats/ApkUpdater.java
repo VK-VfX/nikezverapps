@@ -50,6 +50,7 @@ final class ApkUpdater {
         try {
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(30000);
+            Diag.log(c, "update", "download HTTP " + conn.getResponseCode());
             if (conn.getResponseCode() != 200) throw new IOException("HTTP " + conn.getResponseCode());
             long total = conn.getContentLengthLong();
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -72,8 +73,10 @@ final class ApkUpdater {
             for (byte b : md.digest()) hex.append(String.format("%02x", b));
             if (sha256 != null && sha256.length() > 0 && !hex.toString().equalsIgnoreCase(sha256)) {
                 out.delete();
+                Diag.log(c, "update", "checksum mismatch: got " + hex.substring(0, 12));
                 throw new IOException("The download didn't match its checksum. Try again in a few minutes.");
             }
+            Diag.log(c, "update", "downloaded " + out.length() + " bytes, sha256 " + hex.substring(0, 12) + " ok");
         } finally {
             conn.disconnect();
         }
@@ -98,6 +101,7 @@ final class ApkUpdater {
             int flags = PendingIntent.FLAG_UPDATE_CURRENT;
             if (Build.VERSION.SDK_INT >= 31) flags |= PendingIntent.FLAG_MUTABLE;
             Intent cb = new Intent(c, InstallReceiver.class).setPackage(c.getPackageName());
+            Diag.log(c, "update", "install session " + id + " committed");
             s.commit(PendingIntent.getBroadcast(c, id, cb, flags).getIntentSender());
         } catch (Exception e) {
             s.abandon();
@@ -112,6 +116,7 @@ final class ApkUpdater {
         @Override
         public void onReceive(Context c, Intent intent) {
             int st = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+            Diag.log(c, "installer", "status " + st + " " + intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE));
             if (st == PackageInstaller.STATUS_PENDING_USER_ACTION) {
                 Intent confirm = intent.getParcelableExtra(Intent.EXTRA_INTENT);
                 if (confirm != null) c.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));

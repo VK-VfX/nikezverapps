@@ -84,6 +84,7 @@ class OtaState(private val context: Context, private val scope: CoroutineScope, 
                 ApkInstaller.install(context, file)
                 progress = "Waiting for you to confirm the install"
             } catch (e: Exception) {
+                com.nikopick.zamoled.data.Diag.error("update-install", e)
                 progress = null
                 message = e.message ?: "The update did not finish."
             } finally {

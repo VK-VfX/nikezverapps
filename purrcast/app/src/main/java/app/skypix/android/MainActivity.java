@@ -916,6 +916,16 @@ public class MainActivity extends Activity {
         Ui.Btn t = new Ui.Btn(this, "Open", true);
         t.setOnClickListener(tg);
         row(box, "Telegram", "@xnzvix", t);
+        Ui.Btn lg = new Ui.Btn(this, "Share", false);
+        lg.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { Diag.share(MainActivity.this); }
+        });
+        row(box, "Log for bug reports", "Stays on this phone until you share it. No places or searches.", lg);
+        Ui.Btn lc = new Ui.Btn(this, "Clear", false);
+        lc.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { Diag.clear(MainActivity.this); Toast.makeText(MainActivity.this, "Log cleared", Toast.LENGTH_SHORT).show(); }
+        });
+        row(box, "Clear the log", null, lc);
         Ui.Btn g = new Ui.Btn(this, "Open", false);
         g.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { open("https://github.com/VK-VfX/nikezverapps/tree/main/purrcast"); }
@@ -1072,6 +1082,7 @@ public class MainActivity extends Activity {
                     AppUpdate.Info i = AppUpdate.check(app);
                     AppUpdate.status = i == null ? "You're on the latest version" : "";
                 } catch (Throwable t) {
+                    Diag.error(app, "update-check", t);
                     AppUpdate.status = "Couldn't check right now. Are you online?";
                 }
                 AppUpdate.busy = false;
@@ -1099,6 +1110,7 @@ public class MainActivity extends Activity {
                     setUpdateStatus("Verified. Handing over to Android\u2026");
                     AppUpdate.install(app, apk);
                 } catch (Throwable t) {
+                    Diag.error(app, "update-install", t);
                     AppUpdate.busy = false;
                     setUpdateStatus("Update failed: " + t.getMessage());
                 }

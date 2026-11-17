@@ -38,3 +38,6 @@ data moves only when you tap something, or as tiny read-only counts.
 - **Rewards**: every **10 days of Purrcast best streak** earns a special Zamoled wallpaper (counted from the *best* streak, so a missed day never takes a reward back; Purrcast tracks which were claimed).
   Link: `zamoled://reward?day=10` (day must be a multiple of 10). It opens the Cat Club ("gatti") style, one fixed picture per day number,
   with a new colour set each step and Purrcast's quiet zones. Anything new must be added here and in each app's help text.
+
+## Log catcher (all three apps)
+About, right under the Telegram row: **Log for bug reports** with Share and Clear. Each app keeps a small log on the phone only (about 48 KB, oldest half dropped when full): starts, crashes (with stack trace), why the app last stopped (Android's exit reasons), update check/download/checksum/installer status codes and messages, network failures by host and status, and in Maps and Cats page errors, map errors and location error codes. It never records places, searches, typed text or coordinates (decimals that look like coordinates and URL query strings are stripped as they are written). Nothing is sent anywhere: Share opens Android's share sheet and the person chooses where it goes.

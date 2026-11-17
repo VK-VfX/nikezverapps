@@ -32,6 +32,8 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
+        com.nikopick.zamoled.data.Diag.init(this)
+        com.nikopick.zamoled.data.Diag.log("start", "Zamoled ${com.nikopick.zamoled.data.Updates.installedVersion} Android ${android.os.Build.VERSION.RELEASE} ${android.os.Build.MODEL}")
         Screen.init(this)
         com.nikopick.zamoled.data.StreakStore.touch(this)
         CodeSource.init(assets)

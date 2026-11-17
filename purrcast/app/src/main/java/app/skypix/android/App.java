@@ -13,6 +13,8 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        Diag.init(this);
+        Diag.log(this, "start", "Purrcast " + AppUpdate.installedName(this) + " Android " + Build.VERSION.RELEASE + " " + Build.MODEL);
         AndroidGfx.init(this);
         app.skypix.core.Glyphs.cats = Store.cats(this);
         Store.dropOfficial(this);
@@ -21,6 +23,7 @@ public class App extends Application {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
                 try {
+                    Diag.error(App.this, "CRASH " + t.getName(), e);
                     StringWriter sw = new StringWriter();
                     e.printStackTrace(new PrintWriter(sw));
                     String report = "Purrcast 1.0.17 · Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ") · "

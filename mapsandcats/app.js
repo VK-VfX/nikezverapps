@@ -4,6 +4,15 @@
 'use strict';
 
 const APP_VERSION = '2.2.0';
+/* The log catcher: lines go to the shell's diagnostic log (shared only when you tap Share in About). No places, no searches. */
+const diag = (tag, msg) => { try { const t = window.AndroidTrio; if (t && t.diagLog) t.diagLog(tag, String(msg)); } catch {} };
+window.addEventListener('error', e => diag('js-error', (e.message || '') + ' @' + (e.filename || '').split('/').pop() + ':' + e.lineno));
+window.addEventListener('unhandledrejection', e => diag('js-reject', e.reason && e.reason.message ? e.reason.message : e.reason));
+(() => { const f = window.fetch; if (!f) return; window.fetch = function (u) {
+  const host = (() => { try { return new URL(String(u && u.url || u), location.href).host; } catch { return '?'; } })();
+  return f.apply(this, arguments).then(r => { if (!r.ok) diag('net', host + ' HTTP ' + r.status); return r; }, e => { diag('net', host + ' ' + e); throw e; });
+}; })();
+diag('start', 'page ' + APP_VERSION + ' ' + navigator.userAgent.replace(/^.*?\(/, '(').slice(0, 80));
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const KL = [3.139, 101.687]; // [lat, lon] fallback view until we get a fix
@@ -259,6 +268,7 @@ async function initMap() {
   map.on('style.load', onStyleLoad);
   map.on('zoom', update3dArrow);
   map.on('rotate', syncCompass); map.on('pitch', syncCompass);
+  map.on('error', e => diag('map', (e && e.error && e.error.message) || 'map error'));
   map.on('dragstart', () => { following = false; $('#locateBtn').classList.remove('on'); if (nav.active || quest.walking) scheduleRecenter(); });
   map.on('move', updateScale);
   map.on('moveend', () => { updateClusters(); });
@@ -699,7 +709,7 @@ function startLocation() {
   if (watchId != null) navigator.geolocation.clearWatch(watchId);
   watchId = navigator.geolocation.watchPosition(
     p => { if (!S.sim) onPos(p.coords.latitude, p.coords.longitude, p.coords.accuracy || 20, p.timestamp, p.coords.speed); },
-    err => { $('#locLabel').textContent = err.code === 1 ? 'Location is off — tap ◎ to retry' : 'Can’t find you yet…'; if (!me) renderNearby(); },
+    err => { diag('geo', 'error code ' + err.code); $('#locLabel').textContent = err.code === 1 ? 'Location is off — tap ◎ to retry' : 'Can’t find you yet…'; if (!me) renderNearby(); },
     { enableHighAccuracy: true, maximumAge: 2000, timeout: 25000 });
 }
 function setSim(on) {
@@ -1500,6 +1510,8 @@ function openDrawer(o) { $('#drawer').classList.toggle('open', o); $('#drawer').
 $('#menuBtn').addEventListener('click', () => { renderSaved(); openDrawer(true); });
 $('#closeDrawer').addEventListener('click', () => openDrawer(false));
 // The trio: open the sibling apps (Android shell only; the website falls back to their pages)
+$('#logShare').addEventListener('click', () => { try { window.AndroidTrio.shareLog(APP_VERSION); } catch { toast('The log is only kept in the Android app'); } });
+$('#logClear').addEventListener('click', () => { try { window.AndroidTrio.clearLog(); toast('Log cleared'); } catch {} });
 for (const b of document.querySelectorAll('[data-pkg]')) {
   b.addEventListener('click', () => {
     if (window.AndroidApps) window.AndroidApps.open(b.dataset.pkg, b.dataset.url);

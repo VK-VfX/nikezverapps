@@ -19,6 +19,7 @@ final class Ui {
 
     static void report(String where, Throwable t) {
         lastError = where + ": " + t;
+        Diag.log("error", where + ": " + t);
         StackTraceElement[] st = t.getStackTrace();
         for (int i = 0; i < Math.min(4, st.length); i++) lastError += "\n  at " + st[i];
     }

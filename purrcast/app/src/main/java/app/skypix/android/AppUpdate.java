@@ -84,6 +84,7 @@ final class AppUpdate {
         i.sha256 = o.optString("sha256", "");
         i.notes = o.optString("notes", "");
         Store.setLastUpdateCheck(c, System.currentTimeMillis());
+        Diag.log(c, "update", "check: latest " + i.name + " (" + i.code + "), installed " + installedCode(c));
         if (i.code > installedCode(c)) {
             available = i;
             return i;
@@ -117,6 +118,7 @@ final class AppUpdate {
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(30000);
             conn.setRequestProperty("User-Agent", Net.UA);
+            Diag.log(c, "update", "download " + info.name + " HTTP " + conn.getResponseCode());
             if (conn.getResponseCode() != 200) throw new IOException("HTTP " + conn.getResponseCode());
             long total = conn.getContentLengthLong();
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -149,6 +151,7 @@ final class AppUpdate {
                 out.delete();
                 throw new IOException("The download didn't match its checksum (the release may still be publishing). Try again in a few minutes.");
             }
+            Diag.log(c, "update", "downloaded " + out.length() + " bytes, sha256 " + hex.substring(0, 12) + " ok");
             return out;
         } finally {
             conn.disconnect();
@@ -186,6 +189,7 @@ final class AppUpdate {
             int flags = PendingIntent.FLAG_UPDATE_CURRENT;
             if (Build.VERSION.SDK_INT >= 31) flags |= PendingIntent.FLAG_MUTABLE;
             Intent cb = new Intent(c, InstallReceiver.class).setPackage(c.getPackageName());
+            Diag.log(c, "update", "install session " + id + " committed");
             s.commit(PendingIntent.getBroadcast(c, id, cb, flags).getIntentSender());
         } catch (Exception e) {
             s.abandon();
@@ -200,6 +204,7 @@ final class AppUpdate {
         @Override
         public void onReceive(Context c, Intent intent) {
             int st = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+            Diag.log(c, "installer", "status " + st + " " + intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE));
             if (st == PackageInstaller.STATUS_PENDING_USER_ACTION) {
                 Intent confirm = intent.getParcelableExtra(Intent.EXTRA_INTENT);
                 if (confirm != null) {

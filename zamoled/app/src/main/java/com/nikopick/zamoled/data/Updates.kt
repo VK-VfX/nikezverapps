@@ -92,6 +92,7 @@ object Updates {
             }
             UpdateResult.Available(UpdateInfo(version, apk ?: page, page, notes.trim(), size, sha))
         } catch (e: Exception) {
+            Diag.log("update", "check failed: $e")
             UpdateResult.Failed
         }
     }

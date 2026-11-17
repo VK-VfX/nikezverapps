@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
@@ -77,6 +78,7 @@ public class MainActivity extends Activity {
                 try {
                     ApkUpdater.downloadAndInstall(app, url, sha256, text -> report(text));
                 } catch (Exception e) {
+                    Diag.error(app, "update-install", e);
                     report("Update failed: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage()));
                 }
             }).start();
@@ -160,6 +162,10 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void setStreak(int days, int best, double last, String label) {
             getSharedPreferences(CatClubProvider.PREFS, MODE_PRIVATE).edit().putInt("streak_days", days).putInt("streak_best", best).putLong("streak_last", (long) last).putString("streak_label", label == null ? "day streak" : label).apply();
         }
+        /** The page's own log lines (tag + message) go into the same diagnostic log as the shell's. */
+        @JavascriptInterface public void diagLog(String tag, String msg) { Diag.log(MainActivity.this, tag == null ? "page" : tag, msg); }
+        @JavascriptInterface public void shareLog(String appVersion) { runOnUiThread(() -> Diag.share(MainActivity.this, appVersion)); }
+        @JavascriptInterface public void clearLog() { Diag.clear(MainActivity.this); }
         @JavascriptInterface public void setCats(int n) {
             getSharedPreferences(CatClubProvider.PREFS, MODE_PRIVATE).edit().putInt("cats", n).apply();
         }
@@ -231,6 +237,8 @@ public class MainActivity extends Activity {
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
+        Diag.init(this);
+        Diag.log(this, "start", "shell " + Build.VERSION.RELEASE + " " + Build.MODEL);
         web = new WebView(this);
         web.setBackgroundColor(0xFF000000);
         setContentView(web);
