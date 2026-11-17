@@ -112,7 +112,7 @@ final class Ui {
     }
     static int primary(Context c) {
         if (you(c)) return sys(c, isDark(c) ? android.R.color.system_accent1_200 : android.R.color.system_accent1_600, 0xFF0B57D0);
-        return isDark(c) ? 0xFF3DF5D0 : 0xFF00796B;
+        return isDark(c) ? 0xFF3DF5D0 : 0xFF00574D;
     }
     static int onPrimary(Context c) {
         if (you(c)) return sys(c, isDark(c) ? android.R.color.system_accent1_800 : android.R.color.system_accent1_0, 0xFFFFFFFF);
@@ -157,10 +157,65 @@ final class Ui {
 
     /** Rounded surface used for cards and groups. */
     static android.graphics.drawable.GradientDrawable surface(Context c, int color, float radiusDp) {
-        android.graphics.drawable.GradientDrawable d = new android.graphics.drawable.GradientDrawable();
+        // trio signature: cards (24dp and up) get a thin teal rim along the top edge
+        android.graphics.drawable.GradientDrawable d = radiusDp >= 24 ? new RimSurface(c) : new android.graphics.drawable.GradientDrawable();
         d.setCornerRadius(dp(c, radiusDp));
         d.setColor(color);
         return d;
+    }
+
+    /** A rounded surface with the trio's teal rim: 2dp, fading out at both ends, along the top edge. */
+    static final class RimSurface extends android.graphics.drawable.GradientDrawable {
+        private final Paint rim = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final float u;
+        private final int accent;
+
+        RimSurface(Context c) {
+            u = c.getResources().getDisplayMetrics().density;
+            accent = primary(c);
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            super.draw(canvas);
+            android.graphics.Rect b = getBounds();
+            float inset = 28 * u;
+            if (b.width() <= inset * 2) return;
+            float l = b.left + inset, r = b.right - inset;
+            int solid = (accent & 0x00FFFFFF) | 0xCC000000, clear = accent & 0x00FFFFFF;
+            rim.setShader(new android.graphics.LinearGradient(l, 0, r, 0, new int[] {clear, solid, clear}, null, android.graphics.Shader.TileMode.CLAMP));
+            canvas.drawRoundRect(l, b.top, r, b.top + 2 * u, u, u, rim);
+        }
+    }
+
+    /** The rim for custom-drawn cards. */
+    static void drawRim(Canvas canvas, float w, float u, int accent) {
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        float l = 28 * u, r = w - 28 * u;
+        if (r <= l) return;
+        int solid = (accent & 0x00FFFFFF) | 0xCC000000, clear = accent & 0x00FFFFFF;
+        p.setShader(new android.graphics.LinearGradient(l, 0, r, 0, new int[] {clear, solid, clear}, null, android.graphics.Shader.TileMode.CLAMP));
+        canvas.drawRoundRect(l, 0, r, 2 * u, u, u, p);
+    }
+
+    /** Quick press feedback: shrink to 94% in 90 ms, spring back in 120 ms. Transform only, so it never re-lays-out. */
+    static void press(View v, boolean pressed) {
+        v.animate().cancel();
+        v.animate().scaleX(pressed ? 0.94f : 1f).scaleY(pressed ? 0.94f : 1f).setDuration(pressed ? 90 : 120)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
+    }
+
+    /** First show: the cards fade up 6dp, one after another (20 ms apart, first eight). Does nothing if animations are off. */
+    static void enter(android.view.ViewGroup col) {
+        float shift = dp(col.getContext(), 6);
+        int n = Math.min(col.getChildCount(), 8);
+        for (int i = 0; i < n; i++) {
+            View v = col.getChildAt(i);
+            v.setAlpha(0f);
+            v.setTranslationY(shift);
+            v.animate().alpha(1f).translationY(0f).setStartDelay(i * 20L).setDuration(200)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
+        }
     }
 
     /** Material pill button: filled (primary) or tonal. */
@@ -220,6 +275,7 @@ final class Ui {
         @Override
         public void setPressed(boolean pressed) {
             super.setPressed(pressed);
+            press(this, pressed);
             invalidate();
         }
     }
@@ -284,6 +340,7 @@ final class Ui {
         @Override
         public void setPressed(boolean pressed) {
             super.setPressed(pressed);
+            press(this, pressed);
             invalidate();
         }
     }
@@ -306,6 +363,12 @@ final class Ui {
         public void setChecked(boolean checked) {
             super.setChecked(checked);
             invalidate();
+        }
+
+        @Override
+        public void setPressed(boolean pressed) {
+            super.setPressed(pressed);
+            press(this, pressed);
         }
 
         @Override
@@ -370,7 +433,8 @@ final class Ui {
             float u = getResources().getDisplayMetrics().density;
             AndroidGfx g = new AndroidGfx(canvas);
             float w = getWidth(), h = getHeight();
-            g.fillRoundRect(0, 0, w, h, 28 * u, container(c));
+            g.fillRoundRect(0, 0, w, h, 24 * u, container(c));
+            drawRim(canvas, w, u, primary(c));
             app.skypix.core.Icon cat = streak >= 14 ? app.skypix.core.Icon.SHADES : streak >= 7 ? app.skypix.core.Icon.SUN
                     : streak >= 3 ? app.skypix.core.Icon.PARTLY_DAY : app.skypix.core.Icon.CLOUD;
             app.skypix.core.Glyphs.draw(g, cat, 16 * u, (h - 56 * u) / 2f, 56 * u, -1);

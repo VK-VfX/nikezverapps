@@ -207,9 +207,15 @@ public class MainActivity extends Activity {
         return p;
     }
 
+    private boolean entered;
+
     private void rebuild() {
         try {
             rebuildUnsafe();
+            if (!entered && content.getChildCount() > 0) {
+                entered = true;
+                Ui.enter(content);
+            }
         } catch (Throwable t) {
             Ui.report("rebuild", t);
             content.removeAllViews();
@@ -370,7 +376,7 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         int p = Ui.dp(this, 20);
         box.setPadding(p, p, p, p);
-        box.setBackground(Ui.surface(this, Ui.primaryContainer(this), 28));
+        box.setBackground(Ui.surface(this, Ui.primaryContainer(this), 24));
         box.addView(Ui.text(this, title, 20, 500, Ui.onPrimaryContainer(this)));
         TextView t = Ui.text(this, body, 14.5f, 400, Ui.onPrimaryContainer(this));
         t.setLineSpacing(0, 1.2f);
