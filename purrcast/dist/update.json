@@ -1,7 +1,7 @@
 {
-  "versionCode": 18,
-  "versionName": "1.0.17",
+  "versionCode": 19,
+  "versionName": "1.0.18",
   "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
-  "sha256": "53be5baff92e2eb8af69355c68af57373e40405f4e25aca5ea2f2004180bcf3c",
-  "notes": "Weather refresh now retries when the weather service is briefly busy (503), instead of giving up."
+  "sha256": "b8fc9d505e2709cf6786e3630e52e44e1733d8f19a5b00cf470f8a579d73c958",
+  "notes": "Small under-the-hood tidy-up. Nothing new to see, just a cleaner build."
 }

@@ -7,9 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Bump both for every release; the in-app updater compares VERSION_CODE (it must always go up).
-VERSION_CODE=18
-VERSION_NAME=1.0.17
-RELEASE_NOTES="Weather refresh now retries when the weather service is briefly busy (503), instead of giving up."
+VERSION_CODE=19
+VERSION_NAME=1.0.18
+RELEASE_NOTES="Small under-the-hood tidy-up. Nothing new to see, just a cleaner build."
 UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist
 
 DEPS=build/deps
