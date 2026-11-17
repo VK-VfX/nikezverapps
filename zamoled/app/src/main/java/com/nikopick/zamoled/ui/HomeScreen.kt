@@ -729,7 +729,7 @@ private fun FeaturedCard(spec: WallpaperSpec, onClick: () -> Unit, modifier: Mod
         interactionSource = interaction,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         border = hairline(0.12f),
-        modifier = modifier.fillMaxWidth().height(420.dp).pressScale(interaction, 0.96f),
+        modifier = modifier.fillMaxWidth().height(420.dp).pressScale(interaction, 0.96f).tealRim(),
     ) {
         Box(Modifier.fillMaxSize().sharedWallpaper(spec.key, shape)) {
             ThumbImage(bitmap, spec.style.name, Modifier.fillMaxSize())
@@ -793,7 +793,8 @@ fun WallpaperCard(
             .fillMaxWidth()
             .aspectRatio(Screen.aspect)
             .enterOnce(spec.key, index)
-            .pressScale(interaction),
+            .pressScale(interaction)
+            .tealRim(),
     ) {
         Box(Modifier.fillMaxSize().sharedWallpaper(spec.key, shape)) {
             ThumbImage(bitmap, spec.style.name, Modifier.fillMaxSize())
@@ -801,17 +802,24 @@ fun WallpaperCard(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .height(44.dp)
-                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)))),
+                    .height(60.dp)
+                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.9f)))),
+            )
+            Box(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(36.dp)
+                    .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent))),
             )
             MonoLabel(
                 spec.style.name,
-                color = Color.White.copy(alpha = 0.9f),
+                color = Color.White,
                 modifier = Modifier.align(Alignment.BottomStart).padding(start = 12.dp, end = 12.dp, bottom = 11.dp),
             )
             MonoLabel(
                 "%02d".format(index + 1),
-                color = Color.White.copy(alpha = 0.42f),
+                color = Color.White.copy(alpha = 0.92f),
                 modifier = Modifier.align(Alignment.TopStart).padding(start = 12.dp, top = 10.dp),
             )
             androidx.compose.animation.AnimatedVisibility(
@@ -825,7 +833,7 @@ fun WallpaperCard(
                         Icons.Rounded.Favorite,
                         contentDescription = "Favorite",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(5.dp).size(12.dp),
+                        modifier = Modifier.padding(6.dp).size(16.dp),
                     )
                 }
             }
@@ -881,7 +889,8 @@ private fun CategoryCard(category: Category, index: Int, onClick: () -> Unit) {
             .fillMaxWidth()
             .height(210.dp)
             .enterOnce("cat-${category.name}", index)
-            .pressScale(interaction, 0.95f),
+            .pressScale(interaction, 0.95f)
+            .tealRim(),
     ) {
         Box(Modifier.fillMaxSize()) {
             ThumbImage(bitmap, null, Modifier.fillMaxSize(), alpha = 0.75f)
@@ -892,16 +901,16 @@ private fun CategoryCard(category: Category, index: Int, onClick: () -> Unit) {
             )
             Column(Modifier.fillMaxHeight().padding(16.dp)) {
                 Row(verticalAlignment = Alignment.Top) {
-                    Text("%02d".format(index + 1), style = MaterialTheme.typography.displaySmall, color = Color.White.copy(alpha = 0.9f), modifier = Modifier.weight(1f))
+                    Text("%02d".format(index + 1), style = MaterialTheme.typography.displaySmall, color = Color.White, modifier = Modifier.weight(1f))
                     ShapeIcon(category, active = pressed, size = 40.dp, container = container, content = onContainer, spin = false)
                 }
                 Spacer(Modifier.weight(1f))
                 Text(category.label, style = MaterialTheme.typography.headlineSmall, color = Color.White)
-                MonoLabel("${styles.size} wallpapers", color = Color.White.copy(alpha = 0.55f))
+                MonoLabel("${styles.size} wallpapers", color = Color.White.copy(alpha = 0.92f))
                 Text(
                     Styles.subcategories(category).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = Color.White.copy(alpha = 0.92f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
