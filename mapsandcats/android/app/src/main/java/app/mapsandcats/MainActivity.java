@@ -156,6 +156,10 @@ public class MainActivity extends Activity {
 
     /** Exposed to the page as window.AndroidTrio: the shared Cat Club numbers and links to Purrcast and Zamoled. */
     private class TrioBridge {
+        /** The day streak and its shield text, shown by the other two apps in their Cat Club line. */
+        @JavascriptInterface public void setStreak(int days, String label) {
+            getSharedPreferences(CatClubProvider.PREFS, MODE_PRIVATE).edit().putInt("streak_days", days).putString("streak_label", label == null ? "day streak" : label).apply();
+        }
         @JavascriptInterface public void setCats(int n) {
             getSharedPreferences(CatClubProvider.PREFS, MODE_PRIVATE).edit().putInt("cats", n).apply();
         }

@@ -20,7 +20,10 @@ public final class CatClubProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         MatrixCursor c = new MatrixCursor(new String[]{"value", "label"});
         Context ctx = getContext();
-        if (ctx != null) c.addRow(new Object[]{ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt("cats", 0), "cats caught"});
+        if (ctx != null) {
+            android.content.SharedPreferences p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            c.addRow(new Object[]{p.getInt("streak_days", 0), p.getString("streak_label", "day streak")});
+        }
         return c;
     }
 

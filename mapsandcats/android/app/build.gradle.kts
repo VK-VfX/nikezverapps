@@ -42,7 +42,7 @@ android {
 // Bundle the PWA (repo root) into the APK so it runs offline.
 val copyWeb by tasks.registering(Copy::class) {
     from(rootProject.projectDir.parentFile) {
-        include("index.html", "app.css", "app.js", "icons.js", "manifest.webmanifest", "favicon-*.png", "icon-*.png", "version.json", "vendor/**", "assets/**")
+        include("index.html", "app.css", "app.js", "icons.js", "streak.js", "manifest.webmanifest", "favicon-*.png", "icon-*.png", "version.json", "vendor/**", "assets/**")
     }
     into(layout.buildDirectory.dir("web"))
 }

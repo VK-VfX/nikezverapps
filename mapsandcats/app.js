@@ -14,11 +14,12 @@ const S = Object.assign({
   theme: 'dark', speedo: true, meowAt: 80, catVoice: true, limitSign: true, weight: 65, sim: false, xp: 0, caught: 0, avoidHw: false,
   voice: { on: true, name: '' },
   servers: { photon: '', nominatim: '', osrm: '' },
-  saved: { home: null, work: null, favs: [] }, recents: [], trips: [], country: null,
+  saved: { home: null, work: null, favs: [] }, recents: [], trips: [], country: null, streak: null,
 }, (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })());
 S.voice = Object.assign({ on: true, name: '' }, S.voice);
 S.servers = Object.assign({ photon: '', nominatim: '', osrm: '' }, S.servers); delete S.servers.traffic; delete S.traffic; delete S.trafficKey; delete S.trafficProv;
 S.saved = Object.assign({ home: null, work: null, favs: [] }, S.saved);
+S.streak = Object.assign(newStreak(), S.streak);
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
 
 let me = null;           // {lat, lon, acc, ts}
@@ -292,6 +293,16 @@ async function keepAwake(on) {
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (nav.active || quest.on)) keepAwake(true); });
 function syncCats() { try { TRIO && TRIO.setCats(S.caught | 0); } catch {} }
+/* The day streak (same rules as Purrcast and Zamoled, see streak.js). The shield works while all three apps are installed. */
+function allThreeInstalled() { try { return !!TRIO && TRIO.installed('app.skypix.weather') && TRIO.installed('com.nikopick.zamoled'); } catch { return false; } }
+function streakText() { const on = allThreeInstalled(), sh = streakLabel(S.streak, on); return 'day streak' + (sh ? ' \u00b7 ' + sh : ''); }
+function touchStreak() {
+  const n = streakStep(S.streak, streakDay(Date.now(), -new Date().getTimezoneOffset() * 60000), allThreeInstalled());
+  if (n !== S.streak) { S.streak = n; save(); }
+  try { TRIO && TRIO.setStreak(S.streak.count, streakText()); } catch {}
+}
+touchStreak();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { touchStreak(); refreshTrio(); } });
 const REPO_URL = 'https://github.com/VK-VfX/nikezverapps';
 async function refreshTrio() {
   if (!TRIO) return;
@@ -309,7 +320,7 @@ async function refreshTrio() {
     $(el).textContent = t ? '· ' + t : '';
   };
   line('purrcast', '#purrStat'); line('zamoled', '#zamStat');
-  const parts = [`${S.caught | 0} cats caught`]; if (sib.purrcast && sib.purrcast.stat) parts.push(sib.purrcast.stat); if (sib.zamoled && sib.zamoled.stat) parts.push(sib.zamoled.stat);
+  const parts = [`${S.streak.count} ${streakText()}`, `${S.caught | 0} cats caught`]; if (sib.purrcast && sib.purrcast.stat) parts.push(sib.purrcast.stat); if (sib.zamoled && sib.zamoled.stat) parts.push(sib.zamoled.stat);
   $('#catClub').textContent = 'Cat Club: ' + parts.join(' · ');
 }
 $('#weatherHere').addEventListener('click', () => {
