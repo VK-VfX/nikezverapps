@@ -36,22 +36,10 @@ Maps and Cats already follows this (see `mapsandcats/app.css`, last block). Purr
 
 ## Status
 
-**Maps and Cats: done in code, checked in a phone-size browser.** New `icons.js`, motion and contrast layer in `app.css`, 48dp targets, AAA muted colours. Note `android/app/build.gradle.kts` and `sw.js` list files explicitly, so both now include `icons.js`.
+All three apps follow this spec as of Maps and Cats 2.0.0, Purrcast 2.0.0 and Zamoled 7.0.0.
 
-**Purrcast (plain Java, no AndroidX): not changed, could not be run here.** To do:
-1. `Ui.java`: add `TRIO_MUTED = 0xFFAEAEB8`, use it for every caption. Check the light accent: `0xFF00796B` is about 5.3:1, use `0xFF00574D`.
-2. Touch targets: raise every button, switch row and list row to 48dp (`dp(48)` minimum height).
-3. Press feedback: on touch down animate `scaleX/scaleY` to 0.94 over 90 ms, back over 120 ms (`ViewPropertyAnimator`, no layout work).
-4. Cards: 24dp radius, plus the teal rim as a 2dp gradient `View` at the top of each card.
-5. Screen transitions: 240 ms with a `DecelerateInterpolator`; skip when `Settings.Global.ANIMATOR_DURATION_SCALE` is 0.
-6. Replace any non-cat emoji in strings with drawn icons.
+- **Maps and Cats:** `icons.js` (the icon set), the motion and contrast layer at the end of `app.css`, 48px targets, AAA captions. Note `android/app/build.gradle.kts` and `sw.js` list files explicitly, so a new web file must be added to both.
+- **Purrcast:** `Ui.java` has press feedback (`Ui.press`), the teal rim (`RimSurface`, `drawRim`), the first-show entrance (`Ui.enter`) and the darker light-theme accent `#00574D`.
+- **Zamoled:** `Motion.kt` has snappy no-bounce springs and a 90/120 ms press; `Noir.kt` has `Modifier.tealRim()` on `LeafCard`; `Theme.kt` sets `onSurfaceVariant` to `#AEAEB8`.
 
-**Zamoled (Compose): not changed, could not be run here.** To do:
-1. `Theme.kt`: set `onSurfaceVariant` to `#AEAEB8`, keep the primary `#3DF5D0`.
-2. A shared `Modifier.pressable()` in `Components.kt`: `graphicsLayer` scale to 0.94 on press, `tween(90)`; use it on every card, chip and dock item.
-3. Cards: 24.dp shape plus a 2.dp teal gradient rim drawn with `drawBehind` at the top edge.
-4. `minimumInteractiveComponentSize()` of 48.dp on all clickables.
-5. Feed rows: `animateItem()` with `tween(200)`, and `LocalReduceMotion`-style check (animator scale 0 means snap).
-6. Replace non-cat emoji in labels with icons.
-
-Both native apps then need an emulator run to confirm: contrast, tap size, 60 fps scrolling.
+Not yet done: Zamoled's wallpaper-grid cards have no teal rim (kept clean on purpose), and the native apps still need a pass on a real phone for contrast, tap size and 60 fps scrolling.
