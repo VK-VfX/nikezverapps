@@ -60,8 +60,22 @@ jobs:
           name: MapsAndCats-apk
           retention-days: 14
           path: MapsAndCats-v${{ steps.v.outputs.version }}.apk
-      - name: Publish GitHub Release
+      # A shipped file never changes: if this version already has a release, a rebuild (for example after a
+      # workflow edit) must not replace the APK people may already have downloaded and checked.
+      - name: Is this version already published?
+        id: pub
         if: github.event_name == 'push' && steps.key.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "mapsandcats-v${{ steps.v.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::mapsandcats-v${{ steps.v.outputs.version }} is already published; leaving it as it is."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Publish GitHub Release
+        if: github.event_name == 'push' && steps.key.outputs.release == 'true' && steps.pub.outputs.exists != 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: mapsandcats-v${{ steps.v.outputs.version }}
