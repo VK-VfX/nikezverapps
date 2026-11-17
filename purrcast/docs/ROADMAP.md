@@ -31,7 +31,7 @@ Locked cats show as silhouettes with a hint ("Somewhere it's snowing..."), a pro
 ## Built so far (v1.0.8, uncommitted-to-release until built)
 - Streak counter (app card: days in a row, last 7 days, cat that gets cooler as the streak grows).
 - Rain in minutes (Nowcast from Open-Meteo minutely_15; note: outside Europe/N. America/Japan the 15-minute data is interpolated from hourly, so approximate) + "Rain soon" widget (2x2, 4x2) + "Rain in ~N min: grab the umbrella" alert.
-- Official warnings: MET Malaysia open data (api.data.gov.my/weather/warning) matched against the user's city/state. Parser is defensive because the feed could not be tested from the build sandbox. "Danger/flood" wording uses the loud emergency channel.
+- Official warnings (MET Malaysia): built in v1.0.8, **removed at the owner's request** (the parser, the fetch and the two Settings switches are gone; old stored keys are cleared on start).
 - Saved places (search via Open-Meteo geocoding, or "save where I am"), and a per-widget place chooser that shows when a widget is added and on long-press reconfigure.
 - Material You colours (Android 12+, opt-in in Settings): app palette and widget backgrounds follow the wallpaper.
 
@@ -77,7 +77,6 @@ Rules: no snow-only dependencies (owner is in Malaysia: rain, thunder, haze, hea
 - Mascot widget that reacts (asleep at night, awake at sunrise, purrs when petted), seasonal costumes, shareable weather card.
 - "What should I wear?" with a cat outfit suggestion.
 - OTA polish: changelog screen, Wi-Fi only installs, rollback. Translations, settings backup/restore.
-- Philippine (PAGASA) official warnings: no stable open API found yet.
 
 ## The trinity: Purrcast, Zamoled, Maps and Cats
 Three apps by the same owner that open each other. Done: each app has a "The trio" list that opens the others when installed

@@ -16,4 +16,4 @@ Read `docs/ROADMAP.md` for the long-term plan (especially the Cat Club collectio
   The in-app updater reads `dist/update.json` from this branch on raw.githubusercontent.com.
 - `scripts/gen_widgets.py` is the single source of widgets: the UNIFIED list (resizable, shown in the picker) plus the hidden LEGACY sized ones. It regenerates Variants/Widgets/xml/strings/manifest block; run it, then regenerate previews.
 - `MODE=previews|variants|cats|news|headsup scripts/preview.sh <outdir>` renders widgets/text on the JVM for visual checks.
-- Network services (Open-Meteo, data.gov.my) are blocked in the build sandbox: parsers can't be tested live there, so write them defensively.
+- Network services (Open-Meteo) are blocked in the build sandbox: parsers can't be tested live there, so write them defensively.

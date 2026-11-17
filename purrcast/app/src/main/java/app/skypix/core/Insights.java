@@ -35,13 +35,9 @@ public final class Insights {
         }
     }
 
-    /** Official warnings for the current place; refreshed by the app whenever it loads data. */
-    public static volatile List<Insight> official = new ArrayList<Insight>();
-
     public static List<Insight> compute(Weather w, Units u, long nowSec) {
         List<Insight> out = new ArrayList<Insight>();
         if (w == null || !w.valid()) return out;
-        out.addAll(official);
         Weather.Now n = w.now(nowSec);
         int off = w.utcOffset;
         int hi = w.hourIndex(nowSec);

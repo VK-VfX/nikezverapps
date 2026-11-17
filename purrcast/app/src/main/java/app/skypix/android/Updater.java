@@ -4,7 +4,6 @@ import android.content.Context;
 import android.location.Location;
 
 import app.skypix.core.Place;
-import app.skypix.core.Warnings;
 import app.skypix.core.Weather;
 
 import java.util.Locale;
@@ -52,7 +51,6 @@ final class Updater {
                 fetch(app, place);
             }
 
-            fetchOfficial(app, place);
             refreshSaved(app, Store.visible);
             WidgetUpdater.updateAll(app);
             Weather w = Store.loadWeather(app);
@@ -78,43 +76,6 @@ final class Updater {
         Weather w = Store.loadWeather(app);
         Place p = Store.loadPlace(app);
         if ((ok || w != null) && w != null && p != null) Notifier.morning(app, p, w);
-    }
-
-    /** MET Malaysia warnings, at most every 20 minutes, only while you are in Malaysia. */
-    static void fetchOfficial(Context app, Place place) {
-        try {
-            android.content.SharedPreferences sp = Store.prefs(app);
-            if (!Store.official(app)) return;
-            String country = place.country == null ? "" : place.country.toLowerCase(Locale.ROOT);
-            if (!country.contains("malaysia")) {
-                sp.edit().putString("official_status", "Only available in Malaysia (you are in " + (place.country.length() > 0 ? place.country : "an unknown place") + ")").remove("official_json").apply();
-                Store.loadOfficial(app);
-                return;
-            }
-            long now = System.currentTimeMillis();
-            if (now - sp.getLong("official_at", 0) < 20 * 60 * 1000L && sp.contains("official_json")) {
-                Store.loadOfficial(app);
-                return;
-            }
-            String raw = Net.get("https://api.data.gov.my/weather/warning");
-            long nowSec = now / 1000L;
-            java.util.List<Warnings.Warning> all = Warnings.parse(raw, place, nowSec, Store.officialMarine(app));
-            org.json.JSONArray keep = new org.json.JSONArray();
-            int mine = 0;
-            // keep every active record so the sea/coastal switch can take effect without another download
-            for (Warnings.Warning w : all) {
-                if (w.forYou) mine++;
-                if (keep.length() < 200) keep.put(new org.json.JSONObject(w.raw));
-            }
-            String when = android.text.format.DateFormat.format("h:mm a", now).toString();
-            String status = "MET Malaysia: " + all.size() + " active, " + mine + " for your area (checked " + when + ")";
-            if (all.isEmpty() && raw.trim().length() > 2) status += ". Feed read, nothing active";
-            sp.edit().putString("official_json", keep.toString()).putString("official_status", status).putLong("official_at", now).apply();
-            Store.loadOfficial(app);
-        } catch (Exception e) {
-            Store.prefs(app).edit().putString("official_status", "Couldn't read MET Malaysia right now (" + e.getMessage() + ")").apply();
-            Store.loadOfficial(app);
-        }
     }
 
     /** Forecasts for saved places: the ones a widget shows (all of them while the app is open). */

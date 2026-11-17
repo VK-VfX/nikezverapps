@@ -15,6 +15,7 @@ public class App extends Application {
         super.onCreate();
         AndroidGfx.init(this);
         app.skypix.core.Glyphs.cats = Store.cats(this);
+        Store.dropOfficial(this);
         final Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override

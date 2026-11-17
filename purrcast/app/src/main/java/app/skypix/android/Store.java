@@ -10,7 +10,6 @@ import android.text.format.DateFormat;
 import app.skypix.core.Cards;
 import app.skypix.core.Insights;
 import app.skypix.core.Place;
-import app.skypix.core.Warnings;
 import app.skypix.core.Units;
 import app.skypix.core.Weather;
 
@@ -80,26 +79,11 @@ final class Store {
         }
     }
 
-    // ---- official warnings ----
-    static boolean official(Context c) { return sp(c).getBoolean("official", true); }
-    static void setOfficial(Context c, boolean v) { sp(c).edit().putBoolean("official", v).apply(); }
-    static boolean officialMarine(Context c) { return sp(c).getBoolean("official_marine", false); }
-    static void setOfficialMarine(Context c, boolean v) { sp(c).edit().putBoolean("official_marine", v).apply(); }
-    static String officialStatus(Context c) { return sp(c).getString("official_status", "Not checked yet"); }
-
-    /** Re-reads the stored official warnings into {@link Insights#official} for the current place. */
-    static void loadOfficial(Context c) {
-        try {
-            if (!official(c)) {
-                Insights.official = new java.util.ArrayList<Insights.Insight>();
-                return;
-            }
-            Place p = loadPlace(c);
-            long now = System.currentTimeMillis() / 1000L;
-            Insights.official = Warnings.toInsights(Warnings.parse(sp(c).getString("official_json", ""), p, now, officialMarine(c)));
-        } catch (Throwable t) {
-            Insights.official = new java.util.ArrayList<Insights.Insight>();
-        }
+    /** The MET Malaysia warnings feature was removed; forget what it stored. Safe to call on every start. */
+    static void dropOfficial(Context c) {
+        SharedPreferences p = sp(c);
+        if (!p.contains("official") && !p.contains("official_json") && !p.contains("official_status")) return;
+        p.edit().remove("official").remove("official_marine").remove("official_status").remove("official_json").remove("official_at").apply();
     }
 
     // ---- streak: consecutive days the app was opened ----
@@ -232,7 +216,6 @@ final class Store {
         d.units = units(c);
         d.nowSec = System.currentTimeMillis() / 1000L;
         d.tzOffset = java.util.TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 1000;
-        loadOfficial(c);
         applyColors(c, d);
         return d;
     }
