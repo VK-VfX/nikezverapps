@@ -7,6 +7,7 @@ Three apps by one owner that link to each other. Read `purrcast/CLAUDE.md` and `
   to `main`, verify the raw GitHub URL serves the same SHA-256, send the APK. Updater reads `raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/`.
 - Zamoled (`zamoled/`): Gradle/Compose; CI builds on every branch, publishes `zamoled-v<versionName>` only when pushed to `main`. In-app updater lists this repo's releases and takes the newest `zamoled-v*`.
 - Maps and Cats (`mapsandcats/`): web app (Pages) + Capacitor-free Android shell in `mapsandcats/android`. Bump `APP_VERSION` in app.js, `VERSION` in sw.js and `version.json` together.
+- **README download table:** every time an app is released, update its row in the root `README.md` (version and download link; icons live in `docs/icons/`) in the same push. Purrcast's link is stable (`raw.githubusercontent.com/.../purrcast/dist/skypix.apk`); Zamoled and Maps and Cats links name the new release tag.
 - Shared look: teal accent #3DF5D0, black background, ~24dp cards, condensed bold headings + mono captions, same profile picture, same About card.
 - Only Google Noto cat emoji are used as emoji in the products.
 - **Versioning rule (owner's request):** count how much an update carries and bump accordingly: fixes only → patch (1.0.x); several features or behaviour changes → minor (1.x.0); a redesign → major. Never ship a big batch as a patch.
