@@ -31,6 +31,15 @@
   /* '' when the shield is off, else 'shield ready' or 'shield recharging, N days to go'. */
   const streakLabel = (s, shieldOn) => !shieldOn ? '' : s.ready ? 'shield ready' : `shield recharging, ${RECHARGE_DAYS - s.charge} days to go`;
 
+  /* Takes the highest streak across the trio: a sibling visited today or yesterday carries its count into ours. Same object when nothing changes. */
+  function streakAdopt(s, today, sib) {
+    let count = s.count; const d = today - sib.last;
+    if (sib.last !== 0 && (d === 0 || d === 1)) count = Math.max(count, sib.count + d);
+    const best = Math.max(s.best, sib.best, count);
+    if (count === s.count && best === s.best) return s;
+    return Object.assign({}, s, { count, best, mask: count !== s.count ? String(BigInt(s.mask) | 1n) : s.mask });
+  }
+
   /* An old history with only the 64-day mask: its streak is the run of set bits from bit 0. */
   function streakFromLegacy(mask) {
     const m = BigInt(mask); let run = 0;
@@ -41,6 +50,6 @@
   /* The local calendar day number for a clock time and its time zone offset (milliseconds east of UTC). */
   const streakDay = (nowMs, tzOffsetMs) => Math.floor((nowMs + tzOffsetMs) / 86400000);
 
-  const api = { streakStep, streakLabel, streakFromLegacy, streakDay, newStreak };
+  const api = { streakAdopt, streakStep, streakLabel, streakFromLegacy, streakDay, newStreak };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else Object.assign(root, api);
 })(typeof window !== 'undefined' ? window : globalThis);

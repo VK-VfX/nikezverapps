@@ -57,6 +57,23 @@ final class Trio {
         return null;
     }
 
+    /** Another app's day streak as {count, best, last visit day}, or null when it is not installed or is an older version without these numbers. */
+    static long[] streakOf(Context c, String authority) {
+        Cursor cur = null;
+        try {
+            cur = c.getContentResolver().query(Uri.parse("content://" + authority + "/stats"), null, null, null, null);
+            if (cur != null && cur.moveToFirst()) {
+                int b = cur.getColumnIndex("best"), l = cur.getColumnIndex("last");
+                if (b < 0 || l < 0) return null;
+                return new long[]{cur.getInt(cur.getColumnIndexOrThrow("value")), cur.getInt(b), cur.getLong(l)};
+            }
+        } catch (Throwable ignored) {
+        } finally {
+            if (cur != null) cur.close();
+        }
+        return null;
+    }
+
     static boolean newer(String a, String b) {
         String[] x = a.split("\\."), y = b.split("\\.");
         for (int i = 0; i < Math.max(x.length, y.length); i++) {

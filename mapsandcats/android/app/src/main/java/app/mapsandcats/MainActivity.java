@@ -157,8 +157,8 @@ public class MainActivity extends Activity {
     /** Exposed to the page as window.AndroidTrio: the shared Cat Club numbers and links to Purrcast and Zamoled. */
     private class TrioBridge {
         /** The day streak and its shield text, shown by the other two apps in their Cat Club line. */
-        @JavascriptInterface public void setStreak(int days, String label) {
-            getSharedPreferences(CatClubProvider.PREFS, MODE_PRIVATE).edit().putInt("streak_days", days).putString("streak_label", label == null ? "day streak" : label).apply();
+        @JavascriptInterface public void setStreak(int days, int best, double last, String label) {
+            getSharedPreferences(CatClubProvider.PREFS, MODE_PRIVATE).edit().putInt("streak_days", days).putInt("streak_best", best).putLong("streak_last", (long) last).putString("streak_label", label == null ? "day streak" : label).apply();
         }
         @JavascriptInterface public void setCats(int n) {
             getSharedPreferences(CatClubProvider.PREFS, MODE_PRIVATE).edit().putInt("cats", n).apply();
@@ -184,7 +184,11 @@ public class MainActivity extends Activity {
                         android.database.Cursor c = null;
                         try {
                             c = getContentResolver().query(Uri.parse("content://" + s[2] + "/stats"), null, null, null, null);
-                            if (c != null && c.moveToFirst()) o.put("stat", c.getInt(c.getColumnIndexOrThrow("value")) + " " + c.getString(c.getColumnIndexOrThrow("label")));
+                            if (c != null && c.moveToFirst()) {
+                                o.put("stat", c.getInt(c.getColumnIndexOrThrow("value")) + " " + c.getString(c.getColumnIndexOrThrow("label")));
+                                int bi = c.getColumnIndex("best"), li = c.getColumnIndex("last");
+                                if (bi >= 0 && li >= 0) o.put("streak", new JSONObject().put("count", c.getInt(c.getColumnIndexOrThrow("value"))).put("best", c.getInt(bi)).put("last", c.getLong(li)));
+                            }
                         } catch (Exception ignored) {} finally { if (c != null) c.close(); }
                     }
                     out.put(s[0], o);

@@ -64,6 +64,19 @@ public final class Streak {
         return s.ready ? "shield ready" : "shield recharging, " + (RECHARGE_DAYS - s.charge) + " days to go";
     }
 
+    /** Takes the highest streak across the trio: a sibling visited today or yesterday carries its count into ours (yesterday counts today's visit too). Same state when nothing changes. */
+    public static State adopt(State s, long today, int sibCount, int sibBest, long sibLast) {
+        int count = s.count;
+        long d = today - sibLast;
+        if (sibLast != 0 && (d == 0 || d == 1)) count = Math.max(count, sibCount + (int) d);
+        int best = Math.max(Math.max(s.best, sibBest), count);
+        if (count == s.count && best == s.best) return s;
+        State n = s.copy();
+        n.count = count; n.best = best;
+        if (count != s.count) n.mask |= 1L;
+        return n;
+    }
+
     /** An old install had only the 64-day history: its streak is the run of set bits from bit 0. The caller sets {@code last}. */
     public static State fromLegacy(long mask) {
         int run = 0;

@@ -3,6 +3,7 @@ package com.nikopick.zamoled.data
 import android.content.Context
 import com.nikopick.zamoled.gen.StreakState
 import com.nikopick.zamoled.gen.shieldLabel
+import com.nikopick.zamoled.gen.streakAdopt
 import com.nikopick.zamoled.gen.streakStep
 import java.util.TimeZone
 
@@ -34,7 +35,12 @@ object StreakStore {
     @Synchronized
     fun touch(context: Context): StreakState {
         val before = read(context)
-        val after = streakStep(before, dayNumber(), Trio.allInstalled(context))
+        val today = dayNumber()
+        var after = streakStep(before, today, Trio.allInstalled(context))
+        // The trio shares one streak: take the highest from the other two apps (see docs/TRIO.md).
+        for (authority in listOf("app.skypix.weather.catclub", "app.mapsandcats.catclub")) {
+            Trio.streakOf(context, authority)?.let { (count, best, last) -> after = streakAdopt(after, today, count, best, last) }
+        }
         if (after != before) write(context, after)
         return after
     }

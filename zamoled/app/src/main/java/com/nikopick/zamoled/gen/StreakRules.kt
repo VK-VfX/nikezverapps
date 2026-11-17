@@ -52,6 +52,16 @@ fun shieldLabel(s: StreakState, shieldOn: Boolean): String = when {
     else -> "shield recharging, ${STREAK_RECHARGE_DAYS - s.charge} days to go"
 }
 
+/** Takes the highest streak across the trio: a sibling visited today or yesterday carries its count into ours (yesterday counts today's visit too). Same state when nothing changes. */
+fun streakAdopt(s: StreakState, today: Long, sibCount: Int, sibBest: Int, sibLast: Long): StreakState {
+    var count = s.count
+    val d = today - sibLast
+    if (sibLast != 0L && (d == 0L || d == 1L)) count = maxOf(count, sibCount + d.toInt())
+    val best = maxOf(s.best, sibBest, count)
+    if (count == s.count && best == s.best) return s
+    return s.copy(count = count, best = best, mask = if (count != s.count) s.mask or 1uL else s.mask)
+}
+
 /** An old history with only the 64-day mask: its streak is the run of set bits from bit 0. */
 fun streakFromLegacy(mask: ULong): StreakState {
     var run = 0

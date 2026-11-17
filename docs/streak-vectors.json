@@ -320,5 +320,133 @@
     "label": "shield ready"
    }
   }
+ ],
+ "adopt": [
+  {
+   "name": "sibling higher, visited yesterday",
+   "local": {
+    "count": 2,
+    "best": 5,
+    "last": 100,
+    "mask": "3",
+    "ready": true,
+    "charge": 0
+   },
+   "today": 100,
+   "sibling": {
+    "count": 9,
+    "best": 9,
+    "last": 99
+   },
+   "expect": {
+    "count": 10,
+    "best": 10
+   }
+  },
+  {
+   "name": "sibling higher, visited today",
+   "local": {
+    "count": 2,
+    "best": 5,
+    "last": 100,
+    "mask": "3",
+    "ready": true,
+    "charge": 0
+   },
+   "today": 100,
+   "sibling": {
+    "count": 9,
+    "best": 9,
+    "last": 100
+   },
+   "expect": {
+    "count": 9,
+    "best": 9
+   }
+  },
+  {
+   "name": "sibling lower",
+   "local": {
+    "count": 5,
+    "best": 5,
+    "last": 100,
+    "mask": "31",
+    "ready": true,
+    "charge": 0
+   },
+   "today": 100,
+   "sibling": {
+    "count": 3,
+    "best": 3,
+    "last": 100
+   },
+   "expect": {
+    "count": 5,
+    "best": 5
+   }
+  },
+  {
+   "name": "sibling stale, only its best counts",
+   "local": {
+    "count": 2,
+    "best": 5,
+    "last": 100,
+    "mask": "3",
+    "ready": true,
+    "charge": 0
+   },
+   "today": 100,
+   "sibling": {
+    "count": 12,
+    "best": 12,
+    "last": 97
+   },
+   "expect": {
+    "count": 2,
+    "best": 12
+   }
+  },
+  {
+   "name": "sibling never used",
+   "local": {
+    "count": 2,
+    "best": 5,
+    "last": 100,
+    "mask": "3",
+    "ready": true,
+    "charge": 0
+   },
+   "today": 100,
+   "sibling": {
+    "count": 0,
+    "best": 0,
+    "last": 0
+   },
+   "expect": {
+    "count": 2,
+    "best": 5
+   }
+  },
+  {
+   "name": "sibling one day behind catches up to us",
+   "local": {
+    "count": 10,
+    "best": 10,
+    "last": 100,
+    "mask": "1023",
+    "ready": true,
+    "charge": 0
+   },
+   "today": 100,
+   "sibling": {
+    "count": 9,
+    "best": 9,
+    "last": 99
+   },
+   "expect": {
+    "count": 10,
+    "best": 10
+   }
+  }
  ]
 }

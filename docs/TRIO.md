@@ -6,7 +6,7 @@ data moves only when you tap something, or as tiny read-only counts.
 
 | App | Package | Cat Club provider (read-only: day streak and shield text) | Deep link it receives |
 |---|---|---|---|
-| Purrcast | `app.skypix.weather` | `content://app.skypix.weather.catclub/stats` → `value`, `label` (day streak, shield) | `purrcast://weather?lat=&lon=&name=` saves that place and fetches its forecast |
+| Purrcast | `app.skypix.weather` | `content://app.skypix.weather.catclub/stats` → `value`, `label`, `best`, `last`, `mood` | `purrcast://weather?lat=&lon=&name=` saves that place and fetches its forecast |
 | Zamoled | `com.nikopick.zamoled` | `content://com.nikopick.zamoled.catclub/stats` (day streak, shield) | `zamoled://w?k=<recipe>` a shared wallpaper; `zamoled://reward?day=10` the streak wallpaper; `zamoled://weather?mood=rain\|storm\|cloudy\|clear\|night\|snow\|fog` a wallpaper for the weather, with Purrcast's quiet zones |
 | Maps and Cats | `app.mapsandcats` | `content://app.mapsandcats.catclub/stats` (day streak, shield) | `mapsandcats://place?lat=&lon=&name=` shows that place and offers a route |
 
@@ -25,7 +25,7 @@ data moves only when you tap something, or as tiny read-only counts.
 4. Write the link in this file first.
 
 ## Streaks and the Streak Shield (what is real today)
-- **Every app has its own day streak, with identical rules** (no app leads). Opening the app counts as that day's visit (the phone's local calendar day).
+- **One shared streak, highest wins (owner's change, replaces "every app has its own").** Every app keeps its own day streak with identical rules, and each time it opens it reads the other two apps' streak (`value`, `best`, `last`) and takes the highest one that is still alive (visited today or yesterday). The apps converge on the same number without any app being the leader, and nothing leaves the phone. The rule is `adopt` in `docs/streak-vectors.json`. Opening the app counts as that day's visit (the phone's local calendar day).
   The next day adds 1; a longer gap resets it to 1; the best is kept. State per app: count, best, last visit day, a 64-day history, shield state.
 - **Streak Shield**: while **all three apps are installed**, a gap of 1 to 7 missed days does not reset the streak (missed days add nothing, today adds 1).
   It saves once, then recharges after 7 visit days in a row. Each app has its own shield; uninstalling an app switches it off but never removes earned days.

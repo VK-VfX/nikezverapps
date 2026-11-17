@@ -96,7 +96,13 @@ final class Store {
     static synchronized void touchStreak(Context c) {
         SharedPreferences p = sp(c);
         app.skypix.core.Streak.State s = streakState(p);
-        app.skypix.core.Streak.State n = app.skypix.core.Streak.step(s, dayNumber(), shieldOn(c));
+        long today = dayNumber();
+        app.skypix.core.Streak.State n = app.skypix.core.Streak.step(s, today, shieldOn(c));
+        // The trio shares one streak: take the highest from the other two apps (see docs/TRIO.md).
+        for (String authority : new String[]{"com.nikopick.zamoled.catclub", "app.mapsandcats.catclub"}) {
+            long[] sib = Trio.streakOf(c, authority);
+            if (sib != null) n = app.skypix.core.Streak.adopt(n, today, (int) sib[0], (int) sib[1], sib[2]);
+        }
         if (n == s) return;
         p.edit().putLong("streak_last", n.last).putLong("streak_mask", n.mask).putInt("streak_count", n.count)
                 .putInt("streak_best", n.best).putBoolean("shield_ready", n.ready).putInt("shield_charge", n.charge).apply();
@@ -113,6 +119,8 @@ final class Store {
         s.charge = p.getInt("shield_charge", 0);
         return s;
     }
+
+    static long streakLast(Context c) { return sp(c).getLong("streak_last", 0); }
 
     /** The hero-cat mood for the latest weather (see HeroMood); other apps read it from the Cat Club provider. */
     static String mood(Context c) { return sp(c).getString("hero_mood", "smile"); }

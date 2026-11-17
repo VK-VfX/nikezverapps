@@ -36,6 +36,15 @@ object Trio {
         }
     }.getOrNull()
 
+    /** Another app's day streak (count, best, last visit day), or null when it is not installed or is an older version without these numbers. */
+    fun streakOf(context: Context, authority: String): Triple<Int, Int, Long>? = runCatching {
+        context.contentResolver.query(Uri.parse("content://$authority/stats"), null, null, null, null)?.use { c ->
+            val b = c.getColumnIndex("best")
+            val l = c.getColumnIndex("last")
+            if (b >= 0 && l >= 0 && c.moveToFirst()) Triple(c.getInt(c.getColumnIndexOrThrow("value")), c.getInt(b), c.getLong(l)) else null
+        }
+    }.getOrNull()
+
     /** Newest published version of each app, keyed "purrcast", "zamoled", "mapsandcats". Empty when offline. */
     suspend fun latestVersions(): Map<String, String> = withContext(Dispatchers.IO) {
         val out = HashMap<String, String>()

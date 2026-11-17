@@ -18,11 +18,11 @@ public final class CatClubProvider extends ContentProvider {
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
-        MatrixCursor c = new MatrixCursor(new String[]{"value", "label"});
+        MatrixCursor c = new MatrixCursor(new String[]{"value", "label", "best", "last"});
         Context ctx = getContext();
         if (ctx != null) {
             android.content.SharedPreferences p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-            c.addRow(new Object[]{p.getInt("streak_days", 0), p.getString("streak_label", "day streak")});
+            c.addRow(new Object[]{p.getInt("streak_days", 0), p.getString("streak_label", "day streak"), p.getInt("streak_best", 0), p.getLong("streak_last", 0)});
         }
         return c;
     }

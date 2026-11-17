@@ -297,9 +297,15 @@ function syncCats() { try { TRIO && TRIO.setCats(S.caught | 0); } catch {} }
 function allThreeInstalled() { try { return !!TRIO && TRIO.installed('app.skypix.weather') && TRIO.installed('com.nikopick.zamoled'); } catch { return false; } }
 function streakText() { const on = allThreeInstalled(), sh = streakLabel(S.streak, on); return 'day streak' + (sh ? ' \u00b7 ' + sh : ''); }
 function touchStreak() {
-  const n = streakStep(S.streak, streakDay(Date.now(), -new Date().getTimezoneOffset() * 60000), allThreeInstalled());
+  const today = streakDay(Date.now(), -new Date().getTimezoneOffset() * 60000);
+  let n = streakStep(S.streak, today, allThreeInstalled());
+  /* The trio shares one streak: take the highest from the other two apps. */
+  try {
+    const sib = TRIO ? JSON.parse(TRIO.siblings()) : {};
+    for (const k of ['purrcast', 'zamoled']) if (sib[k] && sib[k].streak) n = streakAdopt(n, today, sib[k].streak);
+  } catch {}
   if (n !== S.streak) { S.streak = n; save(); }
-  try { TRIO && TRIO.setStreak(S.streak.count, streakText()); } catch {}
+  try { TRIO && TRIO.setStreak(S.streak.count, S.streak.best, S.streak.last, streakText()); } catch {}
 }
 touchStreak();
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { touchStreak(); refreshTrio(); } });

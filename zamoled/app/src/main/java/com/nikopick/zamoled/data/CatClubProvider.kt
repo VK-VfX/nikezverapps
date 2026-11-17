@@ -15,8 +15,8 @@ class CatClubProvider : ContentProvider() {
     override fun onCreate(): Boolean = true
 
     override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor {
-        val ctx: Context = context ?: return MatrixCursor(arrayOf("value", "label"))
-        return MatrixCursor(arrayOf("value", "label")).apply { addRow(arrayOf<Any>(StreakStore.read(ctx).count, StreakStore.label(ctx))) }
+        val ctx: Context = context ?: return MatrixCursor(arrayOf("value", "label", "best", "last"))
+        return MatrixCursor(arrayOf("value", "label", "best", "last")).apply { addRow(StreakStore.read(ctx).let { arrayOf<Any>(it.count, StreakStore.label(ctx), it.best, it.last) }) }
     }
 
     override fun getType(uri: Uri): String = "vnd.android.cursor.item/vnd.com.nikopick.zamoled.catclub"

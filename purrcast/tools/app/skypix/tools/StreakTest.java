@@ -43,6 +43,15 @@ public final class StreakTest {
             check(name, "charge", s.charge, e.getInt("charge"));
             check(name, "label", Streak.label(s, on), e.getString("label"));
         }
+        JSONArray ad = new JSONObject(text).getJSONArray("adopt");
+        for (int i = 0; i < ad.length(); i++) {
+            JSONObject c = ad.getJSONObject(i), lo = c.getJSONObject("local"), sb = c.getJSONObject("sibling"), e = c.getJSONObject("expect");
+            Streak.State s = new Streak.State();
+            s.count = lo.getInt("count"); s.best = lo.getInt("best"); s.last = lo.getLong("last");
+            Streak.State n = Streak.adopt(s, c.getLong("today"), sb.getInt("count"), sb.getInt("best"), sb.getLong("last"));
+            check(c.getString("name"), "count", n.count, e.getInt("count"));
+            check(c.getString("name"), "best", n.best, e.getInt("best"));
+        }
         Streak.State l = Streak.fromLegacy(7L);
         check("legacy 0b111", "count", l.count, 3);
         check("legacy 0b111", "best", l.best, 3);
@@ -50,6 +59,6 @@ public final class StreakTest {
         check("legacy all ones", "count", Streak.fromLegacy(-1L).count, 64);
         check("legacy empty", "count", Streak.fromLegacy(0L).count, 0);
         if (fail > 0) { System.out.println(fail + " failures"); System.exit(1); }
-        System.out.println("OK " + cases.length() + " cases");
+        System.out.println("OK " + cases.length() + " cases + adopt");
     }
 }
