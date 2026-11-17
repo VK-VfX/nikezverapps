@@ -4,14 +4,14 @@ Each app is complete on its own. Every link below checks that the other app is i
 and quietly falls back to the project's GitHub page, or hides itself, when it is not. No accounts, no background syncing:
 data moves only when you tap something, or as tiny read-only counts.
 
-| App | Package | Cat Club provider (read-only) | Deep link it receives |
+| App | Package | Cat Club provider (read-only: day streak and shield text) | Deep link it receives |
 |---|---|---|---|
-| Purrcast | `app.skypix.weather` | `content://app.skypix.weather.catclub/stats` → `value`, `label` (day streak) | `purrcast://weather?lat=&lon=&name=` saves that place and fetches its forecast |
-| Zamoled | `com.nikopick.zamoled` | `content://com.nikopick.zamoled.catclub/stats` (wallpapers kept) | `zamoled://w?k=<recipe>` a shared wallpaper; `zamoled://reward?day=10` the streak wallpaper; `zamoled://weather?mood=rain\|storm\|cloudy\|clear\|night\|snow\|fog` a wallpaper for the weather, with Purrcast's quiet zones |
-| Maps and Cats | `app.mapsandcats` | `content://app.mapsandcats.catclub/stats` (cats caught) | `mapsandcats://place?lat=&lon=&name=` shows that place and offers a route |
+| Purrcast | `app.skypix.weather` | `content://app.skypix.weather.catclub/stats` → `value`, `label` (day streak, shield) | `purrcast://weather?lat=&lon=&name=` saves that place and fetches its forecast |
+| Zamoled | `com.nikopick.zamoled` | `content://com.nikopick.zamoled.catclub/stats` (day streak, shield) | `zamoled://w?k=<recipe>` a shared wallpaper; `zamoled://reward?day=10` the streak wallpaper; `zamoled://weather?mood=rain\|storm\|cloudy\|clear\|night\|snow\|fog` a wallpaper for the weather, with Purrcast's quiet zones |
+| Maps and Cats | `app.mapsandcats` | `content://app.mapsandcats.catclub/stats` (day streak, shield) | `mapsandcats://place?lat=&lon=&name=` shows that place and offers a route |
 
 ## What you see
-- **Cat Club line** in each app's "The trio" list: its own number plus the siblings' (day streak, wallpapers kept, cats caught).
+- **Cat Club line** in each app's "The trio" list: its own day streak (with the shield state) plus the siblings' streaks.
 - **Purrcast, Saved places → Maps**: opens that place in Maps and Cats.
 - **Maps and Cats, a destination → "Weather here"**: opens Purrcast and saves the place.
 - **Purrcast, The trio → "Wallpaper for this weather"**: opens Zamoled with a matching wallpaper (mood from the current forecast).
@@ -24,12 +24,17 @@ data moves only when you tap something, or as tiny read-only counts.
 3. Counts only through the Cat Club provider, one row, columns `value` (int) and `label` (short text).
 4. Write the link in this file first.
 
-## Streaks and rewards (what is real today)
-- **Purrcast streak**: opening the app counts as that day's visit. Consecutive days grow it, a missed day resets it to 1, the best is kept (64-day history).
-  The streak-card cat is a cloud cat at 1-2 days, partly sunny at 3, sunny at 7, sunglasses at 14+. Cheers at 3, 7, 14, 30, 100 days.
-- **Maps and Cats**: cats caught (Quest). A catch is 10-90 XP by rarity, walking is 1 XP per 25 m, level = 1 + floor(sqrt(XP / 60)).
-- **Zamoled**: wallpapers kept (hearted favourites).
-- **Rewards**: cat moods, cheers, levels, and one real unlock: **every 10 days of Purrcast streak earns a special Zamoled wallpaper**.
-  Counted from the *best* streak (a missed day never takes a reward back); Purrcast tracks which ones were claimed.
+## Streaks and the Streak Shield (what is real today)
+- **Every app has its own day streak, with identical rules** (no app leads). Opening the app counts as that day's visit (the phone's local calendar day).
+  The next day adds 1; a longer gap resets it to 1; the best is kept. State per app: count, best, last visit day, a 64-day history, shield state.
+- **Streak Shield**: while **all three apps are installed**, a gap of 1 to 7 missed days does not reset the streak (missed days add nothing, today adds 1).
+  It saves once, then recharges after 7 visit days in a row. Each app has its own shield; uninstalling an app switches it off but never removes earned days.
+- **One set of test cases** (`docs/streak-vectors.json`) is checked in Purrcast (`purrcast/tools/.../StreakTest.java`), Zamoled
+  (`zamoled/tools/preview/.../StreakTest.kt`) and Maps and Cats (`mapsandcats/tools/streak.test.js`), so the rules cannot drift apart. Change a rule in all three and the vectors together.
+- **Cat Club provider**: `value` is the day streak; `label` is `day streak`, optionally followed by ` · shield ready` or ` · shield recharging, N days to go`.
+  Older versions show a plain label; that still reads correctly.
+- **Streak card cat** (Purrcast): cloud cat at 1-2 days, partly sunny at 3, sunny at 7, sunglasses at 14+. Cheers at 3, 7, 14, 30, 100 days.
+- **Maps and Cats** also keeps cats caught (Quest). A catch is 10-90 XP by rarity, walking is 1 XP per 25 m, level = 1 + floor(sqrt(XP / 60)). **Zamoled** also keeps wallpapers kept (hearted favourites).
+- **Rewards**: every **10 days of Purrcast best streak** earns a special Zamoled wallpaper (counted from the *best* streak, so a missed day never takes a reward back; Purrcast tracks which were claimed).
   Link: `zamoled://reward?day=10` (day must be a multiple of 10). It opens the Cat Club ("gatti") style, one fixed picture per day number,
   with a new colour set each step and Purrcast's quiet zones. Anything new must be added here and in each app's help text.
