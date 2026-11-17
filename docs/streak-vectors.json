@@ -1,0 +1,324 @@
+{
+ "cases": [
+  {
+   "name": "first visit",
+   "shieldOn": true,
+   "start": {
+    "count": 0,
+    "best": 0,
+    "last": 0,
+    "mask": "0",
+    "ready": true,
+    "charge": 0
+   },
+   "visits": [
+    100
+   ],
+   "expect": {
+    "count": 1,
+    "best": 1,
+    "last": 100,
+    "mask": "1",
+    "ready": true,
+    "charge": 0,
+    "label": "shield ready"
+   }
+  },
+  {
+   "name": "four in a row",
+   "shieldOn": true,
+   "start": {
+    "count": 0,
+    "best": 0,
+    "last": 0,
+    "mask": "0",
+    "ready": true,
+    "charge": 0
+   },
+   "visits": [
+    100,
+    101,
+    102,
+    103
+   ],
+   "expect": {
+    "count": 4,
+    "best": 4,
+    "last": 103,
+    "mask": "15",
+    "ready": true,
+    "charge": 0,
+    "label": "shield ready"
+   }
+  },
+  {
+   "name": "same day twice",
+   "shieldOn": true,
+   "start": {
+    "count": 0,
+    "best": 0,
+    "last": 0,
+    "mask": "0",
+    "ready": true,
+    "charge": 0
+   },
+   "visits": [
+    100,
+    100
+   ],
+   "expect": {
+    "count": 1,
+    "best": 1,
+    "last": 100,
+    "mask": "1",
+    "ready": true,
+    "charge": 0,
+    "label": "shield ready"
+   }
+  },
+  {
+   "name": "clock moved back",
+   "shieldOn": true,
+   "start": {
+    "count": 0,
+    "best": 0,
+    "last": 0,
+    "mask": "0",
+    "ready": true,
+    "charge": 0
+   },
+   "visits": [
+    100,
+    101,
+    99
+   ],
+   "expect": {
+    "count": 2,
+    "best": 2,
+    "last": 101,
+    "mask": "3",
+    "ready": true,
+    "charge": 0,
+    "label": "shield ready"
+   }
+  },
+  {
+   "name": "miss 2 days, shield off",
+   "shieldOn": false,
+   "start": {
+    "count": 0,
+    "best": 0,
+    "last": 0,
+    "mask": "0",
+    "ready": true,
+    "charge": 0
+   },
+   "visits": [
+    100,
+    101,
+    102,
+    103,
+    106
+   ],
+   "expect": {
+    "count": 1,
+    "best": 4,
+    "last": 106,
+    "mask": "121",
+    "ready": true,
+    "charge": 0,
+    "label": ""
+   }
+  },
+  {
+   "name": "miss 2 days, shield on",
+   "shieldOn": true,
+   "start": {
+    "count": 0,
+    "best": 0,
+    "last": 0,
+    "mask": "0",
+    "ready": true,
+    "charge": 0
+   },
+   "visits": [
+    100,
+    101,
+    102,
+    103,
+    106
+   ],
+   "expect": {
+    "count": 5,
+    "best": 5,
+    "last": 106,
+    "mask": "121",
+    "ready": false,
+    "charge": 0,
+    "label": "shield recharging, 7 days to go"
+   }
+  },
+  {
+   "name": "miss 7 days saved",
+   "shieldOn": true,
+   "start": {
+    "count": 0,
+    "best": 0,
+    "last": 0,
+    "mask": "0",
+    "ready": true,
+    "charge": 0
+   },
+   "visits": [
+    100,
+    101,
+    109
+   ],
+   "expect": {
+    "count": 3,
+    "best": 3,
+    "last": 109,
+    "mask": "769",
+    "ready": false,
+    "charge": 0,
+    "label": "shield recharging, 7 days to go"
+   }
+  },
+  {
+   "name": "miss 8 days not saved",
+   "shieldOn": true,
+   "start": {
+    "count": 0,
+    "best": 0,
+    "last": 0,
+    "mask": "0",
+    "ready": true,
+    "charge": 0
+   },
+   "visits": [
+    100,
+    101,
+    110
+   ],
+   "expect": {
+    "count": 1,
+    "best": 2,
+    "last": 110,
+    "mask": "1537",
+    "ready": true,
+    "charge": 0,
+    "label": "shield ready"
+   }
+  },
+  {
+   "name": "gap while recharging",
+   "shieldOn": true,
+   "start": {
+    "count": 0,
+    "best": 0,
+    "last": 0,
+    "mask": "0",
+    "ready": true,
+    "charge": 0
+   },
+   "visits": [
+    100,
+    101,
+    104,
+    108
+   ],
+   "expect": {
+    "count": 1,
+    "best": 3,
+    "last": 108,
+    "mask": "401",
+    "ready": false,
+    "charge": 0,
+    "label": "shield recharging, 7 days to go"
+   }
+  },
+  {
+   "name": "recharge after 7 in a row",
+   "shieldOn": true,
+   "start": {
+    "count": 0,
+    "best": 0,
+    "last": 0,
+    "mask": "0",
+    "ready": true,
+    "charge": 0
+   },
+   "visits": [
+    100,
+    101,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111
+   ],
+   "expect": {
+    "count": 10,
+    "best": 10,
+    "last": 111,
+    "mask": "3327",
+    "ready": true,
+    "charge": 0,
+    "label": "shield ready"
+   }
+  },
+  {
+   "name": "long gap",
+   "shieldOn": true,
+   "start": {
+    "count": 0,
+    "best": 0,
+    "last": 0,
+    "mask": "0",
+    "ready": true,
+    "charge": 0
+   },
+   "visits": [
+    100,
+    200
+   ],
+   "expect": {
+    "count": 1,
+    "best": 1,
+    "last": 200,
+    "mask": "1",
+    "ready": true,
+    "charge": 0,
+    "label": "shield ready"
+   }
+  },
+  {
+   "name": "full history",
+   "shieldOn": true,
+   "start": {
+    "count": 0,
+    "best": 0,
+    "last": 0,
+    "mask": "0",
+    "ready": true,
+    "charge": 0
+   },
+   "visits": {
+    "from": 200,
+    "to": 263
+   },
+   "expect": {
+    "count": 64,
+    "best": 64,
+    "last": 263,
+    "mask": "18446744073709551615",
+    "ready": true,
+    "charge": 0,
+    "label": "shield ready"
+   }
+  }
+ ]
+}
