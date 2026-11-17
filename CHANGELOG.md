@@ -18,6 +18,7 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 ## Zamoled
 
+- **8.2.1**: The Windows zip now carries the licences of the fonts and libraries it ships (THIRD-PARTY.txt). Nothing else changes.
 - **8.2.0**: One shared streak (the highest across the three apps), a log for bug reports in About (shows why an update install failed), open-source notices.
 - **8.1.0**: Your own day streak and the Streak Shield, shown in the Cat Club card. Hero cat art is bundled for what comes next.
 - **8.0.0**: Night Photos world, short editor tabs, calmer buttons, denser or airier doodles. "For Pixel" removed.
