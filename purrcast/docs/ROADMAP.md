@@ -31,7 +31,7 @@ Locked cats show as silhouettes with a hint ("Somewhere it's snowing..."), a pro
 ## Built so far (v1.0.8, uncommitted-to-release until built)
 - Streak counter (app card: days in a row, last 7 days, cat that gets cooler as the streak grows).
 - Rain in minutes (Nowcast from Open-Meteo minutely_15; note: outside Europe/N. America/Japan the 15-minute data is interpolated from hourly, so approximate) + "Rain soon" widget (2x2, 4x2) + "Rain in ~N min: grab the umbrella" alert.
-- Official warnings (MET Malaysia): built in v1.0.8, **removed at the owner's request** (the parser, the fetch and the two Settings switches are gone; old stored keys are cleared on start).
+- Official warnings (MET Malaysia): built in v1.0.8, **removed at the owner's request** (the parser, the fetch and the two Settings switches are gone; old stored keys are cleared on start). Warnings now come only from the Open-Meteo forecast (no sign-up, no key; no free keyless provider publishes Malaysian alerts) and use plain wording ("Flood risk", "Strong wind", "Extreme heat") with no "official" label, including the one-line Heads-up widgets.
 - Saved places (search via Open-Meteo geocoding, or "save where I am"), and a per-widget place chooser that shows when a widget is added and on long-press reconfigure.
 - Material You colours (Android 12+, opt-in in Settings): app palette and widget backgrounds follow the wallpaper.
 

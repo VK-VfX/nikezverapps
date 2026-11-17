@@ -51,14 +51,14 @@ public final class Insights {
             skipHourlyWet = true;
             String when = Nowcast.minutesText(nc.minutes);
             out.add(new Insight("rain-soon:" + (nc.startsAt / 3600), NOTICE, Icon.UMBRELLA,
-                    "Rain in about " + when + ": grab the umbrella",
+                    "Rain in " + when,
                     Nowcast.intensity(nc.peakRate) + " \u00b7 about " + u.precip(nc.nextHourMm) + " \u00b7 don't get wet",
-                    "Rain in ~" + when, Nowcast.intensity(nc.peakRate), nc.startsAt));
+                    (nc.minutes >= 60 ? "Rain soon" : "Rain in " + when), Nowcast.intensity(nc.peakRate), nc.startsAt));
         } else if (nc != null && nc.state == Nowcast.RAINING && nc.minutes > 0 && nc.minutes <= 90) {
             out.add(new Insight("rain-stops:" + (nc.endsAt / 3600), INFO, Icon.PARTLY_DAY,
-                    "Rain stops in about " + Nowcast.minutesText(nc.minutes),
-                    Nowcast.intensity(nc.peakRate) + " now \u00b7 dry paws soon",
-                    "Dry in ~" + Nowcast.minutesText(nc.minutes), "Rain stops soon", nc.endsAt));
+                    "Rain stops in " + Nowcast.minutesText(nc.minutes),
+                    Nowcast.intensity(nc.peakRate) + " now \u00b7 easing soon",
+                    "Dry in " + Nowcast.minutesText(nc.minutes), "Rain stops soon", nc.endsAt));
         }
 
         // Rain / snow
@@ -75,11 +75,11 @@ public final class Insights {
             if (easing > 0) {
                 out.add(new Insight("wet-now:" + day, NOTICE, Wmo.isSnow(n.code) ? Icon.SHIVER : Icon.UMBRELLA,
                         noun + " easing around " + u.time(w.hTime[easing], off, false),
-                        "Right now: " + Wmo.label(n.code) + " \u00b7 dry paws soon", noun + " eases " + u.time(w.hTime[easing], off, false), Wmo.label(n.code), 0L));
+                        "Right now: " + Wmo.label(n.code) + " \u00b7 easing soon", noun + " eases " + u.time(w.hTime[easing], off, false), Wmo.label(n.code), 0L));
             } else {
                 out.add(new Insight("wet-now:" + day, NOTICE, Wmo.isSnow(n.code) ? Icon.SHIVER : Icon.UMBRELLA,
-                        noun + " is here to stay",
-                        "The umbrella stays out for the next 12 hours", noun + " continues", "Wet for 12 h", 0L));
+                        noun + " all day",
+                        "Expect it for the next 12 hours", noun + " continues", "Wet for 12 h", 0L));
             }
         } else {
             for (int j = hi + 1; j <= end && !skipHourlyWet; j++) {
@@ -89,7 +89,7 @@ public final class Insights {
                     long hrs = Math.max(1, (w.hTime[j] - nowSec + 1800) / 3600);
                     out.add(new Insight("wet:" + (w.hTime[j] / 3600), NOTICE,
                             snow ? Icon.SHIVER : Icon.UMBRELLA,
-                            snow ? "Snow likely around " + u.time(w.hTime[j], off, false) : "Bring an umbrella: rain ~" + u.time(w.hTime[j], off, false),
+                            snow ? "Snow likely around " + u.time(w.hTime[j], off, false) : "Rain expected around " + u.time(w.hTime[j], off, false),
                             Math.round(w.hPop[j]) + "% chance · " + u.precip(w.hPrecip[j]) + " · in about " + hrs + " h", (snow ? "Snow" : "Rain") + " ~" + u.time(w.hTime[j], off, false), Math.round(w.hPop[j]) + "% \u00b7 " + hrs + " h", w.hTime[j]));
                     break;
                 }
@@ -100,8 +100,8 @@ public final class Insights {
         for (int j = hi; j <= end; j++) {
             if (Wmo.isStorm(w.hCode[j])) {
                 out.add(new Insight("storm:" + (w.hTime[j] / 3600), WARNING, Icon.STORM,
-                        "Thunderstorms at " + u.time(w.hTime[j], off, false),
-                        "Possible \u00b7 hide indoors, don't get wet", "Storm " + u.time(w.hTime[j], off, false), "Stay indoors", w.hTime[j]));
+                        "Thunderstorm around " + u.time(w.hTime[j], off, false),
+                        "Stay indoors", "Storm " + u.time(w.hTime[j], off, false), "Stay indoors", w.hTime[j]));
                 break;
             }
         }
@@ -119,10 +119,10 @@ public final class Insights {
             String amount = (p3 >= 30 || rate >= 25)
                     ? "About " + u.precip(Math.max(p3, rate)) + " of rain in the next 3 hours"
                     : "About " + u.precip(p24) + " of rain over the next 24 hours";
-            out.add(new Insight("flood:" + day, WARNING, Icon.ALERT, "Flood alert: stay high and dry",
+            out.add(new Insight("flood:" + day, WARNING, Icon.ALERT, "Flood risk: avoid low roads",
                     amount + " \u00b7 avoid low roads, don't wade through water", "Flood risk", "Heavy rain", w.hTime[rateIdx]));
         } else if (p3 >= 15 || rate >= 10 || p24 >= 50) {
-            out.add(new Insight("flood-watch:" + day, NOTICE, Icon.UMBRELLA, "Downpour ahead: keep paws dry",
+            out.add(new Insight("flood-watch:" + day, NOTICE, Icon.UMBRELLA, "Heavy rain ahead",
                     "Up to " + u.precip(Math.max(p3, p24 / 3)) + " expected \u00b7 stay dry and avoid low-lying areas", "Heavy rain", "Flooding possible", w.hTime[rateIdx]));
         }
 
@@ -135,14 +135,14 @@ public final class Insights {
             if (!Double.isNaN(w.hTemp[j]) && w.hTemp[j] < minTemp) { minTemp = w.hTemp[j]; minIdx = j; }
         }
         if (maxFeels >= 41) {
-            out.add(new Insight("heat:" + day, WARNING, Icon.SWEAT, "Too hot to purr: stay cool",
+            out.add(new Insight("heat:" + day, WARNING, Icon.SWEAT, "Extreme heat: stay cool",
                     "Feels like " + u.t(maxFeels) + " around " + u.time(w.hTime[maxIdx], off, false) + " · hydrate and avoid the sun", "Extreme heat", "Feels " + u.t(maxFeels), w.hTime[maxIdx]));
         } else if (maxFeels >= 35) {
-            out.add(new Insight("hot:" + day, NOTICE, Icon.SWEAT, "Hot out there: find some shade",
+            out.add(new Insight("hot:" + day, NOTICE, Icon.SWEAT, "Hot today: find shade",
                     "Feels like " + u.t(maxFeels) + " around " + u.time(w.hTime[maxIdx], off, false), "Hot today", "Feels " + u.t(maxFeels), w.hTime[maxIdx]));
         }
         if (minTemp <= 0) {
-            out.add(new Insight("freeze:" + day, NOTICE, Icon.SHIVER, "Brrr! Scarf weather",
+            out.add(new Insight("freeze:" + day, NOTICE, Icon.SHIVER, "Freezing: dress warm",
                     "Down to " + u.t(minTemp) + " around " + u.time(w.hTime[minIdx], off, false), "Freezing", "Low " + u.t(minTemp), w.hTime[minIdx]));
         }
 
@@ -150,10 +150,10 @@ public final class Insights {
         double gust = Double.isNaN(n.gust) ? 0 : n.gust;
         for (int j = hi; j <= end; j++) if (!Double.isNaN(w.hWind[j])) gust = Math.max(gust, w.hWind[j] * 1.4);
         if (gust >= 60) {
-            out.add(new Insight("wind:" + day, WARNING, Icon.WIND, "Hold your whiskers: strong gusts",
+            out.add(new Insight("wind:" + day, WARNING, Icon.WIND, "Strong wind",
                     "Gusts up to " + u.speedText(gust), "Strong gusts", "Gusts " + u.speedText(gust), 0L));
         } else if (gust >= 40) {
-            out.add(new Insight("wind:" + day, NOTICE, Icon.WIND, "Breezy: whiskers in the wind",
+            out.add(new Insight("wind:" + day, NOTICE, Icon.WIND, "Windy today",
                     "Gusts up to " + u.speedText(gust), "Windy", "Gusts " + u.speedText(gust), 0L));
         }
 
@@ -164,19 +164,19 @@ public final class Insights {
             if (!Double.isNaN(w.hUv[j]) && w.hUv[j] > uvPeak) { uvPeak = w.hUv[j]; uvIdx = j; }
         }
         if (uvPeak >= 8) {
-            out.add(new Insight("uv:" + day, WARNING, Icon.SHADES, "Shades on: " + Weather.uvLabel(uvPeak).toLowerCase() + " UV",
+            out.add(new Insight("uv:" + day, WARNING, Icon.SHADES, "" + Weather.uvLabel(uvPeak) + " UV: cover up",
                     "UV " + Math.round(uvPeak) + " around " + u.time(w.hTime[uvIdx], off, false) + " · sunscreen and shade", "UV " + Math.round(uvPeak), "Sunscreen + shade", w.hTime[uvIdx]));
         } else if (uvPeak >= 6) {
-            out.add(new Insight("uv:" + day, NOTICE, Icon.SHADES, "Shades on: high UV today",
+            out.add(new Insight("uv:" + day, NOTICE, Icon.SHADES, "High UV today",
                     "UV " + Math.round(uvPeak) + " around " + u.time(w.hTime[uvIdx], off, false) + " · wear sunscreen", "High UV", "UV " + Math.round(uvPeak), w.hTime[uvIdx]));
         }
 
         // Air quality
         if (w.aqi >= 151) {
-            out.add(new Insight("aqi:" + day, WARNING, Icon.MASK, "Mask up: unhealthy air",
+            out.add(new Insight("aqi:" + day, WARNING, Icon.MASK, "Unhealthy air: limit time outside",
                     "AQI " + w.aqi + " · limit time outdoors", "Poor air", "AQI " + w.aqi, 0L));
         } else if (w.aqi >= 101) {
-            out.add(new Insight("aqi:" + day, NOTICE, Icon.MASK, "Mask up: hazy air today",
+            out.add(new Insight("aqi:" + day, NOTICE, Icon.MASK, "Hazy air today",
                     "AQI " + w.aqi + " · " + Weather.aqiLabel(w.aqi), "Air caution", "AQI " + w.aqi, 0L));
         }
 
