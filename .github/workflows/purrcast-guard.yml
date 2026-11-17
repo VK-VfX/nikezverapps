@@ -1,0 +1,43 @@
+name: Purrcast - shipped APK guard
+# Purrcast is released by hand (scripts/build.sh, then dist/ is pushed), so there is no CI publishing step to
+# guard. Instead this check fails when dist/skypix.apk changes without a new versionCode, or when update.json
+# does not describe the APK next to it. A shipped file must never change under the same version.
+on:
+  push:
+    branches: [main]
+    paths: ["purrcast/dist/**"]
+  pull_request:
+    paths: ["purrcast/dist/**"]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: update.json describes this APK
+        run: |
+          WANT=$(python3 -c "import json;print(json.load(open('purrcast/dist/update.json'))['sha256'])")
+          HAVE=$(sha256sum purrcast/dist/skypix.apk | cut -d' ' -f1)
+          if [ "$WANT" != "$HAVE" ]; then echo "::error::update.json says sha256 $WANT but skypix.apk is $HAVE"; exit 1; fi
+      - name: Same APK bytes need the same version, new bytes need a new version
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then echo "no earlier commit to compare"; exit 0; fi
+          git cat-file -e "$BASE^{commit}" 2>/dev/null || { echo "base not available, skipping"; exit 0; }
+          OLD=$(git show "$BASE:purrcast/dist/skypix.apk" 2>/dev/null | sha256sum | cut -d' ' -f1 || true)
+          NEW=$(sha256sum purrcast/dist/skypix.apk | cut -d' ' -f1)
+          [ "$OLD" = "$NEW" ] && { echo "APK unchanged"; exit 0; }
+          OLDV=$(git show "$BASE:purrcast/dist/update.json" 2>/dev/null | python3 -c "import json,sys;print(json.load(sys.stdin)['versionCode'])" 2>/dev/null || echo 0)
+          NEWV=$(python3 -c "import json;print(json.load(open('purrcast/dist/update.json'))['versionCode'])")
+          if [ "$NEWV" -le "$OLDV" ]; then
+            echo "::error::skypix.apk changed but versionCode is still $NEWV (was $OLDV). Bump VERSION_CODE in scripts/build.sh and rebuild."
+            exit 1
+          fi
+          echo "APK changed and versionCode went $OLDV -> $NEWV"

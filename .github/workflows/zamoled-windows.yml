@@ -74,4 +74,9 @@ jobs:
             echo "waiting for release $TAG ($i)"; sleep 30
           done
           gh release view "$TAG" >/dev/null || { echo "release $TAG does not exist"; exit 1; }
-          gh release upload "$TAG" tools/desktop/build/release/Zamoled-Windows-x64.zip --clobber
+          # A shipped file never changes: if the zip is already on this release, leave it.
+          if gh release view "$TAG" --json assets --jq '.assets[].name' | grep -qx 'Zamoled-Windows-x64.zip'; then
+            echo "::notice::$TAG already has Zamoled-Windows-x64.zip; leaving it as it is."
+          else
+            gh release upload "$TAG" tools/desktop/build/release/Zamoled-Windows-x64.zip
+          fi
