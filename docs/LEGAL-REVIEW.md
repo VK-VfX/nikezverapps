@@ -4,7 +4,7 @@ Date: 2026-11-17. **This is an engineering review of what the code and files do,
 the "get a lawyer" items are marked. Everything below is read from the repo as it is today.
 
 ## Status (2026-11-17)
-Done in the same update: repo `LICENSE` (all rights reserved) and `NOTICE.md`; `docs/PRIVACY.md` and reworded in-app text; Purrcast and Maps and Cats disclaimers; in-app Open-source notices in all three apps; DuckDuckGo/Bing scraping removed from Maps and Cats (Wikipedia only). Still open: write down where each icon came from (needs the owner), confirm the Zamoled Windows emoji font, and a lawyer's read if you ever charge money or use a store.
+Done in the same update: repo `LICENSE` (all rights reserved) and `NOTICE.md`; `docs/PRIVACY.md` and reworded in-app text; Purrcast and Maps and Cats disclaimers; in-app Open-source notices in all three apps; DuckDuckGo/Bing scraping removed from Maps and Cats (Wikipedia only). Icon origin is recorded in `docs/ARTWORK.md` (Gemini). The Zamoled Windows zip was checked: it ships Android's own open-licence fonts from Robolectric (Noto Color Emoji, Roboto, Droid, Lato and others), no Microsoft fonts; a `THIRD-PARTY.txt` with their licences now goes into the zip. Still open: confirm the profile picture's origin and a lawyer's read if you ever charge money or use a store.
 
 ## Summary
 | # | Finding | App | Risk | Fix |
@@ -16,10 +16,10 @@ Done in the same update: repo `LICENSE` (all rights reserved) and `NOTICE.md`; `
 | 5 | Navigation and ETA have no safety or accuracy disclaimer | Maps | Medium | One line in About and before the first route, see 5 |
 | 6 | Public routing and search servers (OSRM demo, Nominatim, Photon) have usage policies | Maps | Medium | Rate limits, identify the app, keep "your own server" setting, see 6 |
 | 7 | Third-party licence texts are shipped for some parts, not all | all | Low | Add an in-app "Open-source notices" page, see 7 |
-| 8 | Who owns the three app icons and the cat art? | all | Check | Write down where each came from, see 8 |
+| 8 | Who owns the three app icons and the cat art? (Gemini-generated, see `docs/ARTWORK.md`) | all | Low | Write down where each came from, see 8 |
 | 9 | Open-Meteo's free tier is for non-commercial use | Purrcast | Low today | Keep the app free and ad-free, or buy a plan, see 9 |
 | 10 | Sibling apps can read your streak (exported provider, no signature check) | all | Low | Say so in the privacy note, or add a signature permission, see 10 |
-| 11 | Zamoled Windows zip and emoji fonts | Zamoled | Check | Confirm which emoji font the desktop build renders with, see 11 |
+| 11 | Zamoled Windows zip and emoji fonts (checked: no Microsoft fonts) | Zamoled | Low | Confirm which emoji font the desktop build renders with, see 11 |
 
 ## 1. Repo licence
 No `LICENSE` or `NOTICE` at the repo root. Without one, nobody may legally copy, modify or redistribute the code, even though it is public.

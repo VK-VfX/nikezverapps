@@ -137,6 +137,7 @@ val finishImage = tasks.register("finishImage") {
 tasks.register<Zip>("distZip") {
     dependsOn(finishImage)
     from(dist.map { it.dir("Zamoled") }) { into("Zamoled") }
+    from(file("THIRD-PARTY.txt")) { into("Zamoled") }
     archiveFileName.set("Zamoled-Windows-x64.zip")
     destinationDirectory.set(layout.buildDirectory.dir("release"))
 }

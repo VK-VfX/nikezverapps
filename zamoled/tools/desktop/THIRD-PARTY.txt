@@ -1,0 +1,14 @@
+Zamoled for Windows: third-party parts shipped in this folder
+
+Fonts (bundled with the Android graphics runtime from Robolectric, used to draw wallpapers; no Microsoft fonts are included):
+  Noto Color Emoji and the Noto Sans / Noto Serif families (Google), Roboto, Roboto Condensed, Droid Sans, Droid Sans Mono,
+  Droid Sans Fallback (Google/Android Open Source Project): Apache License 2.0, https://www.apache.org/licenses/LICENSE-2.0
+  Lato, Arvo, Dancing Script, Cutive Mono, Carrois Gothic SC, Arbutus Slab, Rubik, Source Sans Pro, Nanum Gothic:
+  SIL Open Font License 1.1, https://openfontlicense.org (each font keeps its own copyright holder)
+  Coming Soon: Apache License 2.0
+The app's own window text uses a font already installed on your PC (Segoe UI when present); it is not shipped.
+
+Libraries: Robolectric (MIT), Skia graphics runtime (BSD-3-Clause), Kotlin and the Java runtime (Eclipse Temurin: GPLv2 with Classpath Exception).
+
+Photographs in Night Photos: Unsplash License, credits in the Android app (Settings, Open-source notices).
+Zamoled itself: all rights reserved, see https://github.com/VK-VfX/nikezverapps

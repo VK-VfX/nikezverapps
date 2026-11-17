@@ -9,6 +9,7 @@
 | Search: Photon (Komoot), Nominatim; routing: OSRM | Maps and Cats | public servers under their usage policies |
 | Weather and air quality: Open-Meteo.com | Purrcast | CC BY 4.0 (https://open-meteo.com/en/license) |
 | Night Photos (six photographs) | Zamoled | Unsplash License; credits in `zamoled/app/src/main/assets/photos/CREDITS.txt` |
+| Zamoled for Windows: bundled Android fonts (Noto, Roboto, Droid, Lato, Arvo and others), Robolectric, Skia | Zamoled (Windows) | Apache-2.0 / SIL OFL 1.1 / MIT / BSD-3; list in `zamoled/tools/desktop/THIRD-PARTY.txt`, shipped in the zip |
 | AndroidX, Jetpack Compose, WorkManager, Kotlin and coroutines | Zamoled; androidx.webkit in the Maps and Cats shell | Apache-2.0 |
 
 Each app also shows these in About, under "Open-source notices".
