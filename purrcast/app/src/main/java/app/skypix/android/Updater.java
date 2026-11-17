@@ -54,7 +54,12 @@ final class Updater {
             refreshSaved(app, Store.visible);
             WidgetUpdater.updateAll(app);
             Weather w = Store.loadWeather(app);
-            if (w != null) Notifier.alerts(app, place, w);
+            if (w != null) {
+                long now = System.currentTimeMillis() / 1000L;
+                java.util.List<app.skypix.core.Insights.Insight> ins = app.skypix.core.Insights.compute(w, Store.units(app), now);
+                Store.setMood(app, app.skypix.core.HeroMood.pick(app.skypix.core.Wmo.icon(w.now(now).code, w.now(now).isDay), ins.isEmpty() ? null : ins.get(0)));
+                Notifier.alerts(app, place, w);
+            }
             return w != null;
         }
     }

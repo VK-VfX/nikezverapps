@@ -114,6 +114,10 @@ final class Store {
         return s;
     }
 
+    /** The hero-cat mood for the latest weather (see HeroMood); other apps read it from the Cat Club provider. */
+    static String mood(Context c) { return sp(c).getString("hero_mood", "smile"); }
+    static void setMood(Context c, String m) { sp(c).edit().putString("hero_mood", m).apply(); }
+
     /** True while all three apps are installed on this phone: the Streak Shield and the hero cat work. */
     static boolean shieldOn(Context c) { return Trio.allInstalled(c); }
 

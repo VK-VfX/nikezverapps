@@ -89,3 +89,6 @@ A feature in each app: Purrcast 2.1.0, Zamoled 8.1.0, Maps and Cats 2.2.0, toget
 
 ## Update: emotions instead of costumes (owner's request)
 The hero cat has nine emotions: smile, grin, smirk, confident, angry, shocked, sad, scared, loaf (plus a locked silhouette). Same mask, cape and star collar on every one. Purrcast picks the emotion from the weather icon; Zamoled's Hero Club mixes them; the Maps and Cats parade walks a mix. Weather mapping is the builder's proposal, see the hero-cat plan.
+
+### Mood rule (owner's request)
+The hero cat's emotion follows Purrcast's weather and its top one-liner (`core/HeroMood.java`). Widgets use it directly. The other two apps read the mood from the Cat Club provider (`mood` column) and show it on the lead cat; everything they pick for decoration (parade, Hero Club wallpapers) comes from the calm set only. Angry and sad appear only when the weather is bad (storm, flood, strong wind -> angry; rain, flood watch -> sad).

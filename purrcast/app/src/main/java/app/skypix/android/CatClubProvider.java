@@ -15,8 +15,8 @@ public final class CatClubProvider extends ContentProvider {
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
-        MatrixCursor c = new MatrixCursor(new String[]{"value", "label"});
-        if (getContext() != null) c.addRow(new Object[]{Store.streak(getContext()), Store.streakLabel(getContext())});
+        MatrixCursor c = new MatrixCursor(new String[]{"value", "label", "mood"});
+        if (getContext() != null) c.addRow(new Object[]{Store.streak(getContext()), Store.streakLabel(getContext()), Store.mood(getContext())});
         return c;
     }
 
