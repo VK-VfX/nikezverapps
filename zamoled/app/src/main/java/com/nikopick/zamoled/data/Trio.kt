@@ -16,6 +16,24 @@ data class CatStat(val value: Int, val label: String)
  * How Zamoled, Purrcast and Maps and Cats know about each other. Every call is safe when the other app is missing:
  * it just returns null, and the screen hides that line.
  */
+/** The "Show hero cat" switch and the unlock rule: all three apps installed and the switch on. */
+object HeroSwitch {
+    fun on(context: Context): Boolean = context.getSharedPreferences("zamoled", Context.MODE_PRIVATE).getBoolean("hero_on", true)
+
+    fun set(context: Context, value: Boolean) {
+        context.getSharedPreferences("zamoled", Context.MODE_PRIVATE).edit().putBoolean("hero_on", value).apply()
+        refresh(context)
+    }
+
+    fun active(context: Context): Boolean = on(context) && Trio.allInstalled(context)
+
+    /** Updates the Hero Club style from the switch, the installed apps and Purrcast's mood. */
+    fun refresh(context: Context) {
+        com.nikopick.zamoled.gen.HeroPack.unlocked = active(context)
+        com.nikopick.zamoled.gen.HeroPack.lead = Trio.mood(context)?.takeIf { it in com.nikopick.zamoled.gen.HeroPack.ALL } ?: "smile"
+    }
+}
+
 object Trio {
     const val PURRCAST = "app.skypix.weather"
     const val MAPS = "app.mapsandcats"

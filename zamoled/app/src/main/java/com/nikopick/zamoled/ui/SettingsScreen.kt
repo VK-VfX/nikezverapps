@@ -237,13 +237,14 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
             Column(Modifier.padding(horizontal = 18.dp, vertical = 14.dp)) {
                 Text("Cat Club", style = MaterialTheme.typography.titleMedium)
                 val streak = remember { com.nikopick.zamoled.data.StreakStore.read(context).count }
-                val heroOpen = remember { Trio.allInstalled(context) }
+                var heroOn by remember { mutableStateOf(com.nikopick.zamoled.data.HeroSwitch.on(context)) }
+                val heroOpen = remember { Trio.allInstalled(context) } && heroOn
                 val heroMood = remember { Trio.mood(context)?.takeIf { it in HERO_MOODS } ?: "smile" }
                 Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     StreakRing(streak)
                     HeroCat(if (heroOpen) heroMood else "locked", if (heroOpen) "The hero cat feeling $heroMood" else "A hero cat silhouette")
                     Text(
-                        if (heroOpen) "Hero cat: $heroMood" else "Install all three apps to meet the hero cat",
+                        if (heroOpen) "Hero cat: $heroMood. Hero Club wallpapers are unlocked in Doodle." else if (!Trio.allInstalled(context)) "Install all three apps to meet the hero cat" else "The hero cat is hidden",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
@@ -264,6 +265,12 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (shield.isNotEmpty()) Text(shield, style = MaterialTheme.typography.labelLarge, color = Violet)
+                if (Trio.allInstalled(context)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Text("Show hero cat", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        Switch(checked = heroOn, onCheckedChange = { heroOn = it; com.nikopick.zamoled.data.HeroSwitch.set(context, it) })
+                    }
+                }
                 Spacer(Modifier.height(8.dp))
                 Text(
                     "How it works: every app counts its own day streak, the same way, and each app shows the other two when installed. " +

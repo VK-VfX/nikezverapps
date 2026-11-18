@@ -457,8 +457,15 @@ object Styles {
     ) + NatureWorld.styles + GlitchWorld.styles + LabWorld.styles + WordsWorld.styles + SpaceWorld.styles
 
     /** Every style shown in the app; the Night Photos only when their images are bundled (not in the Windows app). */
-    val all: List<Style> get() = if (PhotoPack.ready) allWithPhotos else base
+    val all: List<Style> get() = when {
+        PhotoPack.ready && HeroPack.available -> allWithPhotosAndHero
+        PhotoPack.ready -> allWithPhotos
+        HeroPack.available -> baseWithHero
+        else -> base
+    }
     private val allWithPhotos: List<Style> by lazy { base + PhotoWorld.styles }
+    private val baseWithHero: List<Style> by lazy { base + HeroClub }
+    private val allWithPhotosAndHero: List<Style> by lazy { base + PhotoWorld.styles + HeroClub }
 
     /** Retired styles: hidden from browsing but still able to open saved favourites. */
     private val retired: List<Style> = listOf(
@@ -513,7 +520,7 @@ object Styles {
 
     fun byId(id: String): Style {
         val key = aliases[id] ?: id
-        return all.firstOrNull { it.id == key } ?: retired.firstOrNull { it.id == key } ?: PhotoWorld.styles.firstOrNull { it.id == key }?.takeIf { PhotoPack.ready } ?: all[0]
+        return all.firstOrNull { it.id == key } ?: retired.firstOrNull { it.id == key } ?: PhotoWorld.styles.firstOrNull { it.id == key }?.takeIf { PhotoPack.ready } ?: HeroClub.takeIf { key == it.id && HeroPack.ready } ?: all[0]
     }
     fun of(category: Category): List<Style> = all.filter { it.category == category }
 

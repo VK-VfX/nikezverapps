@@ -23,6 +23,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        com.nikopick.zamoled.data.HeroSwitch.refresh(this)
         com.nikopick.zamoled.data.StreakStore.touch(this)
     }
 
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
         com.nikopick.zamoled.data.StreakStore.touch(this)
         CodeSource.init(assets)
         com.nikopick.zamoled.gen.PhotoPack.init(assets)
+        com.nikopick.zamoled.gen.HeroPack.init(assets)
         ThumbCache.init(this)
         Updates.schedule(this, getSharedPreferences("zamoled", MODE_PRIVATE).getBoolean(Prefs.AUTO_UPDATE, true))
         if (savedInstanceState == null) readLink(intent)
