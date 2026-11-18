@@ -3,7 +3,7 @@
 (() => {
 'use strict';
 
-const APP_VERSION = '2.4.0';
+const APP_VERSION = '2.5.0';
 /* The log catcher: lines go to the shell's diagnostic log (shared only when you tap Share in About). No places, no searches. */
 const diag = (tag, msg) => { try { const t = window.AndroidTrio; if (t && t.diagLog) t.diagLog(tag, String(msg)); } catch {} };
 window.addEventListener('error', e => diag('js-error', (e.message || '') + ' @' + (e.filename || '').split('/').pop() + ':' + e.lineno));

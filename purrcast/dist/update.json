@@ -1,7 +1,7 @@
 {
-  "versionCode": 24,
-  "versionName": "2.3.0",
+  "versionCode": 25,
+  "versionName": "2.4.0",
   "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
-  "sha256": "92c5b540bd0017999d3bc4064982203a9ab66f239a30dfd949f54261f8315ba7",
-  "notes": "A fresh look (soft violet streak ring, rounder cards), the masked hero cat on widgets in five mask looks, save and restore your progress with a short code, whole place names that never show a council (Shah Alam, Selangor), and the whole name on small widgets."
+  "sha256": "0b7ae55ec9f27f51b1d3dd8c1e97dc749fe0b400e314095209c911b624c393ea",
+  "notes": "The supercat arrives at a 10 day streak and grows happier each day (still reacting to your weather). The shield saves a broken streak up to 7 days; after that the plain Noto cat is sad for two days and confident from the third."
 }
