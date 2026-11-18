@@ -44,3 +44,18 @@ About, right under the Telegram row: **Log for bug reports** with Share and Clea
 
 ## Hero cat on the streak cards (first step)
 When Purrcast, Zamoled and Maps and Cats are all installed, the streak card (Purrcast), the Cat Club card (Zamoled) and the Cat Club block (Maps and Cats) show the masked hero cat in the mood Purrcast chose from the weather (see `HeroMood`; shared as the `mood` column of the Cat Club provider). Until then they show the locked silhouette and a line saying to install all three. The widgets, the Hero Club wallpapers and the walking parade come later. The violet ring next to it counts days to the next 10-day reward.
+
+## Hero cat everywhere (complete)
+- **Unlock rule:** Purrcast, Zamoled and Maps and Cats all installed, and the app's own "Show hero cat" switch on (each app keeps its own switch, default on). Nothing is sent anywhere; each app checks which siblings are installed.
+- **Purrcast:** every widget cat becomes the hero cat in the emotion of that weather (`HeroMood.fromIcon`); notifications and text keep the plain cat emoji. The streak card shows the hero in Purrcast's weather mood. If a sibling is uninstalled, the next refresh falls back to the normal cats.
+- **Zamoled:** a "Hero Club" wallpaper style in Doodle (pure black, corners exactly #000000): the big cats show Purrcast's mood, the rest come from the calm set. Hidden while locked; saved favourites of it still open.
+- **Maps and Cats:** a walking parade of five hero cats across the Cat Club block in the drawer (the weather mood leads). A still row when the phone's "remove animations" setting is on.
+- **Angry and sad** only appear when the weather is bad (they come only from Purrcast's mood); everything chosen for decoration is from the calm set.
+- **Locked:** a silhouette and "Install all three apps to meet the hero cat".
+
+## Save codes (complete)
+- Settings, **Progress**: *Save my progress* and *Restore progress* in all three apps. Codes are **per app**: one app never reads or writes another app's code.
+- Prefixes: `PRC1` (streak + rewards claimed), `ZAM1` (streak), `MAC1` (streak + xp + cats caught). Crockford base32 in groups of four with a CRC-16; shared vectors in `docs/save-code-vectors.json` are checked by Java, Kotlin and JS tests.
+- Ways to keep it: share to notes or chat, a screenshot card (Pictures/Trio, Android 10+), a calendar event, a text file, copy. An optional full backup `.json` carries saved places (Purrcast, Maps and Cats), favourites (Zamoled) and a few settings.
+- Restoring never lowers anything: bests, xp, cats caught and rewards take the larger number; the newer streak block wins. A pasted note with several codes works; a wrong-app code, a typo and an empty paste each get a friendly message.
+- No new permissions, no network, no camera.
