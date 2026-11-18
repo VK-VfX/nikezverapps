@@ -10,6 +10,10 @@ public final class Glyphs {
     /** When true every weather cat is the masked hero cat in the emotion of that weather (all three apps installed, switch on). Image-only: notification text keeps the plain cat emoji. */
     public static volatile boolean hero = false;
 
+    /** Which of the five hero looks (mask and cape colour) is drawn, 0 to 4. The widget updater picks a new one each refresh. */
+    public static volatile int heroVariant = 0;
+    public static final int HERO_LOOKS = 5;
+
     /** The cat as an emoji character, for notification text (the system's Noto Color Emoji draws it). */
     public static String catEmoji(Icon ic) {
         String n = catFor(ic);
@@ -213,7 +217,7 @@ public final class Glyphs {
 
     private static void cat(Gfx g, Icon ic, float x, float y, float s, float t) {
         if (hero) {
-            g.emoji("hero_" + HeroMood.fromIcon(ic), x, y, s);
+            g.emoji("hero_" + HeroMood.fromIcon(ic) + "_" + Math.floorMod(heroVariant, HERO_LOOKS), x, y, s);
             return;
         }
         String face = catFor(ic);

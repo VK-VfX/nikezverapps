@@ -381,7 +381,7 @@ const HERO_MOODS = ['smile', 'grin', 'smirk', 'confident', 'angry', 'shocked', '
 function renderClubHero(sib) {
   const box = $('#clubHero'); if (!box) return;
   const open = allThreeInstalled() && S.heroOn !== false, mood = open && sib.purrcast && HERO_MOODS.includes(sib.purrcast.mood) ? sib.purrcast.mood : 'smile';
-  box.innerHTML = streakRing(S.streak.count) + `<img class="hero-cat" src="assets/hero/hero-${open ? mood : 'locked'}.svg" alt="${open ? 'The hero cat feeling ' + mood : 'A hero cat silhouette'}" width="64" height="64">` +
+  box.innerHTML = streakRing(S.streak.count) + `<img class="hero-cat" src="assets/hero/hero-${open ? mood + '-' + Math.floor(Math.random() * 5) : 'locked'}.svg" alt="${open ? 'The hero cat feeling ' + mood : 'A hero cat silhouette'}" width="64" height="64">` +
     `<span class="hero-note">${open ? 'Hero cat: ' + mood : allThreeInstalled() ? 'The hero cat is hidden' : 'Install all three apps to meet the hero cat'}</span>`;
   renderParade(open, mood);
   const row = $('#heroRow'); if (row) { row.hidden = !allThreeInstalled(); $('#heroToggle').checked = S.heroOn !== false; }
@@ -393,7 +393,8 @@ function renderParade(open, mood) {
   if (!open) { box.innerHTML = ''; return; }
   const cats = [mood, ...CALM_MOODS.filter(m => m !== mood).sort((a, b) => (a < b ? -1 : 1)).slice(0, 4)];
   box.style.setProperty('--pw', Math.max(160, box.clientWidth || 300) + 'px');
-  box.innerHTML = cats.map((m, i) => `<div class="walker" style="--i:${i}"><img src="assets/hero/hero-${m}.svg" alt="" width="44" height="44"></div>`).join('');
+  const off = Math.floor(Math.random() * 5);   // a different mask on every cat, and a different set each time
+  box.innerHTML = cats.map((m, i) => `<div class="walker" style="--i:${i}"><img src="assets/hero/hero-${m}-${(i + off) % 5}.svg" alt="" width="44" height="44"></div>`).join('');
 }
 async function refreshTrio() {
   if (!TRIO) return;

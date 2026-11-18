@@ -47,10 +47,12 @@ object HeroPack {
     val CALM = listOf("smile", "grin", "smirk", "confident", "shocked", "loaf")
     val ALL = listOf("smile", "grin", "smirk", "confident", "angry", "shocked", "sad", "scared", "loaf")
 
-    /** The picture of the hero cat in [mood], decoded no larger than needed for [targetWidth] pixels. */
-    fun load(mood: String, targetWidth: Int): Bitmap? {
+    const val LOOKS = 5
+
+    /** The picture of the hero cat in [mood] and mask look [look] (0 to 4; the locked silhouette has no look), decoded no larger than needed for [targetWidth] pixels. */
+    fun load(mood: String, look: Int, targetWidth: Int): Bitmap? {
         val open = opener ?: return null
-        val file = "hero_$mood.png"
+        val file = if (mood == "locked") "hero_locked.png" else "hero_${mood}_${Math.floorMod(look, LOOKS)}.png"
         if (file !in present) return null
         var sample = 1
         while (512 / (sample * 2) >= targetWidth && sample < 8) sample *= 2
@@ -93,7 +95,7 @@ object HeroClub : Style("hero_club", "Hero Club", Category.DOODLE) {
             // keep the four corners pure black: nothing is drawn where a cat would reach one
             val m = size * 0.75f
             if ((p.x < m || p.x > s.w - m) && (p.y < m || p.y > s.h - m)) continue
-            val bmp = HeroPack.load(mood, (size * pxScale).toInt().coerceAtLeast(64)) ?: continue
+            val bmp = HeroPack.load(mood, s.i(0, HeroPack.LOOKS), (size * pxScale).toInt().coerceAtLeast(64)) ?: continue
             s.canvas.save()
             s.canvas.translate(p.x, p.y)
             s.canvas.rotate(p.rot + s.f(-6f, 6f))

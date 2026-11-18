@@ -59,3 +59,7 @@ When Purrcast, Zamoled and Maps and Cats are all installed, the streak card (Pur
 - Ways to keep it: share to notes or chat, a screenshot card (Pictures/Trio, Android 10+), a calendar event, a text file, copy. An optional full backup `.json` carries saved places (Purrcast, Maps and Cats), favourites (Zamoled) and a few settings.
 - Restoring never lowers anything: bests, xp, cats caught and rewards take the larger number; the newer streak block wins. A pasted note with several codes works; a wrong-app code, a typo and an empty paste each get a friendly message.
 - No new permissions, no network, no camera.
+
+## Hero cat art (v2)
+Five mask looks, each with its own cape and collar colour: red domino, blue wing, purple visor, green goggles and rose cat-eye. Every emotion exists in every look (`hero-<emotion>-<0..4>`), plus one locked silhouette; made by `trio-art/hero-cats/build.py` with soft shading (mask sheen, cape gradient, forehead light, chin shade) and shipped at 512 px (Maps and Cats uses the vector SVG). A different look is picked each time: every widget refresh in Purrcast, each cat in Zamoled's Hero Club and in the Maps and Cats parade, and every time a card is shown.
+Widgets show the whole place name: it wraps and shrinks before anything is cut; on the wide card the country is dropped first.

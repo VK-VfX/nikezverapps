@@ -193,6 +193,13 @@ public final class Cards {
             return out;
         }
 
+        /** A place name that gets smaller (down to 8.5) before it is cut, so the whole name stays readable. */
+        void placeText(String name, float size, int font, float maxW, float x, float y, int align, int color) {
+            float sz = size;
+            while (sz > 8.5f && tw(name, sz, font) > maxW) sz -= 0.5f;
+            text(fit(name, sz, font, maxW), x, y, sz, font, align, color);
+        }
+
         /** Small caps label (hours, percentages, day names). Smooth vector type, sized from the old pixel cell. */
         private float pixSize(float cell) {
             return Math.max(11.5f, PixelFont.H * cell * 1.42f);
@@ -495,6 +502,20 @@ public final class Cards {
 
     // ---- NOW (2x2) -----------------------------------------------------------------------------------------------
 
+    /** A place name as a block: it wraps and shrinks (down to 8.5) until it fits [maxW] x [maxH]; returns the height used. */
+    private static float placeBlock(R r, String name, float x, float top, float maxW, float maxH, float size, int font, int color) {
+        float fs = size;
+        java.util.List<String> lines = r.wrap(name, fs, font, maxW, 6);
+        while (fs > 8.5f && lines.size() * (fs + 2.2f) > maxH) {
+            fs -= 0.5f;
+            lines = r.wrap(name, fs, font, maxW, 6);
+        }
+        int maxLines = Math.max(1, (int) (maxH / (fs + 2.2f)));
+        if (lines.size() > maxLines) lines = r.wrap(name, fs, font, maxW, maxLines);
+        for (int i = 0; i < lines.size(); i++) r.text(lines.get(i), x, top + fs - 1 + i * (fs + 2.2f), fs, font, Gfx.LEFT, color);
+        return lines.size() * (fs + 2.2f);
+    }
+
     private static void now(R r, Data d) {
         float w = r.w, h = r.h;
         float pad = clamp(w * 0.1f, 10, 16);
@@ -502,9 +523,6 @@ public final class Cards {
         Units u = d.units;
         float isz = clamp(w * 0.26f, 22, 40);
         float real = r.icon(Wmo.icon(n.code, n.isDay), w - pad - isz, pad - 3, isz);
-        String loc = r.fit(d.place.shortName(), 12, Gfx.FONT_MEDIUM, w - 2 * pad - real - 4);
-        r.text(loc, pad, pad + 10, 12, Gfx.FONT_MEDIUM, Gfx.LEFT, T2);
-
         float cell = 1.5f;
         float pixTop = h - pad - r.pixH(cell);
         hiLo(r, pad, pixTop, cell, d.weather.todayMax(d.nowSec), d.weather.todayMin(d.nowSec), u, Gfx.LEFT);
@@ -512,6 +530,9 @@ public final class Cards {
         r.text(r.fit(Wmo.label(n.code), 12, Gfx.FONT_REGULAR, w - 2 * pad), pad, condBase, 12, Gfx.FONT_REGULAR, Gfx.LEFT, T2);
         float ts = clamp(h * 0.35f, 28, 48);
         r.text(u.t(n.temp), pad - 1, condBase - 17, ts, Gfx.FONT_BOLD, Gfx.LEFT, WHITE);
+
+        // The whole place name: it wraps beside the icon and shrinks a little until it fits the room above the temperature.
+        placeBlock(r, d.place.shortName(), pad, pad, w - 2 * pad - real - 4, (condBase - 17 - ts * 0.74f) - pad - 3, 12, Gfx.FONT_MEDIUM, T2);
     }
 
     // ---- MODERN CARDS: line charts, big number, classic (Pixel / Material look) --------------------------------
@@ -558,7 +579,7 @@ public final class Cards {
         String temp = u.t(n.temp);
         float tsz = tall ? 34 : wide ? 24 : 18;
         if (tall) {
-            r.text(r.fit(d.place.shortName(), hs, Gfx.FONT_MEDIUM, w - 2 * pad), pad, pad + hs, hs, Gfx.FONT_MEDIUM, Gfx.LEFT, ink);
+            r.placeText(d.place.shortName(), hs, Gfx.FONT_MEDIUM, w - 2 * pad, pad, pad + hs, Gfx.LEFT, ink);
             r.text("H: " + u.t(wx.todayMax(d.nowSec)) + "  L: " + u.t(wx.todayMin(d.nowSec)), pad, pad + hs + 18, 13, Gfx.FONT_REGULAR, Gfx.LEFT, ink2);
             r.text(temp, pad, pad + hs + 18 + tsz + 2, tsz, Gfx.FONT_MEDIUM, Gfx.LEFT, warm);
             top = pad + hs + 18 + tsz + 8;
@@ -725,7 +746,7 @@ public final class Cards {
         if (w >= 170 && h < 135) {
             // short and wide: place and temperature on the left, cat and condition on the right
             float ls2 = 16;
-            r.text(r.fit(d.place.shortName(), ls2, Gfx.FONT_MEDIUM, w * 0.5f), pad, pad + ls2, ls2, Gfx.FONT_MEDIUM, Gfx.LEFT, WHITE);
+            r.placeText(d.place.shortName(), ls2, Gfx.FONT_MEDIUM, w * 0.5f, pad, pad + ls2, Gfx.LEFT, WHITE);
             float ts2 = clamp(h * 0.50f, 34, 56);
             r.text(u.t(n.temp), pad - 1, pad + ls2 + 4 + ts2 * 0.82f, ts2, Gfx.FONT_LIGHT, Gfx.LEFT, WHITE);
             float isz2 = clamp(h * 0.38f, 28, 44);
@@ -736,7 +757,7 @@ public final class Cards {
         }
         float ls = clamp(w * 0.15f, 15, 22);
         float locBase = pad + ls;
-        r.text(r.fit(d.place.shortName(), ls, Gfx.FONT_MEDIUM, w - 2 * pad), pad, locBase, ls, Gfx.FONT_MEDIUM, Gfx.LEFT, WHITE);
+        r.placeText(d.place.shortName(), ls, Gfx.FONT_MEDIUM, w - 2 * pad, pad, locBase, Gfx.LEFT, WHITE);
         float ts = clamp(h * 0.38f, 38, 72);
         String tt = u.t(n.temp);
         while (ts > 30 && r.tw(tt, ts, Gfx.FONT_LIGHT) > w - 2 * pad) ts -= 2;
@@ -1135,7 +1156,11 @@ public final class Cards {
 
         float lsz = 13.5f * s;
         float lBase = tBase + lsz + 6 * s;
-        r.text(r.fit(d.place.title(), lsz, Gfx.FONT_LIGHT, leftMax), pad, lBase, lsz, Gfx.FONT_LIGHT, Gfx.LEFT, T2);
+        String wideName = d.place.title();
+        float wideSz = lsz;
+        while (wideSz > 9.5f && r.tw(wideName, wideSz, Gfx.FONT_LIGHT) > leftMax) wideSz -= 0.5f;
+        if (r.tw(wideName, wideSz, Gfx.FONT_LIGHT) > leftMax) wideName = d.place.shortName();   // the country goes first, the place stays whole
+        r.placeText(wideName, wideSz, Gfx.FONT_LIGHT, leftMax, pad, lBase, Gfx.LEFT, T2);
 
         float cell = 1.6f * s;
         float pY = lBase + 8 * s;
@@ -1165,9 +1190,9 @@ public final class Cards {
         Weather.Now n = wx.now(d.nowSec);
         float isz = clamp(w * 0.26f, 22, 40);
         float real = r.icon(Wmo.icon(n.code, n.isDay), w - pad - isz, pad - 3, isz);
-        r.text(r.fit(d.place.shortName(), 12, Gfx.FONT_MEDIUM, w - 2 * pad - real - 4), pad, pad + 10, 12, Gfx.FONT_MEDIUM, Gfx.LEFT, T2);
         float ts = clamp(w * 0.36f, 32, 50);
-        float tBase = pad + 18 + ts * 0.8f;
+        float nameH = placeBlock(r, d.place.shortName(), pad, pad, w - 2 * pad - real - 4, 46, 12, Gfx.FONT_MEDIUM, T2);
+        float tBase = pad + Math.max(18, nameH + 6) + ts * 0.8f;
         r.text(u.t(n.temp), pad - 1, tBase, ts, Gfx.FONT_BOLD, Gfx.LEFT, WHITE);
         float cBase = tBase + 17;
         r.text(r.fit(Wmo.label(n.code), 12, Gfx.FONT_REGULAR, w - 2 * pad), pad, cBase, 12, Gfx.FONT_REGULAR, Gfx.LEFT, T2);
@@ -1204,7 +1229,7 @@ public final class Cards {
         Weather.Now n = wx.now(d.nowSec);
         int hi = wx.hourIndex(d.nowSec);
         String temp = u.t(n.temp);
-        r.text(r.fit(d.place.shortName(), 13, Gfx.FONT_BOLD, w - 2 * pad), pad, pad + 12, 13, Gfx.FONT_BOLD, Gfx.LEFT, WHITE);
+        r.placeText(d.place.shortName(), 13, Gfx.FONT_BOLD, w - 2 * pad, pad, pad + 12, Gfx.LEFT, WHITE);
         float tsz = 24;
         float tw = r.tw(temp, tsz, Gfx.FONT_BOLD);
         r.text(temp, pad - 1, pad + 12 + 6 + tsz * 0.8f, tsz, Gfx.FONT_BOLD, Gfx.LEFT, WHITE);
@@ -1297,7 +1322,7 @@ public final class Cards {
         float tsz = h >= 150 ? 30 : 24;
         float tw = r.tw(temp, tsz, Gfx.FONT_BOLD);
         r.text(temp, w - pad, pad + tsz * 0.78f, tsz, Gfx.FONT_BOLD, Gfx.RIGHT, WHITE);
-        r.text(r.fit(d.place.shortName(), hs, Gfx.FONT_BOLD, w - 2 * pad - tw - 10), pad, pad + hs, hs, Gfx.FONT_BOLD, Gfx.LEFT, WHITE);
+        r.placeText(d.place.shortName(), hs, Gfx.FONT_BOLD, w - 2 * pad - tw - 10, pad, pad + hs, Gfx.LEFT, WHITE);
         float sub = 11;
         float subBase = pad + hs + sub + 3;
         if (h >= 100) {
@@ -1345,7 +1370,7 @@ public final class Cards {
         float w = r.w, h = r.h;
         float pad = clamp(w * 0.05f, 12, 18);
         int di = wx.dayIndex(d.nowSec);
-        r.text(r.fit(d.place.shortName(), 14, Gfx.FONT_BOLD, w * 0.55f), pad, pad + 13, 14, Gfx.FONT_BOLD, Gfx.LEFT, WHITE);
+        r.placeText(d.place.shortName(), 14, Gfx.FONT_BOLD, w * 0.55f, pad, pad + 13, Gfx.LEFT, WHITE);
         boolean narrow = w < 200;
         if (!narrow) r.pix("FORECAST", w - pad, pad + 3, 1.3f, Gfx.RIGHT, T3);
 
@@ -1576,7 +1601,7 @@ public final class Cards {
             r.icon(Icon.MOON, w / 2 - real / 2, horizonY - arcH * 0.7f - real / 2, isz);
         }
 
-        if (w >= 200) r.text(r.fit(d.place.shortName(), 12.5f, Gfx.FONT_MEDIUM, w * (w < 200 ? 0.8f : 0.35f)), pad, pad + 11, 12.5f, Gfx.FONT_MEDIUM, Gfx.LEFT, T2);
+        if (w >= 200) r.placeText(d.place.shortName(), 12.5f, Gfx.FONT_MEDIUM, w * (w < 200 ? 0.8f : 0.35f), pad, pad + 11, Gfx.LEFT, T2);
         boolean narrow = w < 200;
         float ts = narrow ? 11.5f : 14;
         String srT = u.time(sr, wx.utcOffset, true), ssT = u.time(ss, wx.utcOffset, true);

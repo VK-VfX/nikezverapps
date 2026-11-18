@@ -95,6 +95,8 @@ final class WidgetUpdater {
     }
 
     static void update(Context ctx, AppWidgetManager m, int variant, int id, Cards.Data d) {
+        // a different hero look (mask and cape colour) every time a widget is refreshed
+        app.skypix.core.Glyphs.heroVariant = new java.util.Random().nextInt(app.skypix.core.Glyphs.HERO_LOOKS);
         push(ctx, m, variant, id, d, -1, 1f);
     }
 

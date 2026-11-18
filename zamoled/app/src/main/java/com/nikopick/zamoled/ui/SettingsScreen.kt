@@ -407,7 +407,10 @@ private fun StreakRing(count: Int) {
 @Composable
 private fun HeroCat(name: String, description: String) {
     val context = LocalContext.current
-    val bmp = remember(name) { runCatching { context.assets.open("hero/hero_$name.png").use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull() }
+    // a different mask look each time the screen is shown
+    val look = remember { (0 until 5).random() }
+    val file = if (name == "locked") "hero_locked.png" else "hero_${name}_$look.png"
+    val bmp = remember(file) { runCatching { context.assets.open("hero/$file").use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull() }
     if (bmp != null) {
         Image(bmp.asImageBitmap(), contentDescription = description, modifier = Modifier.size(64.dp))
     }
