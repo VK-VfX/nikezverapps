@@ -158,6 +158,36 @@ public final class Cards {
             return t.trim() + "…";
         }
 
+        /** Breaks [s] into at most [maxLines] lines that each fit [maxW]; words stay whole where they can. Only the last line gets "..." if it still does not fit. */
+        java.util.List<String> wrap(String s, float size, int font, float maxW, int maxLines) {
+            java.util.List<String> out = new java.util.ArrayList<String>();
+            if (s == null || s.length() == 0) return out;
+            String[] words = s.trim().split("\\s+");
+            String line = "";
+            for (int i = 0; i < words.length; i++) {
+                String w = words[i];
+                String tryLine = line.length() == 0 ? w : line + " " + w;
+                if (tw(tryLine, size, font) <= maxW) { line = tryLine; continue; }
+                if (line.length() > 0) { out.add(line); line = ""; }
+                // a single word wider than the line is cut by characters
+                while (tw(w, size, font) > maxW && w.length() > 1) {
+                    int k = w.length() - 1;
+                    while (k > 1 && tw(w.substring(0, k), size, font) > maxW) k--;
+                    out.add(w.substring(0, k));
+                    w = w.substring(k);
+                }
+                line = w;
+            }
+            if (line.length() > 0) out.add(line);
+            while (out.size() > maxLines) {
+                String last = out.remove(out.size() - 1);
+                out.set(out.size() - 1, out.get(out.size() - 1) + " " + last);
+            }
+            int li = out.size() - 1;
+            if (li >= 0) out.set(li, fit(out.get(li), size, font, maxW));
+            return out;
+        }
+
         /** Small caps label (hours, percentages, day names). Smooth vector type, sized from the old pixel cell. */
         private float pixSize(float cell) {
             return Math.max(11.5f, PixelFont.H * cell * 1.42f);
@@ -861,7 +891,25 @@ public final class Cards {
                 float isz = clamp(h * 0.34f, 28, 44);
                 r.icon(Wmo.icon(n.code, n.isDay), w - pad - isz, pad - 2, isz);
                 r.text(d.units.t(n.temp), w - pad, pad + isz + 24, 24, Gfx.FONT_MEDIUM, Gfx.RIGHT, WHITE);
-                r.text(r.fit(d.place.shortName(), 12, Gfx.FONT_REGULAR, w * 0.30f), w - pad, h - pad + 1, 12, Gfx.FONT_REGULAR, Gfx.RIGHT, T2);
+                // The whole place name, bottom right. It wraps over as many lines as fit under the temperature and, when the
+                // date shares its row (wide cards), stays clear of the date; the type shrinks a little before anything is cut.
+                float placeBase = h - pad + 1;
+                float tempBase = pad + isz + 24;
+                float dateEnd = pad + r.tw(dateText(d, d.tzOffset), 15, Gfx.FONT_MEDIUM) + 10;
+                boolean sharesRow = Math.abs((base + 22) - placeBase) < 14;
+                float maxW = Math.max(60, sharesRow ? w - pad - dateEnd : w - 2 * pad);
+                int maxLines = Math.max(1, Math.min(3, (int) ((placeBase - 9.6f - tempBase - 4) / 14.5f) + 1));
+                String pn = d.place.shortName();
+                float psz = 12;
+                java.util.List<String> pl = r.wrap(pn, psz, Gfx.FONT_REGULAR, maxW, 8);
+                while (pl.size() > maxLines && psz > 9.5f) {
+                    psz -= 0.5f;
+                    pl = r.wrap(pn, psz, Gfx.FONT_REGULAR, maxW, 8);
+                }
+                if (pl.size() > maxLines) pl = r.wrap(pn, psz, Gfx.FONT_REGULAR, maxW, maxLines);
+                for (int i = 0; i < pl.size(); i++) {
+                    r.text(pl.get(pl.size() - 1 - i), w - pad, placeBase - i * (psz + 2.5f), psz, Gfx.FONT_REGULAR, Gfx.RIGHT, T2);
+                }
             }
         }
     }
