@@ -192,7 +192,8 @@ public class MainActivity extends Activity {
                             c = getContentResolver().query(Uri.parse("content://" + s[2] + "/stats"), null, null, null, null);
                             if (c != null && c.moveToFirst()) {
                                 o.put("stat", c.getInt(c.getColumnIndexOrThrow("value")) + " " + c.getString(c.getColumnIndexOrThrow("label")));
-                                int bi = c.getColumnIndex("best"), li = c.getColumnIndex("last");
+                                int bi = c.getColumnIndex("best"), li = c.getColumnIndex("last"), mi = c.getColumnIndex("mood");
+                                if (mi >= 0) o.put("mood", c.getString(mi));
                                 if (bi >= 0 && li >= 0) o.put("streak", new JSONObject().put("count", c.getInt(c.getColumnIndexOrThrow("value"))).put("best", c.getInt(bi)).put("last", c.getLong(li)));
                             }
                         } catch (Exception ignored) {} finally { if (c != null) c.close(); }

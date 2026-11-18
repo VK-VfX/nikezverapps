@@ -454,3 +454,32 @@ body.navigating .fab:not(#locateBtn) { width: 46px; height: 46px; border-radius:
 .chip { border-radius: 20px; }
 #toast, .toast { border-radius: 24px; }
 h1, h2, h3, .group-title { letter-spacing: .01em; }
+
+/* Cat Club hero: streak ring + hero cat (violet is for streaks and the hero cat only) */
+.club-hero { display: flex; align-items: center; gap: 12px; margin: 4px 0 8px; }
+.club-hero .ring { width: 56px; height: 56px; flex: none; }
+.club-hero .hero-cat { width: 64px; height: 64px; flex: none; }
+.club-hero .hero-note { color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+
+/* Route time chips on the map: selected = teal, others = quiet. 48px hit area around the label. */
+.route-chip { position: relative; border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 20px; padding: 6px 12px; font: 650 13px/1 inherit; cursor: pointer; box-shadow: var(--shadow); }
+.route-chip::before { content: ""; position: absolute; inset: -8px -6px; }
+.route-chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+/* Catch burst: eight specks fly out and fade (transform and opacity only) */
+.burst { position: relative; width: 0; height: 0; pointer-events: none; }
+.burst i { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: burst .6s cubic-bezier(.2,.8,.2,1) forwards; }
+.burst i.v { background: var(--violet); }
+@keyframes burst { from { transform: translate(0, 0) scale(1); opacity: 1; } to { transform: translate(var(--dx), var(--dy)) scale(.3); opacity: 0; } }
+
+/* Search placeholders and the empty-state cat */
+.skel { pointer-events: none; }
+.skel .ico { background: var(--panel-2); border: 0; }
+.skel .bar { height: 12px; border-radius: 6px; background: var(--panel-2); margin: 6px 0; }
+.skel .w60 { width: 60%; } .skel .w40 { width: 40%; }
+.skel { animation: skel 1.2s ease-in-out infinite; }
+.skel:nth-child(2) { animation-delay: .15s; } .skel:nth-child(3) { animation-delay: .3s; }
+@keyframes skel { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+.cat-empty { display: flex; align-items: center; gap: 12px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .burst { display: none; } .skel { animation: none; opacity: .7; } }

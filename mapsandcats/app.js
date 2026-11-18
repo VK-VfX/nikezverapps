@@ -320,6 +320,19 @@ function touchStreak() {
 touchStreak();
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { touchStreak(); refreshTrio(); } });
 const REPO_URL = 'https://github.com/VK-VfX/nikezverapps';
+/* A violet ring toward the next 10-day reward, with the day count inside. */
+function streakRing(count) {
+  const r = 22, c = 2 * Math.PI * r, f = count % 10 / 10, shown = count > 0 && f === 0 ? 1 : f;
+  return `<svg class="ring" viewBox="0 0 56 56" role="img" aria-label="${count} day streak, ${10 - count % 10} days to the next reward"><circle cx="28" cy="28" r="${r}" fill="none" stroke="var(--line)" stroke-width="5"/><circle cx="28" cy="28" r="${r}" fill="none" stroke="var(--violet)" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(c * shown).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 28 28)"/><text x="28" y="33" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text)">${count}</text></svg>`;
+}
+const HERO_MOODS = ['smile', 'grin', 'smirk', 'confident', 'angry', 'shocked', 'sad', 'scared', 'loaf'];
+/* The hero cat: Purrcast's mood when all three apps are installed, otherwise the locked silhouette. */
+function renderClubHero(sib) {
+  const box = $('#clubHero'); if (!box) return;
+  const open = allThreeInstalled(), mood = open && sib.purrcast && HERO_MOODS.includes(sib.purrcast.mood) ? sib.purrcast.mood : 'smile';
+  box.innerHTML = streakRing(S.streak.count) + `<img class="hero-cat" src="assets/hero/hero-${open ? mood : 'locked'}.svg" alt="${open ? 'The hero cat feeling ' + mood : 'A hero cat silhouette'}" width="64" height="64">` +
+    `<span class="hero-note">${open ? 'Hero cat: ' + mood : 'Install all three apps to meet the hero cat'}</span>`;
+}
 async function refreshTrio() {
   if (!TRIO) return;
   syncCats();
@@ -337,6 +350,7 @@ async function refreshTrio() {
   };
   line('purrcast', '#purrStat'); line('zamoled', '#zamStat');
   const parts = [`${S.streak.count} ${streakText()}`, `${S.caught | 0} cats caught`]; if (sib.purrcast && sib.purrcast.stat) parts.push(sib.purrcast.stat); if (sib.zamoled && sib.zamoled.stat) parts.push(sib.zamoled.stat);
+  renderClubHero(sib);
   const club = $('#catClub'); club.textContent = 'Cat Club: ';
   parts.forEach((t, i) => { if (i) club.append(' · '); const s = document.createElement('span'); if (i === 0) s.className = 'streak-v'; s.textContent = t; club.append(s); });
 }
@@ -929,6 +943,16 @@ function kindLabel(r) { // "Fuel · address" — helps tell apart ten places wit
   const v = (r.kind || '').split(':')[1]; if (!v || ['yes', 'house', 'house_number', 'residential', 'undefined', 'null'].includes(v)) return '';
   return pretty(v) + ' · ';
 }
+/* Placeholder rows that fade in and out while a search is running (opacity only). */
+function showSkeleton() {
+  resEl.hidden = false; resEl._data = [];
+  resEl.innerHTML = [0, 1, 2].map(() => '<li class="skel" aria-hidden="true"><div class="ico"></div><div class="li-main"><div class="bar w60"></div><div class="bar w40"></div></div></li>').join('') + '<li class="sr-only" role="status">Searching…</li>';
+}
+/* A sleepy Noto cat for an empty list. */
+function showEmpty(msg) {
+  resEl.hidden = false; resEl._data = [];
+  resEl.innerHTML = `<li class="empty cat-empty"><img src="assets/cats/black-cat.svg" alt="" width="44" height="44"><span>${esc(msg)}</span></li>`;
+}
 function showList(items, emptyMsg) {
   resEl.hidden = false; resEl._data = items;
   resEl.innerHTML = items.length ? items.map((r, i) => `<li data-i="${i}"><div class="ico">${r.icon || ic('pin')}</div><div class="li-main"><div class="li-title">${esc(r.name)}</div><div class="li-sub">${esc(kindLabel(r))}${esc(r.sub)}</div></div><div class="li-dist">${r.d != null ? fmtDist(r.d) : ''}</div></li>`).join('')
@@ -955,7 +979,7 @@ const webRow = text => ({ name: `Search the web for “${text}”`, sub: 'Wikipe
 async function doSearch(explicit = false) {
   const text = qEl.value.trim(); if (text.length < 2) return;
   searchAbort?.abort(); const ac = searchAbort = new AbortController();
-  clearResultsMap(); showList([], 'Searching…');
+  clearResultsMap(); showSkeleton();
   let items = null; try { items = await blendSearch(text, ac.signal, explicit); } catch {}
   if (ac.signal.aborted) return;
   const weak = !items || !items.length || (items[0].rel < .5 && items[0].agree < 2);
@@ -990,7 +1014,7 @@ function selectResult(i, fly) {
 function showOnMap(items, text, fromWeb) {
   clearResultsMap(); resEl.hidden = true;
   resList = items.filter(r => isFinite(r.lat) && isFinite(r.lon)).slice(0, 10);
-  if (!resList.length) { showList([], 'No results. Try a different spelling.'); return; }
+  if (!resList.length) { showEmpty('No results. Try a different spelling.'); return; }
   const strip = $('#resultStrip'), o = searchOrigin();
   strip.innerHTML = resList.map((r, i) => `<div class="rcard" data-i="${i}"><div class="rtop"><span class="rnum">${i + 1}</span><b>${esc(r.name)}</b></div><small>${esc(kindLabel(r))}${esc(r.sub)}</small><div class="rbot"><span>${fmtDist(r.d != null ? r.d : dist(o, [r.lat, r.lon]))}</span><button class="go" data-i="${i}">Go</button></div></div>`).join('')
     + (fromWeb ? '' : '<div class="rcard web"><div class="rtop"><span class="rnum">'+ic('globe')+'</span><b>Search the web</b></div><small>Not here? Look it up on the internet</small></div>');
@@ -1032,7 +1056,7 @@ async function selectPlace(place, opts = {}) {
   $('#destName').textContent = place.name; $('#destSub').textContent = place.sub || '';
   $('#nearbyView').hidden = true; $('#navView').hidden = false; $('#steps').hidden = true; $('#saveMenu').hidden = true;
   $('#sheet').classList.remove('collapsed');
-  $('#alts').innerHTML = ''; $('#routeSummary').innerHTML = ''; $('#estNote').textContent = '';
+  $('#alts').innerHTML = ''; $('#routeSummary').innerHTML = ''; $('#estNote').textContent = ''; clearRouteChips();
   drawMarkers(); syncModeSeg(); syncPanels(); syncSaveStar();
   if (me) await fetchRoute(); else map.easeTo({ center: [place.lon, place.lat], zoom: 16 });
 }
@@ -1132,10 +1156,24 @@ async function reroute() {
   } catch {} finally { clearTimeout(t); nav.rerouting = false; }
 }
 function ensureRouteLayers() { try { if (map.getStyle() && !map.getLayer('route-main')) { if (map.getSource('routes')) map.removeSource('routes'); onStyleLoad(); } } catch {} }
+function clearRouteChips() { (nav.chips || []).forEach(m => m.remove()); nav.chips = []; }
+/* A time chip on each route (tap to choose it); only while planning, never while navigating. */
+function drawRouteChips() {
+  clearRouteChips();
+  if (nav.active || nav.routes.length < 2) return;
+  nav.routes.forEach((r, i) => {
+    const pts = r.geometry.coordinates, at = pts[Math.min(pts.length - 1, Math.floor(pts.length * (.38 + .12 * i)))];
+    const el = document.createElement('button'); el.type = 'button'; el.className = 'route-chip' + (i === nav.sel ? ' on' : ''); el.textContent = fmtEst(r.duration, nav.mode);
+    el.setAttribute('aria-label', 'Route ' + (i + 1) + ': ' + el.textContent);
+    el.addEventListener('click', ev => { ev.stopPropagation(); selectAlt(i); });
+    nav.chips.push(new maplibregl.Marker({ element: el }).setLngLat(at).addTo(map));
+  });
+}
 function drawRoutes(fit) {
   ensureRouteLayers();
   nav.fc = { type: 'FeatureCollection', features: nav.routes.map((r, i) => ({ type: 'Feature', properties: { i, sel: i === nav.sel ? 1 : 0 }, geometry: r.geometry })) };
   map.getSource('routes')?.setData(nav.fc);
+  drawRouteChips();
   if (fit && !nav.active && nav.routes.length) {
     const b = new maplibregl.LngLatBounds(); nav.routes[0].geometry.coordinates.forEach(c => b.extend(c));
     following = false; $('#locateBtn').classList.remove('on');
@@ -1182,7 +1220,7 @@ $('#toggleSteps').addEventListener('click', () => { const s = $('#steps'); s.hid
 $('#closeRoute').addEventListener('click', clearRoute);
 function clearRoute() {
   nav.abort?.abort(); stopNav(true); addingStop = false; $('#addStop').classList.remove('on-toggle');
-  nav.routes = []; nav.fc = null; map.getSource('routes')?.setData(emptyFC);
+  nav.routes = []; nav.fc = null; map.getSource('routes')?.setData(emptyFC); clearRouteChips();
   nav.marks.forEach(m => m.remove()); nav.marks = []; nav.dest = null; nav.wps = []; renderStops();
   $('#navView').hidden = true; $('#nearbyView').hidden = false; syncPanels(); renderNearby();
 }
@@ -1191,7 +1229,7 @@ function clearRoute() {
 $('#startNav').addEventListener('click', () => {
   if (!nav.routes[nav.sel] || !me) return toast('Waiting for a route…');
   try { (purr.ac || (purr.ac = new (window.AudioContext || window.webkitAudioContext)())).resume(); } catch {}
-  nav.active = true; nav.snap = null; nav.pose = null; nav._prep = null; nav.t0 = null; nav.a0 = null; nav.dNext = Infinity; keepAwake(true); renderSpeedo(); navDeclutter(true); update3dArrow(); nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
+  nav.active = true; clearRouteChips(); nav.snap = null; nav.pose = null; nav._prep = null; nav.t0 = null; nav.a0 = null; nav.dNext = Infinity; keepAwake(true); renderSpeedo(); navDeclutter(true); update3dArrow(); nav.idx = 0; nav.off = 0; nav.said.clear(); following = true; haptic(40);
   document.body.classList.add('navigating'); $('#navBanner').hidden = false; $('#tripBar').hidden = false; resEl.hidden = true; syncPanels(); syncMute();
   S.trips = [{ name: nav.dest.name, ts: Date.now(), mode: nav.mode, dist: nav.routes[nav.sel].distance }, ...S.trips].slice(0, 20); save(); renderSaved();
   navCamera(800);
@@ -1405,6 +1443,12 @@ function purr() {
     o.connect(g).connect(ac.destination); o.start(t); o.stop(t + .42);
   } catch {}
 }
+/* A short teal-and-violet puff where a cat was caught (hidden by the system "remove animations" setting). */
+function burst(pos) {
+  const el = document.createElement('div'); el.className = 'burst';
+  for (let i = 0; i < 8; i++) { const p = document.createElement('i'); const a = i / 8 * Math.PI * 2; p.style.setProperty('--dx', Math.round(Math.cos(a) * 34) + 'px'); p.style.setProperty('--dy', Math.round(Math.sin(a) * 34) + 'px'); if (i % 2) p.className = 'v'; el.append(p); }
+  const m = new maplibregl.Marker({ element: el }).setLngLat([pos[1], pos[0]]).addTo(map); setTimeout(() => m.remove(), 700);
+}
 function popXp(pos, n) {
   const el = document.createElement('div'); el.className = 'xp-pop'; el.innerHTML = `<b>+${n} XP</b>`;
   const m = new maplibregl.Marker({ element: el }).setLngLat([pos[1], pos[0]]).addTo(map); setTimeout(() => m.remove(), 1000);
@@ -1428,7 +1472,7 @@ function topUpCats() {
 function catchCat(cat, tapped) {
   if (cat.gone) return; cat.gone = true; quest.cats = quest.cats.filter(c => c !== cat);
   cat.span.classList.add('caught'); setTimeout(() => cat.marker.remove(), 450);
-  session.cats++; S.caught++; syncCats(); addXp(cat.type.xp); popXp(cat.pos, cat.type.xp);
+  session.cats++; S.caught++; syncCats(); addXp(cat.type.xp); popXp(cat.pos, cat.type.xp); burst(cat.pos);
   toast(tapped ? pick(TAP_MSGS) : pick(PASS_MSGS)); purr(); haptic(30); setTimeout(topUpCats, 1500);
 }
 function questTick(prev, cur) {
@@ -1609,6 +1653,6 @@ initMap().then(() => {
   if (S.theme === 'quest') setQuest(true);
   startLocation(); if (S.sim) setSim(true);
   window.__macCheckPending();
-  window.__mac = { map, S, nav, quest, onPos, selectPlace, catSay, limit, parseLimit, startNavTest: () => $('#startNav').click(), spawnCat, catchCat, segmentByScript, blendSearch, webSearch, pageCoords, relevance, mergeRank, getMe: () => me };
+  window.__mac = { drawRoutes, burst, showSkeleton, showEmpty, map, S, nav, quest, onPos, selectPlace, catSay, limit, parseLimit, startNavTest: () => $('#startNav').click(), spawnCat, catchCat, segmentByScript, blendSearch, webSearch, pageCoords, relevance, mergeRank, getMe: () => me };
 });
 })();
