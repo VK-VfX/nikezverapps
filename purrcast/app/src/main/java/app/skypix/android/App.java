@@ -17,6 +17,7 @@ public class App extends Application {
         Diag.log(this, "start", "Purrcast " + AppUpdate.installedName(this) + " Android " + Build.VERSION.RELEASE + " " + Build.MODEL);
         AndroidGfx.init(this);
         app.skypix.core.Glyphs.cats = Store.cats(this);
+        Store.applyHero(this);
         Store.dropOfficial(this);
         final Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {

@@ -26,6 +26,7 @@ final class WidgetUpdater {
 
     static void updateAll(Context ctx) {
         Context app = ctx.getApplicationContext();
+        Store.applyHero(app);
         AppWidgetManager m = AppWidgetManager.getInstance(app);
         for (int v = 0; v < Widgets.ALL.length; v++) {
             int[] ids = m.getAppWidgetIds(new ComponentName(app, Widgets.ALL[v]));

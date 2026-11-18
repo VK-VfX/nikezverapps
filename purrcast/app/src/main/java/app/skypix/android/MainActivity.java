@@ -155,6 +155,7 @@ public class MainActivity extends Activity {
         super.onResume();
         Ui.animStartMs = android.os.SystemClock.uptimeMillis();
         Store.touchStreak(this);
+        Store.applyHero(this);
         rebuild();
         Jobs.sync(this);
         startRefresh(pendingRefresh);
@@ -685,6 +686,20 @@ public class MainActivity extends Activity {
                         rebuild();
                     }
                 }));
+
+        if (Trio.allInstalled(this)) {
+            row(box, "Show hero cat", "The masked hero cat on your widgets and streak card, in the mood of the weather",
+                    toggle(Store.heroOn(this), new CompoundButton.OnCheckedChangeListener() {
+                        @Override public void onCheckedChanged(CompoundButton b, boolean on) {
+                            Store.setHeroOn(MainActivity.this, on);
+                            Store.applyHero(MainActivity.this);
+                            WidgetUpdater.updateAll(MainActivity.this);
+                            rebuild();
+                        }
+                    }));
+        } else {
+            row(box, "Hero cat", "Install Zamoled and Maps and Cats to meet the masked hero cat", null);
+        }
 
         row(box, "Animate on unlock", "5 seconds of weather motion each time you open your phone",
                 toggle(Store.animate(this), new CompoundButton.OnCheckedChangeListener() {

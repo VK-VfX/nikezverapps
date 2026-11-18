@@ -7,6 +7,9 @@ public final class Glyphs {
     /** When true every weather glyph is a Google Noto cat emoji (one cat mood per weather). */
     public static volatile boolean cats = true;
 
+    /** When true every weather cat is the masked hero cat in the emotion of that weather (all three apps installed, switch on). Image-only: notification text keeps the plain cat emoji. */
+    public static volatile boolean hero = false;
+
     /** The cat as an emoji character, for notification text (the system's Noto Color Emoji draws it). */
     public static String catEmoji(Icon ic) {
         String n = catFor(ic);
@@ -209,6 +212,10 @@ public final class Glyphs {
     private static final int INK = 0xFF1B1B1F, SWEAT_BLUE = 0xFF4FC3F7;
 
     private static void cat(Gfx g, Icon ic, float x, float y, float s, float t) {
+        if (hero) {
+            g.emoji("hero_" + HeroMood.fromIcon(ic), x, y, s);
+            return;
+        }
         String face = catFor(ic);
         switch (ic) {
             case UMBRELLA: {

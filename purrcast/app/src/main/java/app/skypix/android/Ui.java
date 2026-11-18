@@ -420,7 +420,7 @@ final class Ui {
         StreakCard(Context c, int streak, int best, long mask, String shield) {
             super(c);
             // all three apps installed: the hero cat, in the mood of the weather (see core/HeroMood)
-            this.hero = Trio.allInstalled(c) ? AndroidGfx.emojiBitmap("hero_" + Store.mood(c)) : null;
+            this.hero = Store.heroActive(c) ? AndroidGfx.emojiBitmap("hero_" + Store.mood(c)) : null;
             this.streak = streak;
             this.best = best;
             this.mask = mask;

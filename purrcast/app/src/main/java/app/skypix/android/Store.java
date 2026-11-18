@@ -202,6 +202,13 @@ final class Store {
     static String mood(Context c) { return sp(c).getString("hero_mood", "smile"); }
     static void setMood(Context c, String m) { sp(c).edit().putString("hero_mood", m).apply(); }
 
+    /** The "Show hero cat" switch (default on). The hero only shows while all three apps are installed. */
+    static boolean heroOn(Context c) { return sp(c).getBoolean("hero_on", true); }
+    static void setHeroOn(Context c, boolean v) { sp(c).edit().putBoolean("hero_on", v).apply(); }
+    static boolean heroActive(Context c) { return heroOn(c) && Trio.allInstalled(c); }
+    /** Makes the widgets and cards follow the switch and the installed apps. Call before drawing. */
+    static void applyHero(Context c) { app.skypix.core.Glyphs.hero = heroActive(c); }
+
     /** True while all three apps are installed on this phone: the Streak Shield and the hero cat work. */
     static boolean shieldOn(Context c) { return Trio.allInstalled(c); }
 
