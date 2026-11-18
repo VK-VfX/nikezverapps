@@ -1,15 +1,15 @@
 name: Zamoled - build Windows app
 
-# The Windows app shares the wallpaper generators with the phone app, so it is rebuilt when those or its own
-# files change, and can be run by hand. It adds Zamoled-Windows-x64.zip to the release of the current version.
+# The Windows app is released on its own, separately from the Android app: its version is in zamoled/tools/desktop/VERSION and
+# its releases are tagged zamoled-windows-v<version>. Updating the phone app never makes a Windows release. A change to the
+# wallpaper generators (shared with the phone app) only re-runs the draw tests here. The zip is built and published only when
+# VERSION names a release that does not exist yet, so a shipped file is never replaced.
 on:
   push:
     branches: ['main']
-    tags: ['zamoled-v*']
     paths:
       - 'zamoled/tools/desktop/**'
       - 'zamoled/app/src/main/java/com/nikopick/zamoled/gen/**'
-      - 'zamoled/release-notes/**'
       - '.github/workflows/zamoled-windows.yml'
   workflow_dispatch:
 
@@ -19,6 +19,10 @@ defaults:
 
 permissions:
   contents: write
+
+concurrency:
+  group: zamoled-windows
+  cancel-in-progress: false
 
 jobs:
   windows:
@@ -48,7 +52,25 @@ jobs:
         working-directory: zamoled/tools/desktop
         run: bash ./gradlew test --console=plain --stacktrace
 
+      - name: Is there a new Windows version to release?
+        id: decide
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="$(tr -d '[:space:]' < tools/desktop/VERSION)"
+          TAG="zamoled-windows-v$V"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::$TAG already exists; only the draw tests ran. Raise tools/desktop/VERSION to release a new Windows version."
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build the Windows app
+        if: steps.decide.outputs.publish == 'true'
         shell: bash
         working-directory: zamoled/tools/desktop
         run: bash ./gradlew distZip --console=plain --stacktrace
@@ -60,23 +82,24 @@ jobs:
           retention-days: 7
           path: zamoled/tools/desktop/build/smoke/*.png
 
-      - name: Add to the release
+      - name: Publish the Windows release
+        if: steps.decide.outputs.publish == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          V="$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)"
-          TAG="zamoled-v$V"
-          [ "${GITHUB_REF_TYPE}" = "tag" ] && TAG="${GITHUB_REF_NAME}"
-          # The phone build creates the release; when both ran for this push, wait for it.
-          for i in $(seq 1 40); do
-            gh release view "$TAG" >/dev/null 2>&1 && break
-            echo "waiting for release $TAG ($i)"; sleep 30
-          done
-          gh release view "$TAG" >/dev/null || { echo "release $TAG does not exist"; exit 1; }
-          # A shipped file never changes: if the zip is already on this release, leave it.
-          if gh release view "$TAG" --json assets --jq '.assets[].name' | grep -qx 'Zamoled-Windows-x64.zip'; then
-            echo "::notice::$TAG already has Zamoled-Windows-x64.zip; leaving it as it is."
-          else
-            gh release upload "$TAG" tools/desktop/build/release/Zamoled-Windows-x64.zip
-          fi
+          TAG="${{ steps.decide.outputs.tag }}"
+          V="${{ steps.decide.outputs.version }}"
+          ZIP=tools/desktop/build/release/Zamoled-Windows-x64.zip
+          SHA="$(sha256sum "$ZIP" | cut -d' ' -f1)"
+          cat > windows-notes.md <<NOTES
+          Zamoled for Windows $V. The same wallpaper generators as the phone app, drawn at the shape and size of your monitor.
+
+          **Install:** download \`Zamoled-Windows-x64.zip\`, unzip it anywhere and run \`Zamoled.exe\`. The first start takes about 15 seconds while the renderer wakes up. It is about 500 MB because it carries Android's graphics engine, so every picture matches the phone exactly. Windows may say it does not recognise the app: choose More info, then Run anyway.
+
+          The Windows app is released on its own schedule, separately from the Android app.
+
+          ## Check your download
+          - ZIP SHA-256: \`$SHA\`
+          NOTES
+          gh release create "$TAG" "$ZIP" --title "Zamoled for Windows $V" --notes-file windows-notes.md --target "$GITHUB_SHA" --latest=false

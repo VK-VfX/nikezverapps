@@ -4,7 +4,7 @@ on:
   push:
     branches: ['**']
     tags: ['zamoled-v*']
-    # Only Zamoled's own files. The Windows app has its own workflow.
+    # Only Zamoled's own files. The Windows app has its own workflow and its own releases (zamoled-windows-v*).
     paths:
       - 'zamoled/**'
       - '!zamoled/tools/desktop/**'

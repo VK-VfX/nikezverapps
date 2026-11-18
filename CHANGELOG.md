@@ -32,6 +32,10 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 (There is no 6.1 / 6.2.0 note in the repo.)
 
+## Zamoled for Windows
+
+- **1.0.0**: Now released on its own (tag `zamoled-windows-v<version>`), separately from the Android app, so a phone update no longer means a Windows update. Same generators and the same look as Zamoled 8.2.1.
+
 ## Maps and Cats
 
 - **2.3.0**: One shared streak, a log for bug reports in About, open-source notices, navigation and privacy wording. Web search now uses Wikipedia only; typing searches Photon, Enter also asks Nominatim.

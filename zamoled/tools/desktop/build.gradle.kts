@@ -97,7 +97,7 @@ val appImage = tasks.register<Exec>("appImage") {
         "jpackage",
         "--type", "app-image",
         "--name", "Zamoled",
-        "--app-version", "1.0.0",
+        "--app-version", file("VERSION").readText().trim(),
         "--input", stage.get().asFile.absolutePath,
         "--main-jar", tasks.jar.get().archiveFileName.get(),
         "--main-class", "com.nikopick.zamoled.desktop.Launcher",
