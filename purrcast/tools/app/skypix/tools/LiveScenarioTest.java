@@ -74,6 +74,11 @@ public final class LiveScenarioTest {
         PlaceNames.refine(open, 60.918691, -149.642056, near);
         check("wilderness: the village 2 km away is found", open.city, "Hope");
 
+        // ---- Shah Alam, Selangor: the title was "Shah Alam, Malaysia" (the country) before the state was used ----
+        Place sa = place(new File(dir, "nominatim-shah-alam.json"));
+        check("Shah Alam: the city is the place", sa.shortName(), "Shah Alam");
+        check("Shah Alam: the title names the state, not the country", sa.title(), "Shah Alam, Selangor");
+
         System.out.println();
         System.out.println(pass + " passed, " + fail + " failed");
         if (fail > 0) System.exit(1);
