@@ -52,6 +52,7 @@ import com.nikopick.zamoled.R
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -234,14 +235,20 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
                 Text("Cat Club", style = MaterialTheme.typography.titleMedium)
                 val streak = remember { com.nikopick.zamoled.data.StreakStore.read(context).count }
                 val shield = remember { com.nikopick.zamoled.data.StreakStore.shieldLine(context) }
-                val parts = listOfNotNull(
-                    "$streak day streak",
+                val rest = listOfNotNull(
                     "$kept wallpapers kept",
                     purrStat?.let { "${it.value} ${it.label}" },
                     mapStat?.let { "${it.value} ${it.label}" },
                 )
-                Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (shield.isNotEmpty()) Text(shield, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    androidx.compose.ui.text.buildAnnotatedString {
+                        withStyle(androidx.compose.ui.text.SpanStyle(color = Violet, fontWeight = FontWeight.Bold)) { append("$streak day streak") }
+                        append(" · " + rest.joinToString(" · "))
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (shield.isNotEmpty()) Text(shield, style = MaterialTheme.typography.labelLarge, color = Violet)
                 Spacer(Modifier.height(8.dp))
                 Text(
                     "How it works: every app counts its own day streak, the same way, and each app shows the other two when installed. " +

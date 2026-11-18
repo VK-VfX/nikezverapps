@@ -7,6 +7,7 @@
   --muted: #aeaeb8;
   --accent: #3df5d0;
   --accent-ink: #00110d;
+  --violet: #b388ff;
   --danger: #ff5c7a;
   --shadow: 0 8px 30px rgba(0,0,0,.7);
   --sat: env(safe-area-inset-top, 0px);
@@ -14,7 +15,7 @@
 }
 body[data-theme="light"] {
   --bg: #fbf6ec; --panel: #fffaf1; --panel-2: #f3ead9; --line: #e6d9c1;
-  --text: #241a11; --muted: #54453a; --accent: #00574d; --accent-ink: #fff;
+  --text: #241a11; --muted: #54453a; --accent: #00574d; --accent-ink: #fff; --violet: #5e35b1;
   --shadow: 0 8px 30px rgba(90,60,20,.18);
 }
 body[data-theme="quest"] {
@@ -439,3 +440,17 @@ body.navigating .fab:not(#locateBtn) { width: 46px; height: 46px; border-radius:
 .switch input { top: -9px; bottom: -9px; height: auto; width: 100%; }
 .linkbtn { min-height: 48px; padding: 0 8px; margin: -14px -8px -14px 0; display: inline-flex; align-items: center; }
 #drawer summary, details > summary { min-height: 48px; display: flex; align-items: center; cursor: pointer; }
+
+/* Trio refresh (2026-11): a soft violet for streaks and the hero cat, and rounder, calmer shapes. Teal stays for actions. */
+.streak-v { color: var(--violet); font-weight: 650; }
+#sheet { border-radius: 28px 28px 0 0; }
+#results, .about { border-radius: 24px; }
+.about { border-radius: 28px; }
+#hud { border-radius: 28px; }
+#navBanner { border-radius: 26px; }
+.btn, .alt { border-radius: 18px; }
+.seg { border-radius: 16px; }
+.seg button { border-radius: 12px; }
+.chip { border-radius: 20px; }
+#toast, .toast { border-radius: 24px; }
+h1, h2, h3, .group-title { letter-spacing: .01em; }

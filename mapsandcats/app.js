@@ -337,7 +337,8 @@ async function refreshTrio() {
   };
   line('purrcast', '#purrStat'); line('zamoled', '#zamStat');
   const parts = [`${S.streak.count} ${streakText()}`, `${S.caught | 0} cats caught`]; if (sib.purrcast && sib.purrcast.stat) parts.push(sib.purrcast.stat); if (sib.zamoled && sib.zamoled.stat) parts.push(sib.zamoled.stat);
-  $('#catClub').textContent = 'Cat Club: ' + parts.join(' · ');
+  const club = $('#catClub'); club.textContent = 'Cat Club: ';
+  parts.forEach((t, i) => { if (i) club.append(' · '); const s = document.createElement('span'); if (i === 0) s.className = 'streak-v'; s.textContent = t; club.append(s); });
 }
 $('#weatherHere').addEventListener('click', () => {
   const d = nav.dest; if (!d || !TRIO) return;

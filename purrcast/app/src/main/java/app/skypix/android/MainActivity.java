@@ -376,7 +376,7 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         int p = Ui.dp(this, 20);
         box.setPadding(p, p, p, p);
-        box.setBackground(Ui.surface(this, Ui.primaryContainer(this), 24));
+        box.setBackground(Ui.surface(this, Ui.primaryContainer(this), Ui.CARD));
         box.addView(Ui.text(this, title, 20, 500, Ui.onPrimaryContainer(this)));
         TextView t = Ui.text(this, body, 14.5f, 400, Ui.onPrimaryContainer(this));
         t.setLineSpacing(0, 1.2f);
@@ -456,7 +456,7 @@ public class MainActivity extends Activity {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(Ui.dp(this, 20), Ui.dp(this, 6), Ui.dp(this, 14), Ui.dp(this, 6));
-        box.setBackground(Ui.surface(this, Ui.container(this), 24));
+        box.setBackground(Ui.surface(this, Ui.container(this), Ui.CARD));
         content.addView(box, lp(-1, -2, 12));
         return box;
     }
@@ -885,7 +885,7 @@ public class MainActivity extends Activity {
         card.setOrientation(LinearLayout.VERTICAL);
         card.setGravity(Gravity.CENTER_HORIZONTAL);
         card.setPadding(Ui.dp(this, 20), Ui.dp(this, 26), Ui.dp(this, 20), Ui.dp(this, 22));
-        card.setBackground(Ui.surface(this, Ui.container(this), 24));
+        card.setBackground(Ui.surface(this, Ui.container(this), Ui.CARD));
         content.addView(card, lp(-1, -2, 12));
 
         ImageView icon = new ImageView(this);
@@ -1150,7 +1150,7 @@ public class MainActivity extends Activity {
             LinearLayout card = new LinearLayout(this);
             card.setOrientation(LinearLayout.VERTICAL);
             card.setPadding(Ui.dp(this, 20), Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 14));
-            card.setBackground(Ui.surface(this, Ui.container(this), 24));
+            card.setBackground(Ui.surface(this, Ui.container(this), Ui.CARD));
 
             int res = getResources().getIdentifier("preview_" + Variants.KEY[v], "drawable", getPackageName());
             if (res != 0) {

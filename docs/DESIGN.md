@@ -9,12 +9,13 @@ Maps and Cats already follows this (see `mapsandcats/app.css`, last block). Purr
 | Token | Value | Notes |
 |---|---|---|
 | Background | `#000000` | pure black on dark |
-| Accent | `#3DF5D0` | the only accent. Light theme: `#00574D` (7:1 on cream) |
+| Accent | `#3DF5D0` | actions, links, the rim, selected states. Light theme: `#00574D` (7:1 on cream) |
+| Violet | `#B388FF` | **second accent (2026-11 refresh)**, only for streaks, the Streak Shield, Cat Club numbers and the hero cat. Never for buttons or links. 7.9:1 on black. Light theme: `#5E35B1` (7.4:1 on cream) |
 | Text | `#F4F4F6` | |
 | Caption / muted | `#AEAEB8` | 9:1 on black. Never dimmer |
-| Card radius | 24dp | |
+| Card radius | 28dp (was 24) | small cards and thumbnails 24dp, buttons and chips 20dp, tonal blocks 18dp |
 | Touch target | 48dp minimum | chips, icon buttons, list rows, switches |
-| Heading | condensed bold | `sans-serif-condensed` |
+| Heading | condensed bold, +1% letter spacing from 20sp | `sans-serif-condensed` |
 | Caption font | mono | `monospace` / `ui-monospace` |
 | Press | 90 ms, scale 0.94 | transform and opacity only |
 | Fast | 160 ms | colour, chips, toggles |
@@ -31,7 +32,7 @@ Maps and Cats already follows this (see `mapsandcats/app.css`, last block). Purr
 
 ## Rules
 - Only Google Noto cats (and the owner's accessory variants) are emoji. Everything else is an icon.
-- No glassmorphism, no glow borders, no decorative gradients, no rainbow buttons, no pastel pills.
+- No glassmorphism, no glow borders, no decorative gradients, no rainbow buttons, no pastel pills. Violet is a second accent with one job (streaks and the hero cat); do not spread it to other UI.
 - Animate transform and opacity, never width, height, margin or `bottom`.
 
 ## Status
@@ -43,3 +44,6 @@ All three apps follow this spec as of Maps and Cats 2.0.0, Purrcast 2.0.0 and Za
 - **Zamoled:** `Motion.kt` has snappy no-bounce springs and a 90/120 ms press; `Noir.kt` has `Modifier.tealRim()` on `LeafCard`; `Theme.kt` sets `onSurfaceVariant` to `#AEAEB8`.
 
 Not yet done: Zamoled's wallpaper-grid cards have no teal rim (kept clean on purpose), and the native apps still need a pass on a real phone for contrast, tap size and 60 fps scrolling.
+
+## Refresh log
+- **2026-11 "violet and softer":** soft violet `#B388FF` for streaks, shield, Cat Club numbers and the hero cat; cards 24 -> 28dp, small cards 20 -> 24dp, buttons 16 -> 20dp; headings +1% letter spacing. Applied in Purrcast (`Ui.CARD`, `Ui.violet`, the streak card), Zamoled (`Leaf`, `LeafSm`, `Violet`, the Cat Club card, detail-screen buttons) and Maps and Cats (`--violet`, `.streak-v`, the last block of `app.css`). Not yet on a real phone.

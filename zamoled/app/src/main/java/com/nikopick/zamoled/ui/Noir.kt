@@ -45,10 +45,13 @@ import androidx.compose.ui.unit.sp
  */
 
 /** Large cards: soft on one diagonal, nearly square on the other. */
-val Leaf = RoundedCornerShape(24.dp)
+val Leaf = RoundedCornerShape(28.dp)
 
 /** Thumbnails and small cards. */
-val LeafSm = RoundedCornerShape(20.dp)
+val LeafSm = RoundedCornerShape(24.dp)
+
+/** The trio's soft violet: streaks, the shield and the hero cat. Teal stays for actions. */
+val Violet = Color(0xFFB388FF)
 
 val Hairline: Color = Color.White.copy(alpha = 0.12f)
 

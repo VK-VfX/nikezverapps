@@ -111,6 +111,14 @@ final class Ui {
         if (you(c)) return sys(c, isDark(c) ? android.R.color.system_neutral2_200 : android.R.color.system_neutral2_700, 0xFF444746);
         return isDark(c) ? 0xFFC4C7C5 : 0xFF444746;
     }
+    /** Card corner radius in dp (trio refresh: 28). */
+    static final int CARD = 28;
+
+    /** The trio's soft violet: streaks, the shield and the hero cat. Teal stays for actions. */
+    static int violet(Context c) {
+        return isDark(c) ? 0xFFB388FF : 0xFF5E35B1;
+    }
+
     static int primary(Context c) {
         if (you(c)) return sys(c, isDark(c) ? android.R.color.system_accent1_200 : android.R.color.system_accent1_600, 0xFF0B57D0);
         return isDark(c) ? 0xFF3DF5D0 : 0xFF00574D;
@@ -152,6 +160,7 @@ final class Ui {
         t.setTextColor(color);
         // the family type: condensed bold for headings, the system face for reading
         t.setTypeface(weight >= 500 && sp >= 15 ? android.graphics.Typeface.create("sans-serif-condensed", android.graphics.Typeface.BOLD) : AndroidGfx.typeface(weight));
+        if (weight >= 500 && sp >= 20) t.setLetterSpacing(0.01f);
         t.setIncludeFontPadding(false);
         return t;
     }
@@ -192,7 +201,7 @@ final class Ui {
     /** The rim for custom-drawn cards. */
     static void drawRim(Canvas canvas, float w, float u, int accent) {
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        float l = 28 * u, r = w - 28 * u;
+        float l = (CARD + 4) * u, r = w - (CARD + 4) * u;
         if (r <= l) return;
         int solid = (accent & 0x00FFFFFF) | 0xCC000000, clear = accent & 0x00FFFFFF;
         p.setShader(new android.graphics.LinearGradient(l, 0, r, 0, new int[] {clear, solid, clear}, null, android.graphics.Shader.TileMode.CLAMP));
@@ -436,21 +445,21 @@ final class Ui {
             float u = getResources().getDisplayMetrics().density;
             AndroidGfx g = new AndroidGfx(canvas);
             float w = getWidth(), h = getHeight();
-            g.fillRoundRect(0, 0, w, h, 24 * u, container(c));
+            g.fillRoundRect(0, 0, w, h, CARD * u, container(c));
             drawRim(canvas, w, u, primary(c));
             app.skypix.core.Icon cat = streak >= 14 ? app.skypix.core.Icon.SHADES : streak >= 7 ? app.skypix.core.Icon.SUN
                     : streak >= 3 ? app.skypix.core.Icon.PARTLY_DAY : app.skypix.core.Icon.CLOUD;
             app.skypix.core.Glyphs.draw(g, cat, 16 * u, (h - 56 * u) / 2f, 56 * u, -1);
-            g.text(streak + (streak == 1 ? " day streak" : " day streak"), 86 * u, 38 * u, 20 * u, Gfx.FONT_MEDIUM, Gfx.LEFT, onSurface(c));
+            g.text(streak + (streak == 1 ? " day streak" : " day streak"), 86 * u, 38 * u, 20 * u, Gfx.FONT_MEDIUM, Gfx.LEFT, violet(c));
             g.text(cheer(streak) + (best > streak ? "  \u00b7  best " + best : ""), 86 * u, 60 * u, 13 * u, Gfx.FONT_REGULAR, Gfx.LEFT, onSurfaceVar(c));
-            if (!shield.isEmpty()) g.text(shield, 86 * u, 100 * u, 12.5f * u, Gfx.FONT_MEDIUM, Gfx.LEFT, primary(c));
+            if (!shield.isEmpty()) g.text(shield, 86 * u, 100 * u, 12.5f * u, Gfx.FONT_MEDIUM, Gfx.LEFT, violet(c));
             // last 7 days, oldest to today
             float dot = 7 * u, gap = 7 * u;
             float x0 = 86 * u, y = 76 * u;
             for (int i = 6; i >= 0; i--) {
                 boolean on = ((mask >>> i) & 1L) != 0;
                 float cx = x0 + (6 - i) * (dot * 2 + gap) + dot;
-                g.fillCircle(cx, y, dot * (on ? 0.85f : 0.55f), on ? primary(c) : divider(c));
+                g.fillCircle(cx, y, dot * (on ? 0.85f : 0.55f), on ? violet(c) : divider(c));
             }
         }
     }

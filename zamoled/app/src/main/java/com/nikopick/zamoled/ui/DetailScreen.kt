@@ -318,7 +318,7 @@ fun DetailScreen(initial: WallpaperSpec, favorites: FavoritesStore, onBack: () -
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             Surface(
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
                 shadowElevation = 12.dp,
@@ -467,7 +467,7 @@ fun DetailScreen(initial: WallpaperSpec, favorites: FavoritesStore, onBack: () -
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
                                 .size(44.dp)
-                                .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(14.dp)),
+                                .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(18.dp)),
                         ) {
                             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
                         }
@@ -490,7 +490,7 @@ fun DetailScreen(initial: WallpaperSpec, favorites: FavoritesStore, onBack: () -
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .size(44.dp)
-                            .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(14.dp)),
+                            .background(MaterialTheme.colorScheme.tertiaryContainer, RoundedCornerShape(18.dp)),
                     ) {
                         Icon(Icons.Rounded.Wallpaper, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
                     }
@@ -554,7 +554,7 @@ private fun CustomizePanel(
                 val on = t == tab
                 Surface(
                     onClick = { picked = t.name },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(20.dp),
                     color = if (on) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
                     modifier = Modifier.weight(1f).heightIn(min = 44.dp),
                 ) {
@@ -583,7 +583,7 @@ private fun CustomizePanel(
                                 selected = st.id == spec.styleId,
                                 onClick = { onStyle(st.id) },
                                 label = { Text(st.name) },
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(20.dp),
                             )
                         }
                     }
@@ -602,7 +602,7 @@ private fun CustomizePanel(
                                     } else {
                                         { LayoutGlyph(l, if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant) }
                                     },
-                                    shape = RoundedCornerShape(16.dp),
+                                    shape = RoundedCornerShape(20.dp),
                                 )
                             }
                         }
@@ -663,7 +663,7 @@ private fun CustomizePanel(
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { onWordsDone() }),
                         trailingIcon = { IconButton(onClick = onWordsDone) { Icon(Icons.Rounded.CheckCircle, contentDescription = "Use these words") } },
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(20.dp),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
@@ -693,12 +693,12 @@ private fun CustomizePanel(
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilledTonalButton(onClick = onShare, shape = RoundedCornerShape(16.dp), modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                        FilledTonalButton(onClick = onShare, shape = RoundedCornerShape(20.dp), modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                             Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
                             Text("Share")
                         }
-                        FilledTonalButton(onClick = onMore, shape = RoundedCornerShape(16.dp), modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                        FilledTonalButton(onClick = onMore, shape = RoundedCornerShape(20.dp), modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                             Icon(Icons.Rounded.GridView, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
                             Text("More like this")

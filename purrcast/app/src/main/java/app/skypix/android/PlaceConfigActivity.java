@@ -145,7 +145,7 @@ public final class PlaceConfigActivity extends Activity {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
         row.setPadding(Ui.dp(this, 20), Ui.dp(this, 14), Ui.dp(this, 20), Ui.dp(this, 14));
-        row.setBackground(Ui.surface(this, on ? Ui.primaryContainer(this) : Ui.container(this), 24));
+        row.setBackground(Ui.surface(this, on ? Ui.primaryContainer(this) : Ui.container(this), Ui.CARD));
         int ink = on ? Ui.onPrimaryContainer(this) : Ui.onSurface(this);
         row.addView(Ui.text(this, title, 16.5f, 500, ink));
         row.addView(Ui.text(this, sub, 13.5f, 400, on ? ink : Ui.onSurfaceVar(this)));
