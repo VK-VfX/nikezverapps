@@ -63,3 +63,9 @@ When Purrcast, Zamoled and Maps and Cats are all installed, the streak card (Pur
 ## Hero cat art (v2)
 Five mask looks, each with its own cape and collar colour: red domino, blue wing, purple visor, green goggles and rose cat-eye. Every emotion exists in every look (`hero-<emotion>-<0..4>`), plus one locked silhouette; made by `trio-art/hero-cats/build.py` with soft shading (mask sheen, cape gradient, forehead light, chin shade) and shipped at 512 px (Maps and Cats uses the vector SVG). A different look is picked each time: every widget refresh in Purrcast, each cat in Zamoled's Hero Club and in the Maps and Cats parade, and every time a card is shown.
 Widgets show the whole place name: it wraps and shrinks before anything is cut; on the wide card the country is dropped first.
+
+## Place names shared by Purrcast and Maps and Cats
+Maps and Cats uses the same holistic place-name logic as Purrcast (`mapsandcats/placenames.js` and `purrcast/.../PlaceNames.java`, both checked against `docs/place-names-vectors.json`). It does **not** read Purrcast's places or current location: each app works the name out from its own location, so no personal place data moves between apps.
+- A council typed into the search box ("Majlis Perbandaran Petaling Jaya Selatan") is searched as the place it governs ("Petaling Jaya Selatan").
+- The line under every result is street, neighbourhood, the town (never a council, never a county on its own) and the state; the country appears only when it is not the user's own.
+- "Near you" names where you are, e.g. "Near Seksyen 14, Petaling Jaya Selatan, Selangor".

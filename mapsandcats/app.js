@@ -775,7 +775,7 @@ function onPos(lat, lon, acc, ts = Date.now(), spd) {
     firstFix.done = true; following = true; $('#locateBtn').classList.add('on');
     map.jumpTo({ center: [lon, lat], zoom: quest.on ? 17 : 16 });
     $('#locLabel').textContent = 'Around your location';
-    resolveCountry(); renderNearby();
+    resolveCountry(); resolveHere(); renderNearby();
     if (quest.on) topUpCats();
   } else if (following) { if (nav.active) navCamera(900); else if (quest.walking) walkCamera(900); else map.easeTo(quest.on ? { center: [lon, lat], pitch: 0, bearing: 0, padding: NO_PAD, duration: 600 } : { center: [lon, lat], duration: 600 }); }
 
@@ -856,6 +856,17 @@ async function resolveCountry() {
     const cc = j.address?.country_code; if (cc) { S.country = { cc, lat: me.lat, lon: me.lon }; save(); }
   } catch {}
 }
+/* "Near you" names where you are the way Purrcast does: the town (never a council) and the state, e.g. Shah Alam, Selangor. */
+async function resolveHere() {
+  if (!me) return;
+  const h = S.here; if (h && dist([h.lat, h.lon], [me.lat, me.lon]) < 3000) { showHere(h.label); return; }
+  try {
+    const j = await (await fetch(`${SV().nominatim}/reverse?format=jsonv2&lat=${me.lat}&lon=${me.lon}&zoom=14&addressdetails=1&accept-language=${encodeURIComponent(UI_LANG + ',en')}`)).json();
+    const label = resultSub({ address: Object.assign({}, j.address, { cc: j.address?.country_code }), userCc: j.address?.country_code, name: '' }); if (!label) return;
+    S.here = { label, lat: me.lat, lon: me.lon }; save(); showHere(label);
+  } catch {}
+}
+function showHere(label) { if (label && !nav.active) $('#locLabel').textContent = 'Near ' + label; }
 function searchOrigin() { if (me) return [me.lat, me.lon]; const c = map.getCenter(); return [c.lat, c.lng]; }
 
 const UI_LANG = (navigator.language || 'en').toLowerCase();
@@ -865,7 +876,9 @@ async function photonSearch(q, o, signal) {
   if (!r.ok) throw new Error(r.status);
   return (await r.json()).features.map(f => {
     const p = f.properties, name = p.name || [p.street, p.housenumber].filter(Boolean).join(' ');
-    return { name, sub: [p.name ? p.street : null, p.city || p.locality || p.county, p.state, p.country].filter(Boolean).join(', '),
+    const cc = (p.countrycode || '').toLowerCase();
+    // the line under the result points at the town, the city or the state: never a council, never a county on its own
+    return { name, sub: resultSub({ name, street: p.name ? p.street : null, address: { city: p.city, suburb: p.locality || p.district, state: p.state, country: p.country, cc }, userCc: S.country?.cc }),
       lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], cc: (p.countrycode || '').toLowerCase() || null, src: 'photon', kind: `${p.osm_key}:${p.osm_value}` };
   }).filter(x => x.name);
 }
@@ -873,8 +886,8 @@ async function nominatimSearch(q, o, signal) {
   const vb = `${o[1] - .5},${o[0] + .5},${o[1] + .5},${o[0] - .5}`;
   const r = await fetch(`${SV().nominatim}/search?format=jsonv2&limit=8&addressdetails=1&accept-language=${encodeURIComponent(UI_LANG + ',en')}&q=${encodeURIComponent(q)}&viewbox=${vb}`, { signal });
   if (!r.ok) throw new Error(r.status);
-  return (await r.json()).map(x => { const parts = x.display_name.split(', ');
-    return { name: x.name || parts[0], sub: parts.slice(1, 4).join(', '), lat: +x.lat, lon: +x.lon, cc: x.address?.country_code || null, src: 'nominatim', kind: `${x.category}:${x.type}`, imp: +x.importance || 0 }; });
+  return (await r.json()).map(x => { const parts = x.display_name.split(', '), nm = x.name || parts[0];
+    return { name: nm, sub: resultSub({ name: nm, address: Object.assign({}, x.address, { cc: x.address?.country_code }), userCc: S.country?.cc }) || parts.slice(1, 4).join(', '), lat: +x.lat, lon: +x.lon, cc: x.address?.country_code || null, src: 'nominatim', kind: `${x.category}:${x.type}`, imp: +x.importance || 0 }; });
 }
 /* --- ranking: text relevance + distance + provider agreement + prominence (not distance alone) --- */
 const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
@@ -920,6 +933,7 @@ function parseCoords(q) {
 async function withRetry(fn) { try { return await fn(); } catch (e) { if (e?.name === 'AbortError') throw e; await new Promise(r => setTimeout(r, 400)); return fn(); } }
 /* Typing asks Photon only; Nominatim (whose usage policy forbids search-as-you-type) is asked when the person presses Enter. */
 async function blendSearch(q, signal, explicit = true) {
+  q = holisticQuery(q);   // a council typed as a place ("Majlis Perbandaran Petaling Jaya Selatan") is searched as the place it governs
   const o = searchOrigin(), pin = parseCoords(q);
   if (pin) return [pin];
   const [ph, nm] = (await Promise.allSettled([withRetry(() => photonSearch(q, o, signal)), explicit ? withRetry(() => nominatimSearch(q, o, signal)) : Promise.resolve(null)])).map(r => r.status === 'fulfilled' ? r.value : null);

@@ -1,0 +1,302 @@
+{
+ "bodies": [
+  [
+   "Majlis Perbandaran Petaling Jaya Selatan",
+   true,
+   "Petaling Jaya Selatan"
+  ],
+  [
+   "Majlis Bandaraya Subang Jaya",
+   true,
+   "Subang Jaya"
+  ],
+  [
+   "Majlis Daerah Hulu Langat",
+   true,
+   "Hulu Langat"
+  ],
+  [
+   "Dewan Bandaraya Kuala Lumpur",
+   true,
+   "Kuala Lumpur"
+  ],
+  [
+   "Subang Jaya City Council",
+   true,
+   "Subang Jaya"
+  ],
+  [
+   "Selangor Municipal Council",
+   true,
+   "Selangor"
+  ],
+  [
+   "Mairie de Lyon",
+   true,
+   "Lyon"
+  ],
+  [
+   "Communauté d'agglomération Paris-Saclay",
+   true,
+   "Paris-Saclay"
+  ],
+  [
+   "Métropole de Lille",
+   true,
+   "Lille"
+  ],
+  [
+   "Ayuntamiento de Madrid",
+   true,
+   "Madrid"
+  ],
+  [
+   "Câmara Municipal de Lisboa",
+   true,
+   "Lisboa"
+  ],
+  [
+   "Prefeitura de São Paulo",
+   true,
+   "São Paulo"
+  ],
+  [
+   "Comune di Milano",
+   true,
+   "Milano"
+  ],
+  [
+   "Stadtverwaltung München",
+   true,
+   "München"
+  ],
+  [
+   "Gemeinde Garching",
+   true,
+   "Garching"
+  ],
+  [
+   "Stadt Köln",
+   true,
+   "Köln"
+  ],
+  [
+   "Gemeente Amsterdam",
+   true,
+   "Amsterdam"
+  ],
+  [
+   "Pemerintah Kota Bandung",
+   true,
+   "Bandung"
+  ],
+  [
+   "Çankaya Belediyesi",
+   true,
+   "Çankaya"
+  ],
+  [
+   "东莞市人民政府",
+   true,
+   "东莞市"
+  ],
+  [
+   "横浜市役所",
+   true,
+   "横浜市"
+  ],
+  [
+   "Shire of Yarra Ranges",
+   true,
+   "Yarra Ranges"
+  ],
+  [
+   "Camden Borough Council",
+   true,
+   "Camden"
+  ],
+  [
+   "Kent County Council",
+   true,
+   "Kent"
+  ],
+  [
+   "Petaling Jaya",
+   false,
+   "Petaling Jaya"
+  ],
+  [
+   "Subang Jaya",
+   false,
+   "Subang Jaya"
+  ],
+  [
+   "City of London",
+   false,
+   "City of London"
+  ],
+  [
+   "Majlis Hotel Apartments",
+   false,
+   "Majlis Hotel Apartments"
+  ],
+  [
+   "Stadtteil Mitte",
+   false,
+   "Stadtteil Mitte"
+  ],
+  [
+   "Gemeindeplatz",
+   false,
+   "Gemeindeplatz"
+  ],
+  [
+   "Madrid",
+   false,
+   "Madrid"
+  ],
+  [
+   "Ville de Paris",
+   false,
+   "Ville de Paris"
+  ],
+  [
+   "Comune",
+   false,
+   "Comune"
+  ],
+  [
+   "Stadtpark",
+   false,
+   "Stadtpark"
+  ],
+  [
+   "Bangsar",
+   false,
+   "Bangsar"
+  ],
+  [
+   "Majlis Perbandaran",
+   true,
+   ""
+  ],
+  [
+   "",
+   false,
+   ""
+  ]
+ ],
+ "resolve": [
+  {
+   "address": {
+    "city": "Majlis Perbandaran Petaling Jaya Selatan",
+    "suburb": "Seksyen 14",
+    "state": "Selangor"
+   },
+   "city": "Petaling Jaya Selatan",
+   "neighborhood": "Seksyen 14",
+   "fromBody": true
+  },
+  {
+   "address": {
+    "city": "Petaling Jaya",
+    "suburb": "SS 2"
+   },
+   "city": "Petaling Jaya",
+   "neighborhood": "SS 2",
+   "fromBody": false
+  },
+  {
+   "address": {
+    "municipality": "Majlis Bandaraya Subang Jaya",
+    "town": "Subang Jaya"
+   },
+   "city": "Subang Jaya",
+   "neighborhood": "",
+   "fromBody": false
+  },
+  {
+   "address": {
+    "county": "Majlis Daerah Hulu Langat",
+    "village": "Kampung Batu 14"
+   },
+   "city": "Kampung Batu 14",
+   "neighborhood": "",
+   "fromBody": false
+  },
+  {
+   "address": {
+    "suburb": "Majlis Perbandaran Petaling Jaya",
+    "city": "Petaling Jaya"
+   },
+   "city": "Petaling Jaya",
+   "neighborhood": "",
+   "fromBody": false
+  },
+  {
+   "address": {
+    "city": "Kuala Lumpur",
+    "suburb": "Kuala Lumpur"
+   },
+   "city": "Kuala Lumpur",
+   "neighborhood": "",
+   "fromBody": false
+  },
+  {
+   "address": {
+    "state": "Selangor"
+   },
+   "city": "",
+   "neighborhood": "",
+   "fromBody": false
+  },
+  {
+   "address": {
+    "municipality": "Gemeinde Garching",
+    "state": "Bayern"
+   },
+   "city": "Garching",
+   "neighborhood": "",
+   "fromBody": true
+  },
+  {
+   "address": {
+    "city": "Lyon",
+    "municipality": "Mairie de Lyon"
+   },
+   "city": "Lyon",
+   "neighborhood": "",
+   "fromBody": false
+  },
+  {
+   "address": {
+    "village": "Florence",
+    "county": "Fremont County",
+    "state": "Colorado"
+   },
+   "city": "Florence",
+   "neighborhood": "",
+   "fromBody": false
+  },
+  {
+   "address": {
+    "county": "Kenai Peninsula Borough",
+    "state": "Alaska"
+   },
+   "city": "",
+   "neighborhood": "",
+   "fromBody": false
+  },
+  {
+   "address": {
+    "city": "Shah Alam",
+    "quarter": "Section 14",
+    "district": "Petaling",
+    "state": "Selangor"
+   },
+   "city": "Shah Alam",
+   "neighborhood": "Section 14",
+   "fromBody": false
+  }
+ ]
+}

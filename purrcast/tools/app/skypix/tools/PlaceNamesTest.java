@@ -160,6 +160,29 @@ public final class PlaceNamesTest {
         check("no city: nothing near leaves the state to be shown", open3.city, "");
         check("no city: asks for a nearby lookup", PlaceNames.resolve(addr("state", "Selangor")).needsNearby() + " / " + PlaceNames.resolve(addr("city", "Petaling Jaya")).needsNearby(), "true / false");
 
+        // ---- the same cases Maps and Cats (JS) passes: docs/place-names-vectors.json ----
+        if (args.length > 0) {
+            try {
+                org.json.JSONObject v = new org.json.JSONObject(new String(java.nio.file.Files.readAllBytes(new java.io.File(args[0]).toPath()), java.nio.charset.StandardCharsets.UTF_8));
+                org.json.JSONArray bodies = v.getJSONArray("bodies");
+                for (int i = 0; i < bodies.length(); i++) {
+                    org.json.JSONArray row = bodies.getJSONArray(i);
+                    check("vectors body: " + row.getString(0), PlaceNames.isBody(row.getString(0)), row.getBoolean(1));
+                    check("vectors strip: " + row.getString(0), PlaceNames.stripBody(row.getString(0)), row.getString(2));
+                }
+                org.json.JSONArray res = v.getJSONArray("resolve");
+                for (int i = 0; i < res.length(); i++) {
+                    org.json.JSONObject rc = res.getJSONObject(i), ad = rc.getJSONObject("address");
+                    Map<String, String> m = new HashMap<String, String>();
+                    for (java.util.Iterator<String> it = ad.keys(); it.hasNext();) { String k = it.next(); m.put(k, ad.getString(k)); }
+                    PlaceNames.Names n = PlaceNames.resolve(m);
+                    check("vectors resolve: " + ad, n.city + " | " + n.neighborhood + " | " + n.fromBody, rc.getString("city") + " | " + rc.getString("neighborhood") + " | " + rc.getBoolean("fromBody"));
+                }
+            } catch (Exception ex) {
+                check("vectors file readable", ex.toString(), "ok");
+            }
+        }
+
         System.out.println();
         System.out.println(pass + " passed, " + fail + " failed");
         if (fail > 0) System.exit(1);
