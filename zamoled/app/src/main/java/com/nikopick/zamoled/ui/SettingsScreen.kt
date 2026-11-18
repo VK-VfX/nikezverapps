@@ -238,17 +238,28 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
                 Text("Cat Club", style = MaterialTheme.typography.titleMedium)
                 val streak = remember { com.nikopick.zamoled.data.StreakStore.read(context).count }
                 var heroOn by remember { mutableStateOf(com.nikopick.zamoled.data.HeroSwitch.on(context)) }
-                val heroOpen = remember { Trio.allInstalled(context) } && heroOn
-                val heroMood = remember { Trio.mood(context)?.takeIf { it in HERO_MOODS } ?: "smile" }
+                val state = remember { com.nikopick.zamoled.data.StreakStore.read(context) }
+                val phase = remember { com.nikopick.zamoled.gen.heroPhase(state.count, state.ready, state.charge) }
+                val allThree = remember { Trio.allInstalled(context) }
+                val heroOpen = allThree && heroOn && phase == com.nikopick.zamoled.gen.HeroPhase.HERO
+                val heroMood = remember { com.nikopick.zamoled.gen.heroEmotion(Trio.mood(context)?.takeIf { it in HERO_MOODS } ?: "smile", state.count) }
+                // the supercat from day 10; before that (or after the shield is spent) the plain Noto cat: sad for 2 days, confident from the 3rd
+                val pic = if (!allThree || !heroOn) "locked" else when (phase) {
+                    com.nikopick.zamoled.gen.HeroPhase.HERO -> heroMood
+                    com.nikopick.zamoled.gen.HeroPhase.SAD -> "plain:cry"
+                    com.nikopick.zamoled.gen.HeroPhase.CONFIDENT -> "plain:smirk"
+                }
+                val note = when {
+                    !allThree -> "Install all three apps to meet the hero cat"
+                    !heroOn -> "The hero cat is hidden"
+                    heroOpen -> "Supercat feeling $heroMood. Hero Club wallpapers are unlocked in Doodle."
+                    phase == com.nikopick.zamoled.gen.HeroPhase.SAD -> "The supercat comes back at a 10 day streak. Keep visiting!"
+                    else -> "Looking confident. The supercat arrives at a 10 day streak."
+                }
                 Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     StreakRing(streak)
-                    HeroCat(if (heroOpen) heroMood else "locked", if (heroOpen) "The hero cat feeling $heroMood" else "A hero cat silhouette")
-                    Text(
-                        if (heroOpen) "Hero cat: $heroMood. Hero Club wallpapers are unlocked in Doodle." else if (!Trio.allInstalled(context)) "Install all three apps to meet the hero cat" else "The hero cat is hidden",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f),
-                    )
+                    HeroCat(pic, if (heroOpen) "The supercat feeling $heroMood" else "A cat")
+                    Text(note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
                 }
                 val shield = remember { com.nikopick.zamoled.data.StreakStore.shieldLine(context) }
                 val rest = listOfNotNull(
@@ -409,8 +420,8 @@ private fun HeroCat(name: String, description: String) {
     val context = LocalContext.current
     // a different mask look each time the screen is shown
     val look = remember { (0 until 5).random() }
-    val file = if (name == "locked") "hero_locked.png" else "hero_${name}_$look.png"
-    val bmp = remember(file) { runCatching { context.assets.open("hero/$file").use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull() }
+    val file = if (name == "locked") "hero/hero_locked.png" else if (name.startsWith("plain:")) "cats/${name.removePrefix("plain:")}.png" else "hero/hero_${name}_$look.png"
+    val bmp = remember(file) { runCatching { context.assets.open(file).use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull() }
     if (bmp != null) {
         Image(bmp.asImageBitmap(), contentDescription = description, modifier = Modifier.size(64.dp))
     }

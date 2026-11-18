@@ -52,7 +52,7 @@ object ShareLink {
     fun rewardSpec(day: Int?): WallpaperSpec? {
         if (day == null || day < 10 || day % 10 != 0 || day > 3650) return null
         val palette = rewardPalettes[(day / 10 - 1) % rewardPalettes.size]
-        return WallpaperSpec("gatti", day * 7919L, palette, black = 0.25f, zone = 2).takeIf { known(it) }
+        return WallpaperSpec("supercat", day * 7919L, palette, black = 0.4f, text = day.toString()).takeIf { known(it) }
     }
 
     private fun known(spec: WallpaperSpec): Boolean = spec.style.id == spec.styleId

@@ -380,9 +380,15 @@ const HERO_MOODS = ['smile', 'grin', 'smirk', 'confident', 'angry', 'shocked', '
 /* The hero cat: Purrcast's mood when all three apps are installed, otherwise the locked silhouette. */
 function renderClubHero(sib) {
   const box = $('#clubHero'); if (!box) return;
-  const open = allThreeInstalled() && S.heroOn !== false, mood = open && sib.purrcast && HERO_MOODS.includes(sib.purrcast.mood) ? sib.purrcast.mood : 'smile';
-  box.innerHTML = streakRing(S.streak.count) + `<img class="hero-cat" src="assets/hero/hero-${open ? mood + '-' + Math.floor(Math.random() * 5) : 'locked'}.svg" alt="${open ? 'The hero cat feeling ' + mood : 'A hero cat silhouette'}" width="64" height="64">` +
-    `<span class="hero-note">${open ? 'Hero cat: ' + mood : allThreeInstalled() ? 'The hero cat is hidden' : 'Install all three apps to meet the hero cat'}</span>`;
+  const st = S.streak, phase = heroPhase(st.count, st.ready, st.charge), all = allThreeInstalled();
+  const open = all && S.heroOn !== false && phase === 'HERO';
+  const mood = heroEmotion(open && sib.purrcast && HERO_MOODS.includes(sib.purrcast.mood) ? sib.purrcast.mood : 'smile', st.count);
+  /* the supercat from day 10; before that (or after the shield is spent) the plain Noto cat: sad for 2 days, confident from the 3rd */
+  const src = !all || S.heroOn === false ? 'assets/hero/hero-locked.svg' : open ? `assets/hero/hero-${mood}-${Math.floor(Math.random() * 5)}.svg`
+    : phase === 'SAD' ? 'assets/cats/crying-cat.png' : 'assets/cats/smirk-cat.svg';
+  const note = !all ? 'Install all three apps to meet the hero cat' : S.heroOn === false ? 'The hero cat is hidden'
+    : open ? 'Supercat feeling ' + mood : phase === 'SAD' ? 'The supercat comes back at a 10 day streak. Keep visiting!' : 'Looking confident. The supercat arrives at a 10 day streak.';
+  box.innerHTML = streakRing(st.count) + `<img class="hero-cat" src="${src}" alt="${open ? 'The supercat feeling ' + mood : 'A cat'}" width="64" height="64">` + `<span class="hero-note">${note}</span>`;
   renderParade(open, mood);
   const row = $('#heroRow'); if (row) { row.hidden = !allThreeInstalled(); $('#heroToggle').checked = S.heroOn !== false; }
 }

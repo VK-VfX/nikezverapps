@@ -7,6 +7,7 @@ const SHELL = [
   'favicon-32.png', 'favicon-48.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'icon-monochrome-512.png', 'assets/logo/logo-96.png', 'assets/profile.png',
   'vendor/maplibre/maplibre-gl.js', 'vendor/maplibre/maplibre-gl.css',
   ...['smile','grin','smirk','confident','angry','shocked','sad','scared','loaf'].flatMap(n => [0, 1, 2, 3, 4].map(v => `assets/hero/hero-${n}-${v}.svg`)), 'assets/hero/hero-locked.svg',
+  'assets/cats/crying-cat.png',
   ...['cat-face','cat','grin-cat','grin-smile-cat','smirk-cat','black-cat','kissing-cat','heart-eyes-cat','paws'].map(n => `assets/cats/${n}.svg`),
 ];
 

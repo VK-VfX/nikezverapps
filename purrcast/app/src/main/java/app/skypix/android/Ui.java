@@ -420,7 +420,11 @@ final class Ui {
         StreakCard(Context c, int streak, int best, long mask, String shield) {
             super(c);
             // all three apps installed: the hero cat, in the mood of the weather (see core/HeroMood)
-            this.hero = Store.heroActive(c) ? AndroidGfx.emojiBitmap("hero_" + Store.mood(c) + "_" + new java.util.Random().nextInt(app.skypix.core.Glyphs.HERO_LOOKS)) : null;
+            app.skypix.core.HeroCat.Phase ph = Store.heroPhase(c);
+            this.hero = !Store.heroActive(c) ? null
+                    : ph == app.skypix.core.HeroCat.Phase.HERO
+                    ? AndroidGfx.emojiBitmap("hero_" + app.skypix.core.HeroCat.emotion(Store.mood(c), streak) + "_" + new java.util.Random().nextInt(app.skypix.core.Glyphs.HERO_LOOKS))
+                    : AndroidGfx.emojiBitmap(ph == app.skypix.core.HeroCat.Phase.SAD ? "cry" : "smirk");   // plain Noto cat: sad, then confident from day 3
             this.streak = streak;
             this.best = best;
             this.mask = mask;

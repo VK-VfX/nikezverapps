@@ -469,7 +469,7 @@ object Styles {
 
     /** Retired styles: hidden from browsing but still able to open saved favourites. */
     private val retired: List<Style> = listOf(
-        Halo, Horizon, Silk,
+        Halo, Horizon, Silk, SuperCatStyle,
         Topographic, Mountains,
         SpectrumBars, CircularSpectrum, Oscilloscope,
         GlitchBlocks, PixelDrip, PixelHearts, Bokeh, LightTrails, NeonRain,

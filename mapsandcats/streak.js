@@ -50,6 +50,17 @@
   /* The local calendar day number for a clock time and its time zone offset (milliseconds east of UTC). */
   const streakDay = (nowMs, tzOffsetMs) => Math.floor((nowMs + tzOffsetMs) / 86400000);
 
-  const api = { streakAdopt, streakStep, streakLabel, streakFromLegacy, streakDay, newStreak };
+  /* The supercat's life cycle (docs/HERO-CAT-RULES.md), checked by docs/hero-cat-vectors.json like Purrcast's HeroCat. */
+  const heroPhase = (count, ready, charge) => (ready && count >= 10) ? 'HERO' : ((ready ? count : charge + 1) >= 3 ? 'CONFIDENT' : 'SAD');
+  const heroJoy = (count) => count <= 10 ? 0 : count <= 13 ? 1 : count <= 20 ? 2 : count <= 29 ? 3 : 4;
+  function heroEmotion(mood, count) {
+    const j = heroJoy(count), calm = mood === 'smile' || mood === 'smirk' || mood === 'confident';
+    if (j >= 2 && calm) return 'grin';
+    if (j === 1 && (mood === 'smirk' || mood === 'confident')) return 'smile';
+    return mood;
+  }
+  const heroAnimated = (count) => count > 20;
+
+  const api = { heroPhase, heroJoy, heroEmotion, heroAnimated, streakAdopt, streakStep, streakLabel, streakFromLegacy, streakDay, newStreak };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else Object.assign(root, api);
 })(typeof window !== 'undefined' ? window : globalThis);

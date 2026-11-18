@@ -207,7 +207,13 @@ final class Store {
     static void setHeroOn(Context c, boolean v) { sp(c).edit().putBoolean("hero_on", v).apply(); }
     static boolean heroActive(Context c) { return heroOn(c) && Trio.allInstalled(c); }
     /** Makes the widgets and cards follow the switch and the installed apps. Call before drawing. */
-    static void applyHero(Context c) { app.skypix.core.Glyphs.hero = heroActive(c); }
+    static void applyHero(Context c) { app.skypix.core.Glyphs.hero = heroActive(c) && heroPhase(c) == app.skypix.core.HeroCat.Phase.HERO; }
+
+    /** The supercat's phase for this streak (docs/HERO-CAT-RULES.md). */
+    static app.skypix.core.HeroCat.Phase heroPhase(Context c) {
+        app.skypix.core.Streak.State s = streakState(sp(c));
+        return app.skypix.core.HeroCat.phase(streak(c), s.ready, s.charge);
+    }
 
     /** True while all three apps are installed on this phone: the Streak Shield and the hero cat work. */
     static boolean shieldOn(Context c) { return Trio.allInstalled(c); }

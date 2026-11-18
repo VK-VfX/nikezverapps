@@ -74,3 +74,28 @@ fun streakFromLegacy(mask: ULong): StreakState {
     while (run < 64 && ((mask shr run) and 1uL) != 0uL) run++
     return StreakState(count = run, best = run, mask = mask)
 }
+
+/** The supercat's life cycle (docs/HERO-CAT-RULES.md); the same rules as Purrcast's HeroCat and checked by docs/hero-cat-vectors.json. */
+enum class HeroPhase { HERO, SAD, CONFIDENT }
+
+/** The supercat shows from the 10th streak day while the shield is ready; otherwise the plain Noto cat: sad for 2 days, confident from the 3rd. */
+fun heroPhase(count: Int, shieldReady: Boolean, charge: Int): HeroPhase {
+    if (shieldReady && count >= 10) return HeroPhase.HERO
+    val day = if (shieldReady) count else charge + 1
+    return if (day >= 3) HeroPhase.CONFIDENT else HeroPhase.SAD
+}
+
+/** How happy the supercat is: 0 on day 10, up to 4 from day 30. */
+fun heroJoy(count: Int): Int = if (count <= 10) 0 else if (count <= 13) 1 else if (count <= 20) 2 else if (count <= 29) 3 else 4
+
+/** Calm weather moods grow happier with the streak; bad-weather and night moods are never changed. */
+fun heroEmotion(weatherMood: String, count: Int): String {
+    val j = heroJoy(count)
+    val calm = weatherMood == "smile" || weatherMood == "smirk" || weatherMood == "confident"
+    if (j >= 2 && calm) return "grin"
+    if (j == 1 && (weatherMood == "smirk" || weatherMood == "confident")) return "smile"
+    return weatherMood
+}
+
+/** Past 20 days the special wallpaper and the card get living effects. */
+fun heroAnimated(count: Int): Boolean = count > 20

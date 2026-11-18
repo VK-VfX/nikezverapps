@@ -1,0 +1,335 @@
+{
+ "phases": [
+  {
+   "count": 1,
+   "ready": true,
+   "charge": 0,
+   "phase": "SAD",
+   "animated": false,
+   "joy": 0
+  },
+  {
+   "count": 2,
+   "ready": true,
+   "charge": 0,
+   "phase": "SAD",
+   "animated": false,
+   "joy": 0
+  },
+  {
+   "count": 3,
+   "ready": true,
+   "charge": 0,
+   "phase": "CONFIDENT",
+   "animated": false,
+   "joy": 0
+  },
+  {
+   "count": 9,
+   "ready": true,
+   "charge": 0,
+   "phase": "CONFIDENT",
+   "animated": false,
+   "joy": 0
+  },
+  {
+   "count": 10,
+   "ready": true,
+   "charge": 0,
+   "phase": "HERO",
+   "animated": false,
+   "joy": 0
+  },
+  {
+   "count": 25,
+   "ready": true,
+   "charge": 0,
+   "phase": "HERO",
+   "animated": true,
+   "joy": 3
+  },
+  {
+   "count": 25,
+   "ready": false,
+   "charge": 0,
+   "phase": "SAD",
+   "animated": true,
+   "joy": 3
+  },
+  {
+   "count": 25,
+   "ready": false,
+   "charge": 1,
+   "phase": "SAD",
+   "animated": true,
+   "joy": 3
+  },
+  {
+   "count": 25,
+   "ready": false,
+   "charge": 2,
+   "phase": "CONFIDENT",
+   "animated": true,
+   "joy": 3
+  },
+  {
+   "count": 40,
+   "ready": false,
+   "charge": 6,
+   "phase": "CONFIDENT",
+   "animated": true,
+   "joy": 4
+  },
+  {
+   "count": 1,
+   "ready": false,
+   "charge": 0,
+   "phase": "SAD",
+   "animated": false,
+   "joy": 0
+  },
+  {
+   "count": 2,
+   "ready": false,
+   "charge": 1,
+   "phase": "SAD",
+   "animated": false,
+   "joy": 0
+  },
+  {
+   "count": 5,
+   "ready": false,
+   "charge": 3,
+   "phase": "CONFIDENT",
+   "animated": false,
+   "joy": 0
+  }
+ ],
+ "emotions": [
+  {
+   "weather": "smile",
+   "count": 10,
+   "emotion": "smile"
+  },
+  {
+   "weather": "smile",
+   "count": 12,
+   "emotion": "smile"
+  },
+  {
+   "weather": "smile",
+   "count": 15,
+   "emotion": "grin"
+  },
+  {
+   "weather": "smile",
+   "count": 25,
+   "emotion": "grin"
+  },
+  {
+   "weather": "smile",
+   "count": 31,
+   "emotion": "grin"
+  },
+  {
+   "weather": "grin",
+   "count": 10,
+   "emotion": "grin"
+  },
+  {
+   "weather": "grin",
+   "count": 12,
+   "emotion": "grin"
+  },
+  {
+   "weather": "grin",
+   "count": 15,
+   "emotion": "grin"
+  },
+  {
+   "weather": "grin",
+   "count": 25,
+   "emotion": "grin"
+  },
+  {
+   "weather": "grin",
+   "count": 31,
+   "emotion": "grin"
+  },
+  {
+   "weather": "smirk",
+   "count": 10,
+   "emotion": "smirk"
+  },
+  {
+   "weather": "smirk",
+   "count": 12,
+   "emotion": "smile"
+  },
+  {
+   "weather": "smirk",
+   "count": 15,
+   "emotion": "grin"
+  },
+  {
+   "weather": "smirk",
+   "count": 25,
+   "emotion": "grin"
+  },
+  {
+   "weather": "smirk",
+   "count": 31,
+   "emotion": "grin"
+  },
+  {
+   "weather": "confident",
+   "count": 10,
+   "emotion": "confident"
+  },
+  {
+   "weather": "confident",
+   "count": 12,
+   "emotion": "smile"
+  },
+  {
+   "weather": "confident",
+   "count": 15,
+   "emotion": "grin"
+  },
+  {
+   "weather": "confident",
+   "count": 25,
+   "emotion": "grin"
+  },
+  {
+   "weather": "confident",
+   "count": 31,
+   "emotion": "grin"
+  },
+  {
+   "weather": "angry",
+   "count": 10,
+   "emotion": "angry"
+  },
+  {
+   "weather": "angry",
+   "count": 12,
+   "emotion": "angry"
+  },
+  {
+   "weather": "angry",
+   "count": 15,
+   "emotion": "angry"
+  },
+  {
+   "weather": "angry",
+   "count": 25,
+   "emotion": "angry"
+  },
+  {
+   "weather": "angry",
+   "count": 31,
+   "emotion": "angry"
+  },
+  {
+   "weather": "shocked",
+   "count": 10,
+   "emotion": "shocked"
+  },
+  {
+   "weather": "shocked",
+   "count": 12,
+   "emotion": "shocked"
+  },
+  {
+   "weather": "shocked",
+   "count": 15,
+   "emotion": "shocked"
+  },
+  {
+   "weather": "shocked",
+   "count": 25,
+   "emotion": "shocked"
+  },
+  {
+   "weather": "shocked",
+   "count": 31,
+   "emotion": "shocked"
+  },
+  {
+   "weather": "sad",
+   "count": 10,
+   "emotion": "sad"
+  },
+  {
+   "weather": "sad",
+   "count": 12,
+   "emotion": "sad"
+  },
+  {
+   "weather": "sad",
+   "count": 15,
+   "emotion": "sad"
+  },
+  {
+   "weather": "sad",
+   "count": 25,
+   "emotion": "sad"
+  },
+  {
+   "weather": "sad",
+   "count": 31,
+   "emotion": "sad"
+  },
+  {
+   "weather": "scared",
+   "count": 10,
+   "emotion": "scared"
+  },
+  {
+   "weather": "scared",
+   "count": 12,
+   "emotion": "scared"
+  },
+  {
+   "weather": "scared",
+   "count": 15,
+   "emotion": "scared"
+  },
+  {
+   "weather": "scared",
+   "count": 25,
+   "emotion": "scared"
+  },
+  {
+   "weather": "scared",
+   "count": 31,
+   "emotion": "scared"
+  },
+  {
+   "weather": "loaf",
+   "count": 10,
+   "emotion": "loaf"
+  },
+  {
+   "weather": "loaf",
+   "count": 12,
+   "emotion": "loaf"
+  },
+  {
+   "weather": "loaf",
+   "count": 15,
+   "emotion": "loaf"
+  },
+  {
+   "weather": "loaf",
+   "count": 25,
+   "emotion": "loaf"
+  },
+  {
+   "weather": "loaf",
+   "count": 31,
+   "emotion": "loaf"
+  }
+ ]
+}

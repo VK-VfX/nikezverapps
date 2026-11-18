@@ -25,7 +25,10 @@ object HeroSwitch {
         refresh(context)
     }
 
-    fun active(context: Context): Boolean = on(context) && Trio.allInstalled(context)
+    fun active(context: Context): Boolean {
+        val st = StreakStore.read(context)
+        return on(context) && Trio.allInstalled(context) && com.nikopick.zamoled.gen.heroPhase(st.count, st.ready, st.charge) == com.nikopick.zamoled.gen.HeroPhase.HERO
+    }
 
     /** Updates the Hero Club style from the switch, the installed apps and Purrcast's mood. */
     fun refresh(context: Context) {

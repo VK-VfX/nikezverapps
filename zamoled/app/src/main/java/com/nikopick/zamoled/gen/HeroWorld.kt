@@ -49,6 +49,17 @@ object HeroPack {
 
     const val LOOKS = 5
 
+    /** The big 768 px portrait for the supercat wallpaper (assets/hero/portrait), or the normal picture when it is missing. */
+    fun portrait(mood: String, look: Int): Bitmap? {
+        val open = opener ?: return null
+        val name = "hero_${mood}_${Math.floorMod(look, LOOKS)}.png"
+        val key = "portrait/$name"
+        synchronized(cache) { cache[key]?.let { if (!it.isRecycled) return it } }
+        val bmp = runCatching { open("portrait/$name")?.use { BitmapFactory.decodeStream(it) } }.getOrNull() ?: return load(mood, look, 512)
+        synchronized(cache) { cache[key] = bmp }
+        return bmp
+    }
+
     /** The picture of the hero cat in [mood] and mask look [look] (0 to 4; the locked silhouette has no look), decoded no larger than needed for [targetWidth] pixels. */
     fun load(mood: String, look: Int, targetWidth: Int): Bitmap? {
         val open = opener ?: return null

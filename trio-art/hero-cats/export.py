@@ -4,6 +4,7 @@ There are nine emotions in five mask looks each (hero-<emotion>-<0..4>) plus one
   Purrcast: purrcast/app/src/main/res/drawable-nodpi/cat_hero_<emotion>_<look>.png   (Purrcast loads "cat_<name>")
   Zamoled:  zamoled/app/src/main/assets/hero/hero_<emotion>_<look>.png
   Maps and Cats: mapsandcats/assets/hero/hero-<emotion>-<look>.svg
+  Zamoled supercat wallpaper: zamoled/app/src/main/assets/hero/portrait/hero_<emotion>_<look>.png (768 px, for the big portrait)
 Run: python3 export.py   (needs node + playwright)"""
 import pathlib, re, shutil, subprocess, tempfile
 from PIL import Image
@@ -18,10 +19,11 @@ MAC = ROOT / "mapsandcats/assets/hero"
 subprocess.run(["python3", str(HERE / "build.py")], check=True)
 tmp = pathlib.Path(tempfile.mkdtemp())
 subprocess.run(["node", str(HERE / "render.js"), str(tmp)], check=True)
-for d in (PUR, ZAM, MAC):
+POR = ZAM / "portrait"
+for d in (PUR, ZAM, MAC, POR):
     d.mkdir(parents=True, exist_ok=True)
 # drop what the previous export left behind
-for d, pat in ((PUR, "cat_hero_*.png"), (ZAM, "hero_*.png"), (MAC, "hero-*.svg")):
+for d, pat in ((PUR, "cat_hero_*.png"), (ZAM, "hero_*.png"), (POR, "hero_*.png"), (MAC, "hero-*.svg")):
     for f in d.glob(pat): f.unlink()
 for n in NAMES:
     im = Image.open(tmp / f"hero-{n}.png").convert("RGBA").resize((512, 512), Image.LANCZOS)
@@ -30,6 +32,9 @@ for n in NAMES:
     q.save(PUR / f"cat_hero_{flat}.png", optimize=True)
     q.save(ZAM / f"hero_{flat}.png", optimize=True)
     shutil.copy(HERE / f"hero-{n}.svg", MAC / f"hero-{n}.svg")
+    if n != "locked":
+        big = Image.open(tmp / f"hero-{n}.png").convert("RGBA")
+        big.quantize(colors=256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).save(POR / f"hero_{flat}.png", optimize=True)
 shutil.copy(HERE / "NOTICE.txt", MAC / "NOTICE.txt")
 shutil.copy(HERE / "NOTICE.txt", ZAM / "NOTICE.txt")
 # a contact sheet on pure black: every emotion in every look
