@@ -1,7 +1,7 @@
 {
-  "versionCode": 23,
-  "versionName": "2.2.1",
+  "versionCode": 24,
+  "versionName": "2.3.0",
   "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
-  "sha256": "79cd5a7a27c3dd319c88139b856d3ad3cee37f10ababac7c87dab87d794e63e5",
-  "notes": "The Clock widget now shows the whole place name, wrapping over up to three lines."
+  "sha256": "92c5b540bd0017999d3bc4064982203a9ab66f239a30dfd949f54261f8315ba7",
+  "notes": "A fresh look (soft violet streak ring, rounder cards), the masked hero cat on widgets in five mask looks, save and restore your progress with a short code, whole place names that never show a council (Shah Alam, Selangor), and the whole name on small widgets."
 }

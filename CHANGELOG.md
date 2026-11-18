@@ -6,6 +6,7 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 ## Purrcast
 
+- **2.3.0**: A fresh look (soft violet streak ring, rounder cards, a weather-tinted header), the masked hero cat on every widget in five mask looks (a different one each refresh), a Show hero cat switch, save and restore your progress with a short code (notes, screenshot card, calendar, file), and holistic place names: a council is never the place, the title names the state (Shah Alam, Selangor), the closest town is found when the map has none. Small widgets show the whole place name.
 - **2.2.1**: The Clock widget shows the whole place name (it wraps over up to three lines instead of cutting it off).
 - **2.2.0**: One shared streak (the highest across the three apps), a log for bug reports in About, open-source notices, clearer privacy and alert wording.
 - **2.1.0**: A day streak of your own plus the Streak Shield (saves up to 7 missed days when all three apps are installed). MET Malaysia alerts removed; warnings use plain wording from Open-Meteo only. Hero cat art and the weather mood are shared with the other two apps.
@@ -19,6 +20,7 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 ## Zamoled
 
+- **8.3.0**: A fresh look (violet streak ring, rounder cards), the hero cat in the Cat Club card, Hero Club wallpapers (when all three apps are installed), a pixels-off badge on every wallpaper card, a richer lock-screen preview, and save and restore your progress with a short code.
 - **8.2.1**: The Windows zip now carries the licences of the fonts and libraries it ships (THIRD-PARTY.txt). Nothing else changes.
 - **8.2.0**: One shared streak (the highest across the three apps), a log for bug reports in About (shows why an update install failed), open-source notices.
 - **8.1.0**: Your own day streak and the Streak Shield, shown in the Cat Club card. Hero cat art is bundled for what comes next.
@@ -39,6 +41,7 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 ## Maps and Cats
 
+- **2.4.0**: Search and results point at the real town and the state (never a council; a council typed as a place is searched as the place it governs), "Near you" names where you are, route time chips on the map, a catch burst in Quest mode, the hero cat and its walking parade, save and restore your progress with a short code, a violet streak ring and a rounder look.
 - **2.3.0**: One shared streak, a log for bug reports in About, open-source notices, navigation and privacy wording. Web search now uses Wikipedia only; typing searches Photon, Enter also asks Nominatim.
 - **2.2.0**: Your own day streak and the Streak Shield, shown in the Cat Club line. Hero cat art is bundled for what comes next.
 - **2.1.0**: Green Start and red End buttons, honest time ranges (no live traffic), 3D switch moved to Settings, clearer map buttons.

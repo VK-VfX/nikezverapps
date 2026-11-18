@@ -7,9 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Bump both for every release; the in-app updater compares VERSION_CODE (it must always go up).
-VERSION_CODE=23
-VERSION_NAME=2.2.1
-RELEASE_NOTES="The Clock widget now shows the whole place name, wrapping over up to three lines."
+VERSION_CODE=24
+VERSION_NAME=2.3.0
+RELEASE_NOTES="A fresh look (soft violet streak ring, rounder cards), the masked hero cat on widgets in five mask looks, save and restore your progress with a short code, whole place names that never show a council (Shah Alam, Selangor), and the whole name on small widgets."
 UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist
 
 DEPS=build/deps
