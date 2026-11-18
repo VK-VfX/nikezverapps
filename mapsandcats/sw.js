@@ -3,7 +3,7 @@
 const VERSION = '2.3.0';
 const CACHE = 'mapsandcats-' + VERSION;
 const SHELL = [
-  './', 'index.html', 'app.css', 'app.js', 'icons.js', 'streak.js', 'manifest.webmanifest',
+  './', 'index.html', 'app.css', 'app.js', 'icons.js', 'streak.js', 'savecode.js', 'progress.js', 'manifest.webmanifest',
   'favicon-32.png', 'favicon-48.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'icon-monochrome-512.png', 'assets/logo/logo-96.png', 'assets/profile.png',
   'vendor/maplibre/maplibre-gl.js', 'vendor/maplibre/maplibre-gl.css',
   ...['smile','grin','smirk','confident','angry','shocked','sad','scared','loaf','locked'].map(n => `assets/hero/hero-${n}.svg`),

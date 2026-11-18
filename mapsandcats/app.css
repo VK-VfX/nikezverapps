@@ -483,3 +483,14 @@ h1, h2, h3, .group-title { letter-spacing: .01em; }
 .cat-empty { display: flex; align-items: center; gap: 12px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .burst { display: none; } .skel { animation: none; opacity: .7; } }
+
+/* Progress sheet (save and restore) */
+.pmodal { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: end center; background: rgba(0,0,0,.6); padding: 12px; }
+.pmodal[hidden] { display: none; }
+.pmodal .card { width: min(520px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 28px; padding: 18px; box-shadow: var(--shadow); max-height: 86vh; overflow: auto; }
+.pmodal h3 { margin: 0 0 6px; }
+.pmodal .code { font: 600 15px/1.5 ui-monospace, monospace; color: var(--text); background: var(--panel-2); border-radius: 16px; padding: 12px; word-break: break-all; margin: 8px 0 10px; }
+.pmodal .btn { width: 100%; text-align: left; margin-top: 8px; min-height: 48px; }
+.pmodal textarea { width: 100%; min-height: 96px; box-sizing: border-box; background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 16px; padding: 12px; font: 14px/1.4 ui-monospace, monospace; }
+.pmodal .err { color: var(--danger); font-size: 13px; min-height: 18px; margin-top: 6px; }
+.pmodal label.chk { display: flex; gap: 10px; align-items: center; margin: 10px 0; min-height: 48px; font-size: 13px; color: var(--muted); }

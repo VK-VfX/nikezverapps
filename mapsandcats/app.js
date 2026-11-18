@@ -319,6 +319,57 @@ function touchStreak() {
 }
 touchStreak();
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { touchStreak(); refreshTrio(); } });
+/* ---- progress: save a code, restore a code (docs/superpowers/specs/2026-11-17-progress-save-code-design.md) ---- */
+const progModal = $('#progModal');
+function progClose() { progModal.hidden = true; progModal.innerHTML = ''; }
+function progOpen(html) { progModal.innerHTML = '<div class="card">' + html + '</div>'; progModal.hidden = false; }
+progModal.addEventListener('click', e => { if (e.target === progModal) progClose(); });
+const progDay = () => new Date().toISOString().slice(0, 10);
+const progBridge = () => { try { return window.AndroidTrio && window.AndroidTrio.shareText ? window.AndroidTrio : null; } catch { return null; } };
+function progDownload(name, mime, body) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([body], { type: mime })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+function progCard(code) {
+  const c = document.createElement('canvas'); c.width = 1080; c.height = 1350; const g = c.getContext('2d');
+  g.fillStyle = '#000'; g.fillRect(0, 0, 1080, 1350);
+  g.fillStyle = '#3df5d0'; g.font = 'bold 64px sans-serif'; g.fillText('Maps and Cats progress', 80, 190);
+  g.fillStyle = '#aeaeb8'; g.font = '36px monospace'; g.fillText('Saved ' + progDay(), 80, 250);
+  g.fillStyle = '#f4f4f6'; g.font = '58px monospace'; let line = '', y = 520;
+  for (const part of code.split('-')) { const next = line ? line + '-' + part : part; if (g.measureText(next).width > 920 && line) { g.fillText(line, 80, y); y += 92; line = part; } else line = next; }
+  if (line) g.fillText(line, 80, y);
+  g.fillStyle = '#aeaeb8'; g.font = '38px sans-serif'; g.fillText('Keep this safe. Paste it into', 80, 1120); g.fillText('Restore progress to get your streak back.', 80, 1172);
+  return c.toDataURL('image/png');
+}
+function progIcs(code) { const d = progDay().replace(/-/g, ''); return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'BEGIN:VEVENT', 'UID:mac-progress-' + d + '@mapsandcats', 'DTSTAMP:' + d + 'T000000Z', 'DTSTART;VALUE=DATE:' + d, 'SUMMARY:Maps and Cats progress code', 'DESCRIPTION:' + code, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n'); }
+function showSave() {
+  const code = saveCodeEncode('MAC1', progressPayload(S)), B = progBridge();
+  const acts = [
+    ['Share to notes or chat', () => B ? B.shareText('Maps and Cats progress code:\n' + code) : navigator.share ? navigator.share({ text: code }).catch(() => {}) : progCopy(code)],
+    ['Save a screenshot card', () => { const url = progCard(code); if (B) B.saveImage('mapsandcats-progress-' + progDay() + '.png', url); else { const a = document.createElement('a'); a.href = url; a.download = 'mapsandcats-progress.png'; a.click(); } }],
+    ['Add to calendar', () => B ? B.addCalendar('Maps and Cats progress code', code) : progDownload('mapsandcats-progress.ics', 'text/calendar', progIcs(code))],
+    ['Save as a text file', () => B ? B.saveFile('mapsandcats-progress-' + progDay() + '.txt', 'text/plain', 'Maps and Cats progress code\n' + code + '\n') : progDownload('mapsandcats-progress.txt', 'text/plain', code + '\n')],
+    ['Full backup file (places and settings)', () => B ? B.saveFile('mapsandcats-backup-' + progDay() + '.json', 'application/json', progressBackup(S)) : progDownload('mapsandcats-backup.json', 'application/json', progressBackup(S))],
+    ['Copy', () => progCopy(code)],
+  ];
+  progOpen('<h3>Keep your streak safe</h3><div class="code" id="progCode"></div>' + acts.map((a, i) => `<button class="btn ghost" data-i="${i}" type="button">${esc(a[0])}</button>`).join('') + '<button class="btn ghost" data-close type="button">Close</button>');
+  $('#progCode').textContent = code;
+  progModal.querySelectorAll('button[data-i]').forEach(b => b.addEventListener('click', () => { progClose(); try { acts[+b.dataset.i][1](); } catch { toast('No app found for that. Try Copy.'); } }));
+  progModal.querySelector('[data-close]').addEventListener('click', progClose);
+}
+function progCopy(code) { (navigator.clipboard ? navigator.clipboard.writeText(code) : Promise.reject()).then(() => toast('Copied. Paste it somewhere safe.'), () => toast('Copy is blocked here. Select the code and copy it.')); }
+function showRestore() {
+  const B = progBridge(); let pre = ''; try { const t = B && B.clipboardText ? B.clipboardText() : ''; if (t && t.length < 5000 && saveCodeDecode(t, 'MAC1').kind === 'ok') pre = t; } catch {}
+  progOpen('<h3>Restore progress</h3><textarea id="progText" placeholder="MAC1-XXXX-XXXX-..." aria-label="Progress code"></textarea><div class="err" id="progErr" role="alert"></div><label class="chk"><input type="checkbox" id="progSettings"> Also restore my settings (backup files only)</label><button class="btn primary" id="progGo" type="button">Restore</button><button class="btn ghost" id="progFile" type="button">Open file</button><button class="btn ghost" data-close type="button">Cancel</button>');
+  $('#progText').value = pre;
+  const done = msg => { progClose(); toast(msg, 4000); refreshTrio(); };
+  $('#progGo').addEventListener('click', () => { try { const m = progressRestoreText(S, $('#progText').value); save(); done(m); } catch (e) { $('#progErr').textContent = e.message; } });
+  $('#progFile').addEventListener('click', () => {
+    const withSettings = $('#progSettings').checked, got = text => { try { const m = text.trim().startsWith('{') ? progressRestoreBackup(S, text, withSettings) : progressRestoreText(S, text); save(); done(m); } catch (e) { toast(e.message, 4000); } };
+    if (B && B.pickFile) { window.__macFilePicked = got; B.pickFile(); progClose(); }
+    else { const i = document.createElement('input'); i.type = 'file'; i.onchange = () => i.files[0] && i.files[0].text().then(got); i.click(); progClose(); }
+  });
+  progModal.querySelector('[data-close]').addEventListener('click', progClose);
+}
+$('#progSave').addEventListener('click', showSave);
+$('#progRestore').addEventListener('click', showRestore);
 const REPO_URL = 'https://github.com/VK-VfX/nikezverapps';
 /* A violet ring toward the next 10-day reward, with the day count inside. */
 function streakRing(count) {

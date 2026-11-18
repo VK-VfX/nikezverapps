@@ -278,6 +278,12 @@
   </div>
 
   <div class="group">
+    <label class="group-title">Progress</label>
+    <button class="btn ghost" id="progSave" type="button" style="width:100%;margin-top:8px;text-align:left">Save my progress <span class="hint">· a short code for your streak</span></button>
+    <button class="btn ghost" id="progRestore" type="button" style="width:100%;margin-top:8px;text-align:left">Restore progress <span class="hint">· paste a code or open a backup file</span></button>
+  </div>
+
+  <div class="group">
     <label class="group-title">The trio</label>
     <div class="club-hero" id="clubHero"></div>
     <p class="hint" id="catClub"></p>
@@ -315,10 +321,13 @@
       <p>Noto Emoji cats © Google (Apache-2.0) via svgmoji (MIT). MapLibre GL JS (BSD-3-Clause). Map data © OpenStreetMap contributors (ODbL). Tiles and styles by OpenFreeMap and OpenMapTiles. Search by Photon (Komoot) and Nominatim, routing by OSRM, on their public servers under their usage policies. androidx.webkit (Apache-2.0). Full list: github.com/VK-VfX/nikezverapps, NOTICE.md.</p></details>
   </div>
 </aside>
+<div id="progModal" class="pmodal" hidden role="dialog" aria-modal="true" aria-label="Progress"></div>
 
 <script src="vendor/maplibre/maplibre-gl.js"></script>
 <script src="icons.js"></script>
 <script src="streak.js"></script>
+<script src="savecode.js"></script>
+<script src="progress.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

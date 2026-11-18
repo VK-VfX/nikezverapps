@@ -136,6 +136,24 @@ public class MainActivity extends Activity {
         {"zamoled", "com.nikopick.zamoled", "com.nikopick.zamoled.catclub"},
     };
     private String pendingPlace = "";
+    private String pendingBody;
+    private void toast(String s) { runOnUiThread(() -> android.widget.Toast.makeText(this, s, android.widget.Toast.LENGTH_LONG).show()); }
+
+    @Override protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (result != RESULT_OK || data == null || data.getData() == null) return;
+        if (request == 51 && pendingBody != null) {
+            try (java.io.OutputStream os = getContentResolver().openOutputStream(data.getData())) { os.write(pendingBody.getBytes("UTF-8")); toast("Saved."); } catch (Exception e) { toast("Couldn't save that file."); }
+            pendingBody = null;
+        } else if (request == 52) {
+            try (java.io.InputStream in = getContentResolver().openInputStream(data.getData())) {
+                java.io.ByteArrayOutputStream o = new java.io.ByteArrayOutputStream(); byte[] buf = new byte[8192]; int n, total = 0;
+                while ((n = in.read(buf)) > 0 && total < 1000000) { o.write(buf, 0, n); total += n; }
+                final String text = o.toString("UTF-8");
+                runOnUiThread(() -> web.evaluateJavascript("window.__macFilePicked && window.__macFilePicked(" + JSONObject.quote(text) + ")", null));
+            } catch (Exception e) { toast("Couldn't open that file."); }
+        }
+    }
 
     /** mapsandcats://place?lat=..&lon=..&name=..  (sent by Purrcast): remembered until the page asks for it. */
     private void captureLink(Intent i) {
@@ -161,6 +179,33 @@ public class MainActivity extends Activity {
         /** The day streak and its shield text, shown by the other two apps in their Cat Club line. */
         @JavascriptInterface public void setStreak(int days, int best, double last, String label) {
             getSharedPreferences(CatClubProvider.PREFS, MODE_PRIVATE).edit().putInt("streak_days", days).putInt("streak_best", best).putLong("streak_last", (long) last).putString("streak_label", label == null ? "day streak" : label).apply();
+        }
+        @JavascriptInterface public void shareText(String t) {
+            runOnUiThread(() -> { try { startActivity(Intent.createChooser(new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, t), "Keep your progress code")); } catch (Exception e) { toast("No app found for that. Try Copy."); } });
+        }
+        @JavascriptInterface public void saveFile(String name, String mime, String body) {
+            pendingBody = body;
+            runOnUiThread(() -> { try { startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType(mime).putExtra(Intent.EXTRA_TITLE, name), 51); } catch (Exception e) { toast("No app found for that. Try Copy."); } });
+        }
+        @JavascriptInterface public void saveImage(String name, String dataUrl) {
+            if (Build.VERSION.SDK_INT < 29) { toast("Saving a picture needs Android 10. Try Copy."); return; }
+            try {
+                byte[] png = android.util.Base64.decode(dataUrl.substring(dataUrl.indexOf(',') + 1), android.util.Base64.DEFAULT);
+                android.content.ContentValues v = new android.content.ContentValues();
+                v.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, name); v.put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png"); v.put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Trio");
+                Uri u = getContentResolver().insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
+                try (java.io.OutputStream os = getContentResolver().openOutputStream(u)) { os.write(png); }
+                toast("Saved to Pictures/Trio.");
+            } catch (Exception e) { toast("Couldn't save the picture. Try Copy."); }
+        }
+        @JavascriptInterface public void addCalendar(String title, String desc) {
+            runOnUiThread(() -> { try { long now = System.currentTimeMillis(); startActivity(new Intent(Intent.ACTION_INSERT).setData(android.provider.CalendarContract.Events.CONTENT_URI).putExtra(android.provider.CalendarContract.Events.TITLE, title).putExtra(android.provider.CalendarContract.Events.DESCRIPTION, desc).putExtra(android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME, now).putExtra(android.provider.CalendarContract.EXTRA_EVENT_END_TIME, now).putExtra(android.provider.CalendarContract.EXTRA_EVENT_ALL_DAY, true)); } catch (Exception e) { toast("No calendar app found. Try Copy."); } });
+        }
+        @JavascriptInterface public void pickFile() {
+            runOnUiThread(() -> { try { startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"), 52); } catch (Exception e) { toast("No app found for that."); } });
+        }
+        @JavascriptInterface public String clipboardText() {
+            try { android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE); CharSequence t = cm.hasPrimaryClip() ? cm.getPrimaryClip().getItemAt(0).coerceToText(MainActivity.this) : null; return t == null ? "" : t.toString(); } catch (Exception e) { return ""; }
         }
         /** The page's own log lines (tag + message) go into the same diagnostic log as the shell's. */
         @JavascriptInterface public void diagLog(String tag, String msg) { Diag.log(MainActivity.this, tag == null ? "page" : tag, msg); }
