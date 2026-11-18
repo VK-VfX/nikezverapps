@@ -22,6 +22,8 @@ public final class Place {
         String city = cityName();
         String c = city.length() > 0 ? city : region.length() > 0 ? region : neighborhood;
         if (c.length() == 0) return Fmt.coord(lat, true) + " " + Fmt.coord(lon, false);
+        // the state or region tells apart towns that share a name ("Florence, Colorado" is not "Florence, Italy")
+        if (city.length() > 0 && region.length() > 0 && !region.equals(city)) return city + ", " + region;
         return country.length() > 0 && !country.equals(c) ? c + ", " + country : c;
     }
 
