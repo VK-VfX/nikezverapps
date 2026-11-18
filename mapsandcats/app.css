@@ -494,3 +494,15 @@ h1, h2, h3, .group-title { letter-spacing: .01em; }
 .pmodal textarea { width: 100%; min-height: 96px; box-sizing: border-box; background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 16px; padding: 12px; font: 14px/1.4 ui-monospace, monospace; }
 .pmodal .err { color: var(--danger); font-size: 13px; min-height: 18px; margin-top: 6px; }
 .pmodal label.chk { display: flex; gap: 10px; align-items: center; margin: 10px 0; min-height: 48px; font-size: 13px; color: var(--muted); }
+
+/* The hero parade: a row of hero cats walking across the Cat Club block (transform only; a still row when animations are off) */
+.parade { position: relative; height: 52px; overflow: hidden; margin: 2px 0 8px; --pw: 300px; }
+.parade:empty { display: none; }
+.parade .walker { position: absolute; left: 0; bottom: 0; width: 44px; height: 44px; animation: hero-walk 18s linear infinite; animation-delay: calc(var(--i) * -3.6s); }
+.parade .walker img { width: 44px; height: 44px; display: block; animation: hero-bob .5s ease-in-out infinite alternate; }
+@keyframes hero-walk { from { transform: translateX(-56px); } to { transform: translateX(var(--pw)); } }
+@keyframes hero-bob { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) {
+  .parade { display: flex; justify-content: space-around; align-items: flex-end; }
+  .parade .walker, .parade .walker img { position: static; animation: none; }
+}

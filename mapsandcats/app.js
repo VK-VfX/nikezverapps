@@ -380,9 +380,20 @@ const HERO_MOODS = ['smile', 'grin', 'smirk', 'confident', 'angry', 'shocked', '
 /* The hero cat: Purrcast's mood when all three apps are installed, otherwise the locked silhouette. */
 function renderClubHero(sib) {
   const box = $('#clubHero'); if (!box) return;
-  const open = allThreeInstalled(), mood = open && sib.purrcast && HERO_MOODS.includes(sib.purrcast.mood) ? sib.purrcast.mood : 'smile';
+  const open = allThreeInstalled() && S.heroOn !== false, mood = open && sib.purrcast && HERO_MOODS.includes(sib.purrcast.mood) ? sib.purrcast.mood : 'smile';
   box.innerHTML = streakRing(S.streak.count) + `<img class="hero-cat" src="assets/hero/hero-${open ? mood : 'locked'}.svg" alt="${open ? 'The hero cat feeling ' + mood : 'A hero cat silhouette'}" width="64" height="64">` +
-    `<span class="hero-note">${open ? 'Hero cat: ' + mood : 'Install all three apps to meet the hero cat'}</span>`;
+    `<span class="hero-note">${open ? 'Hero cat: ' + mood : allThreeInstalled() ? 'The hero cat is hidden' : 'Install all three apps to meet the hero cat'}</span>`;
+  renderParade(open, mood);
+  const row = $('#heroRow'); if (row) { row.hidden = !allThreeInstalled(); $('#heroToggle').checked = S.heroOn !== false; }
+}
+/* A little walking parade of hero cats: the weather's mood leads, the rest come from the calm set (angry and sad belong to bad weather only). */
+const CALM_MOODS = ['smile', 'grin', 'smirk', 'confident', 'shocked', 'loaf'];
+function renderParade(open, mood) {
+  const box = $('#parade'); if (!box) return;
+  if (!open) { box.innerHTML = ''; return; }
+  const cats = [mood, ...CALM_MOODS.filter(m => m !== mood).sort((a, b) => (a < b ? -1 : 1)).slice(0, 4)];
+  box.style.setProperty('--pw', Math.max(160, box.clientWidth || 300) + 'px');
+  box.innerHTML = cats.map((m, i) => `<div class="walker" style="--i:${i}"><img src="assets/hero/hero-${m}.svg" alt="" width="44" height="44"></div>`).join('');
 }
 async function refreshTrio() {
   if (!TRIO) return;
@@ -1605,6 +1616,7 @@ $('#alongList').addEventListener('click', e => { const b = e.target.closest('[da
 $('#destWx').addEventListener('click', () => { const d = nav.dest; if (d && TRIO) TRIO.openUri(`purrcast://weather?lat=${d.lat}&lon=${d.lon}&name=${encodeURIComponent(d.name || '')}`, REPO_URL + '/releases'); });
 $('#catVoiceToggle').addEventListener('change', e => { S.catVoice = e.target.checked; save(); if (e.target.checked) speak(catSay('far', 'In 200 metres, turn left.'), true); });
 $('#limitToggle').addEventListener('change', e => { S.limitSign = e.target.checked; save(); limit.at = 0; renderSpeedo(); });
+$('#heroToggle').addEventListener('change', e => { S.heroOn = e.target.checked; save(); refreshTrio(); });
 $('#speedoToggle').addEventListener('change', e => { S.speedo = e.target.checked; save(); renderSpeedo(); });
 $('#meowAt').addEventListener('change', e => { const v = Math.min(300, Math.max(0, Math.round(+e.target.value || 0))); S.meowAt = v; e.target.value = v; meowArmed = true; save(); renderSpeedo(); toast(v ? `Meow at ${v} km/h 😼` : 'Meow off'); });
 $('#simToggle').addEventListener('change', e => { setSim(e.target.checked); toast(e.target.checked ? 'Simulating a stroll' : 'Simulation off'); });
