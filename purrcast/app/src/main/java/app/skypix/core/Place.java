@@ -20,7 +20,7 @@ public final class Place {
 
     public String title() {
         String city = cityName();
-        String c = city.length() > 0 ? city : neighborhood.length() > 0 ? neighborhood : region;
+        String c = city.length() > 0 ? city : region.length() > 0 ? region : neighborhood;
         if (c.length() == 0) return Fmt.coord(lat, true) + " " + Fmt.coord(lon, false);
         return country.length() > 0 && !country.equals(c) ? c + ", " + country : c;
     }
@@ -28,8 +28,8 @@ public final class Place {
     public String shortName() {
         String city = cityName();
         if (city.length() > 0) return city;
+        if (region.length() > 0) return region;   // the town or city, else the state; a suburb only when nothing broader is known
         if (neighborhood.length() > 0) return neighborhood;
-        if (region.length() > 0) return region;
         return Fmt.coord(lat, true);
     }
 

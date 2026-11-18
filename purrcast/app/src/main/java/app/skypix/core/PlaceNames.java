@@ -17,18 +17,29 @@ import org.json.JSONObject;
 public final class PlaceNames {
     private PlaceNames() {}
 
+    private static final int F = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
+    // A body in front of the name: Malay and Indonesian, French, Spanish, Portuguese, Italian, English.
     private static final Pattern PREFIX = Pattern.compile(
             "^(majlis\\s+(perbandaran|bandaraya|daerah|bandaran|tempatan)|dewan\\s+bandaraya|pejabat\\s+daerah|pihak\\s+berkuasa\\s+tempatan"
-                    + "|(municipality|municipal\\s+council|city\\s+council|district\\s+council|town\\s+council)\\s+of)\\b\\s*",
-            Pattern.CASE_INSENSITIVE);
+                    + "|pemerintah\\s+(kota|kabupaten|daerah)|pemkot|pemkab"
+                    + "|mairie\\s+(de|du|des|d['\u2019])|communaut[\u00e9e]\\s+(de\\s+communes|d['\u2019]agglom[\u00e9e]ration|urbaine)|m[\u00e9e]tropole\\s+(de|du|des|d['\u2019])"
+                    + "|ayuntamiento\\s+(de|del)|c[\u00e2a]mara\\s+municipal\\s+(de|do|da|dos|das)|prefeitura(\\s+municipal)?\\s+(de|do|da|dos|das)"
+                    + "|comune\\s+(di|del|della|dell['\u2019]|dei)|citt[\u00e0a]\\s+metropolitana\\s+di"
+                    + "|shire\\s+of|regional\\s+(district|municipality|council)\\s+of"
+                    + "|(municipality|municipal\\s+council|city\\s+council|district\\s+council|town\\s+council)\\s+of)\\b\\s*", F);
+    // German and Dutch bodies are a word then the name ("Gemeinde Garching"); the space is required so "Stadtteil Mitte" and "Stadtpark" stay places.
+    private static final Pattern WORD_PREFIX = Pattern.compile(
+            "^(stadtverwaltung|gemeindeverwaltung|stadtgemeinde|marktgemeinde|verbandsgemeinde|ortsgemeinde|gemeinde|stadt|landratsamt|bezirksamt|gemeente)\\s+", F);
+    // A body after the name: "Subang Jaya City Council", "\u00c7ankaya Belediyesi", "Kobenhavn kommune", Chinese, Japanese and Korean city offices.
     private static final Pattern SUFFIX = Pattern.compile(
-            "\\s*\\b((city|municipal|district|borough|county|town|metropolitan|regional)\\s+council|city\\s+hall)$", Pattern.CASE_INSENSITIVE);
+            "\\s*(\\b((city|municipal|district|borough|county|town|metropolitan|regional|shire)\\s+council|city\\s+hall|belediyesi|kommune|kommun)"
+                    + "|(\u4eba\u6c11\u653f\u5e9c|\u653f\u5e9c|\u5f79\u6240|\u5f79\u5834|\uc2dc\uccad|\uad6c\uccad|\uad70\uccad))$", F);
 
     /** True for a municipal or administrative body (a council, a city hall, a district office), not a place people live in. */
     public static boolean isBody(String name) {
         if (name == null) return false;
         String s = name.trim();
-        return s.length() > 0 && (PREFIX.matcher(s).find() || SUFFIX.matcher(s).find());
+        return s.length() > 0 && (PREFIX.matcher(s).find() || WORD_PREFIX.matcher(s).find() || SUFFIX.matcher(s).find());
     }
 
     /** The place a body is named after ("Majlis Bandaraya Subang Jaya" gives "Subang Jaya"); a normal name stays; "" if nothing is left. */
@@ -37,6 +48,7 @@ public final class PlaceNames {
         String s = name.trim();
         if (!isBody(s)) return s;
         s = PREFIX.matcher(s).replaceFirst("");
+        s = WORD_PREFIX.matcher(s).replaceFirst("");
         s = SUFFIX.matcher(s).replaceFirst("");
         return s.trim();
     }
@@ -46,10 +58,15 @@ public final class PlaceNames {
         public String city = "";
         public String neighborhood = "";
         public boolean fromBody;
+
+        /** True when there is no real city, town or village yet: a nearby lookup can find one. */
+        public boolean needsNearby() {
+            return fromBody || city.length() == 0;
+        }
     }
 
     private static final String[] CITY_KEYS = {"city", "town", "village", "municipality", "county", "state_district"};
-    private static final String[] AREA_KEYS = {"suburb", "quarter", "neighbourhood", "city_district", "hamlet"};
+    private static final String[] AREA_KEYS = {"suburb", "quarter", "neighbourhood", "city_district", "borough", "district", "hamlet"};
 
     /** Picks the city and the neighbourhood from a Nominatim address (field name to value). */
     public static Names resolve(Map<String, String> address) {
@@ -137,10 +154,30 @@ public final class PlaceNames {
         return best;
     }
 
-    /** A name worked out from a municipal body gives way to the town or suburb you are actually in (within 2.5 km). Real names are never replaced. */
+    private static Cand nearestTown(double lat, double lon, List<Cand> cands, double maxM) {
+        Cand best = null;
+        double bestD = maxM;
+        for (int i = 0; i < cands.size(); i++) {
+            Cand c = cands.get(i);
+            if (!("town".equals(c.kind) || "city".equals(c.kind) || "village".equals(c.kind))) continue;
+            double d = meters(lat, lon, c.lat, c.lon);
+            if (d <= bestD) {
+                best = c;
+                bestD = d;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Points at the town, city or suburb you are really in. A name worked out from a municipal body gives way to the closest
+     * town or suburb within 2.5 km; when there is no city at all, the closest town, city or village within 12 km is used (and if
+     * there is none, the state is what gets shown). Real names are never replaced.
+     */
     public static void refine(Names n, double lat, double lon, List<Cand> cands) {
-        if (!n.fromBody) return;
+        if (!n.needsNearby()) return;
         Cand c = nearest(lat, lon, cands, 2500);
+        if (c == null && n.city.length() == 0) c = nearestTown(lat, lon, cands, 12000);
         if (c != null) {
             n.city = c.name;
             n.fromBody = false;

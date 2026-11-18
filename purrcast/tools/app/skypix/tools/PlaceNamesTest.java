@@ -114,6 +114,52 @@ public final class PlaceNamesTest {
         onlyBody.neighborhood = "Seksyen 14";
         check("saved place: a body with nothing left falls back to the neighbourhood", onlyBody.shortName(), "Seksyen 14");
 
+        // ---- the same logic worldwide: a body is never the place, in any language ----
+        String[][] world = {
+            {"Mairie de Lyon", "Lyon"}, {"Communaut\u00e9 d'agglom\u00e9ration Paris-Saclay", "Paris-Saclay"}, {"M\u00e9tropole de Lille", "Lille"},
+            {"Ayuntamiento de Madrid", "Madrid"}, {"C\u00e2mara Municipal de Lisboa", "Lisboa"}, {"Prefeitura de S\u00e3o Paulo", "S\u00e3o Paulo"},
+            {"Comune di Milano", "Milano"}, {"Stadtverwaltung M\u00fcnchen", "M\u00fcnchen"}, {"Gemeinde Garching", "Garching"}, {"Stadt K\u00f6ln", "K\u00f6ln"},
+            {"Gemeente Amsterdam", "Amsterdam"}, {"Pemerintah Kota Bandung", "Bandung"}, {"\u00c7ankaya Belediyesi", "\u00c7ankaya"},
+            {"\u4e1c\u839e\u5e02\u4eba\u6c11\u653f\u5e9c", "\u4e1c\u839e\u5e02"}, {"\u6a2a\u6d5c\u5e02\u5f79\u6240", "\u6a2a\u6d5c\u5e02"},
+            {"Shire of Yarra Ranges", "Yarra Ranges"}, {"Camden Borough Council", "Camden"}, {"Kent County Council", "Kent"}};
+        for (int i = 0; i < world.length; i++) {
+            check("world body: " + world[i][0], PlaceNames.isBody(world[i][0]), true);
+            check("world strip: " + world[i][0], PlaceNames.stripBody(world[i][0]), world[i][1]);
+        }
+        String[] places = {"Stadtteil Mitte", "Gemeindeplatz", "Madrid", "Lyon", "Ville de Paris", "Comune", "Stadtpark", "Bangsar"};
+        for (int i = 0; i < places.length; i++) check("world not a body: " + places[i], PlaceNames.isBody(places[i]), false);
+        PlaceNames.Names de = PlaceNames.resolve(addr("municipality", "Gemeinde Garching", "state", "Bayern"));
+        check("world address: municipality body gives the place", de.city + " / " + de.fromBody, "Garching / true");
+        PlaceNames.Names fr = PlaceNames.resolve(addr("city", "Lyon", "municipality", "Mairie de Lyon"));
+        check("world address: the real city wins", fr.city + " / " + fr.fromBody, "Lyon / false");
+
+        // ---- always point at the town, the city or the state: never a suburb on its own ----
+        app.skypix.core.Place noCity = new app.skypix.core.Place();
+        noCity.neighborhood = "Bangsar";
+        noCity.region = "Selangor";
+        noCity.country = "Malaysia";
+        check("display: no city points at the state, not the suburb", noCity.shortName(), "Selangor");
+        check("display: no city title is the state and the country", noCity.title(), "Selangor, Malaysia");
+        app.skypix.core.Place suburbOnly = new app.skypix.core.Place();
+        suburbOnly.neighborhood = "Bangsar";
+        check("display: only a suburb known still shows it", suburbOnly.shortName(), "Bangsar");
+
+        // ---- no city at all: look for a town nearby (up to 12 km), a suburb only when very close ----
+        List<PlaceNames.Cand> rural = PlaceNames.parseOverpass("{\"elements\":[" +
+                "{\"lat\":3.5700,\"lon\":101.6500,\"tags\":{\"name\":\"Kuala Kubu Bharu\",\"place\":\"town\"}}," +
+                "{\"lat\":3.4900,\"lon\":101.6000,\"tags\":{\"name\":\"Kampung Orang Asli\",\"place\":\"hamlet\"}}," +
+                "{\"lat\":3.4960,\"lon\":101.6010,\"tags\":{\"name\":\"Taman Indah\",\"place\":\"suburb\"}}]}");
+        PlaceNames.Names open = PlaceNames.resolve(addr("state", "Selangor"));
+        PlaceNames.refine(open, 3.4905, 101.6002, rural);
+        check("no city: a suburb very close is accepted", open.city, "Taman Indah");
+        PlaceNames.Names open2 = PlaceNames.resolve(addr("state", "Selangor"));
+        PlaceNames.refine(open2, 3.5400, 101.6400, rural);
+        check("no city: a town within 12 km is found", open2.city, "Kuala Kubu Bharu");
+        PlaceNames.Names open3 = PlaceNames.resolve(addr("state", "Selangor"));
+        PlaceNames.refine(open3, 4.5, 102.5, rural);
+        check("no city: nothing near leaves the state to be shown", open3.city, "");
+        check("no city: asks for a nearby lookup", PlaceNames.resolve(addr("state", "Selangor")).needsNearby() + " / " + PlaceNames.resolve(addr("city", "Petaling Jaya")).needsNearby(), "true / false");
+
         System.out.println();
         System.out.println(pass + " passed, " + fail + " failed");
         if (fail > 0) System.exit(1);

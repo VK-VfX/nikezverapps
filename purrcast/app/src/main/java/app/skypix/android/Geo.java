@@ -26,12 +26,13 @@ final class Geo {
             }
             // A council is not a place: use the real town, else the place the council is named after, else the closest town or suburb.
             PlaceNames.Names n = PlaceNames.resolve(fields);
-            if (n.fromBody) {
+            if (n.needsNearby()) {
+                // no real city or town in the address (or only a council): look for the closest named place, then a wider look for a town
                 try {
-                    String q = String.format(Locale.US, "[out:json][timeout:8];node(around:3000,%.5f,%.5f)[place~\"^(suburb|town|city|village|neighbourhood|quarter)$\"];out 20;", p.lat, p.lon);
-                    PlaceNames.refine(n, p.lat, p.lon, PlaceNames.parseOverpass(Net.get("https://overpass-api.de/api/interpreter?data=" + java.net.URLEncoder.encode(q, "UTF-8"))));
+                    PlaceNames.refine(n, p.lat, p.lon, PlaceNames.parseOverpass(overpass(p, 3000, "suburb|town|city|village|neighbourhood|quarter")));
+                    if (n.city.length() == 0) PlaceNames.refine(n, p.lat, p.lon, PlaceNames.parseOverpass(overpass(p, 12000, "town|city|village")));
                 } catch (Exception ignored) {
-                    // offline or busy: the name worked out from the council is still a place
+                    // offline or busy: what the address gave (or the state) is still a good name
                 }
             }
             p.neighborhood = n.neighborhood;
@@ -43,6 +44,11 @@ final class Geo {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private static String overpass(Place p, int radiusM, String kinds) throws java.io.IOException {
+        String q = String.format(Locale.US, "[out:json][timeout:8];node(around:%d,%.5f,%.5f)[place~\"^(%s)$\"];out 40;", radiusM, p.lat, p.lon, kinds);
+        return Net.get("https://overpass-api.de/api/interpreter?data=" + java.net.URLEncoder.encode(q, "UTF-8"));
     }
 
     static double distanceM(double lat1, double lon1, double lat2, double lon2) {
