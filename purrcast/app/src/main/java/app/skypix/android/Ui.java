@@ -416,6 +416,8 @@ final class Ui {
         private final String shield;
         private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final android.graphics.Bitmap hero;
+        /** Uptime when the power-up animation began; 0 = not playing. It plays once for each 10-day step, and not with animations off. */
+        private long burstStart;
 
         StreakCard(Context c, int streak, int best, long mask, String shield) {
             super(c);
@@ -425,6 +427,10 @@ final class Ui {
                     : ph == app.skypix.core.HeroCat.Phase.HERO
                     ? AndroidGfx.emojiBitmap("hero_" + app.skypix.core.HeroCat.emotion(Store.mood(c), streak) + "_" + new java.util.Random().nextInt(app.skypix.core.Glyphs.HERO_LOOKS))
                     : AndroidGfx.emojiBitmap(ph == app.skypix.core.HeroCat.Phase.SAD ? "cry" : "smirk");   // plain Noto cat: sad, then confident from day 3
+            if (hero != null && ph == app.skypix.core.HeroCat.Phase.HERO && Store.animate(c) && Store.burstStep(c) != streak / 10) {
+                Store.setBurstStep(c, streak / 10);
+                burstStart = android.os.SystemClock.uptimeMillis();
+            }
             this.streak = streak;
             this.best = best;
             this.mask = mask;
@@ -458,7 +464,25 @@ final class Ui {
                     : streak >= 3 ? app.skypix.core.Icon.PARTLY_DAY : app.skypix.core.Icon.CLOUD;
             if (hero != null) {
                 p.setFilterBitmap(true);
+                float k = burstStart == 0 ? 1f : Math.min(1f, (android.os.SystemClock.uptimeMillis() - burstStart) / 1300f);
+                float hx = 44 * u, hy = h / 2f;
+                if (k < 1f) {
+                    // power-up: rings of light spread from the cat while it springs in
+                    float e = 1f - (1f - k) * (1f - k) * (1f - k);
+                    p.setStyle(Paint.Style.STROKE);
+                    p.setStrokeWidth(4 * u * (1f - k) + u);
+                    p.setColor(violet(c)); p.setAlpha((int) (255 * (1f - k)));
+                    canvas.drawCircle(hx, hy, 28 * u + e * 150 * u, p);
+                    p.setColor(primary(c)); p.setAlpha((int) (230 * (1f - k)));
+                    canvas.drawCircle(hx, hy, 28 * u + e * 80 * u, p);
+                    p.setStyle(Paint.Style.FILL); p.setAlpha(255);
+                }
+                float sc = burstStart == 0 ? 1f : k < 0.75f ? 0.2f + 0.95f * (k / 0.75f) * (k / 0.75f) : 1.15f - 0.15f * ((k - 0.75f) / 0.25f);
+                canvas.save();
+                canvas.scale(sc, sc, hx, hy);
                 canvas.drawBitmap(hero, null, new android.graphics.RectF(16 * u, (h - 56 * u) / 2f, 72 * u, (h + 56 * u) / 2f), p);
+                canvas.restore();
+                if (k < 1f) postInvalidateOnAnimation();
             } else {
                 app.skypix.core.Glyphs.draw(g, cat, 16 * u, (h - 56 * u) / 2f, 56 * u, -1);
             }

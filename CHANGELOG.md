@@ -6,6 +6,7 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 ## Purrcast
 
+- **2.5.0**: A new status bar icon (a cat under the sun) and the supercat power-up animation on the streak card: it springs in with rings of light the first time each 10-day step shows (not with animations off).
 - **2.4.0**: The supercat arrives at a 10 day streak and grows happier each day (still reacting to your weather). If the streak breaks the shield can save it up to 7 days; once it is spent the cat goes back to the plain Noto cat, sad for two days and confident from the third. Widgets show the supercat only from day 10.
 - **2.3.0**: A fresh look (soft violet streak ring, rounder cards, a weather-tinted header), the masked hero cat on every widget in five mask looks (a different one each refresh), a Show hero cat switch, save and restore your progress with a short code (notes, screenshot card, calendar, file), and holistic place names: a council is never the place, the title names the state (Shah Alam, Selangor), the closest town is found when the map has none. Small widgets show the whole place name.
 - **2.2.1**: The Clock widget shows the whole place name (it wraps over up to three lines instead of cutting it off).
@@ -21,6 +22,7 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 ## Zamoled
 
+- **8.5.0**: The supercat power-up animation in the Cat Club card: it springs in with rings of light the first time each 10-day step shows (not with remove-animations on).
 - **8.4.0**: The supercat rules (day 10, happier each day, sad then confident plain cat after a spent shield), and a brand new Supercat streak wallpaper: a big portrait in a halo of light, rays, rings and stars that grows richer every 10 days. Hero Club unlocks only while the supercat is out.
 - **8.3.0**: A fresh look (violet streak ring, rounder cards), the hero cat in the Cat Club card, Hero Club wallpapers (when all three apps are installed), a pixels-off badge on every wallpaper card, a richer lock-screen preview, and save and restore your progress with a short code.
 - **8.2.1**: The Windows zip now carries the licences of the fonts and libraries it ships (THIRD-PARTY.txt). Nothing else changes.
@@ -43,6 +45,7 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 ## Maps and Cats
 
+- **2.6.0**: The supercat power-up animation: it pops in with rings of light the first time each 10-day step shows (not with reduced motion on).
 - **2.5.0**: The supercat arrives at a 10 day streak and grows happier each day; before that, or after a spent shield, the plain Noto cat (sad for two days, confident from the third).
 - **2.4.0**: Search and results point at the real town and the state (never a council; a council typed as a place is searched as the place it governs), "Near you" names where you are, route time chips on the map, a catch burst in Quest mode, the hero cat and its walking parade, save and restore your progress with a short code, a violet streak ring and a rounder look.
 - **2.3.0**: One shared streak, a log for bug reports in About, open-source notices, navigation and privacy wording. Web search now uses Wikipedia only; typing searches Photon, Enter also asks Nominatim.

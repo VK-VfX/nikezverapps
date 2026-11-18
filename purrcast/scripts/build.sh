@@ -7,9 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Bump both for every release; the in-app updater compares VERSION_CODE (it must always go up).
-VERSION_CODE=25
-VERSION_NAME=2.4.0
-RELEASE_NOTES="The supercat arrives at a 10 day streak and grows happier each day (still reacting to your weather). The shield saves a broken streak up to 7 days; after that the plain Noto cat is sad for two days and confident from the third."
+VERSION_CODE=26
+VERSION_NAME=2.5.0
+RELEASE_NOTES="A new status bar icon (a cat under the sun) and the supercat power-up animation: it springs in with rings of light the first time each 10-day streak step shows."
 UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist
 
 DEPS=build/deps

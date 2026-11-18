@@ -1,6 +1,10 @@
 package com.nikopick.zamoled.ui
 
 import android.Manifest
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawBehind
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -258,7 +262,7 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
                 }
                 Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     StreakRing(streak)
-                    HeroCat(pic, if (heroOpen) "The supercat feeling $heroMood" else "A cat")
+                    HeroCat(pic, if (heroOpen) "The supercat feeling $heroMood" else "A cat", burst = heroOpen, step = state.count / 10)
                     Text(note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
                 }
                 val shield = remember { com.nikopick.zamoled.data.StreakStore.shieldLine(context) }
@@ -416,13 +420,37 @@ private fun StreakRing(count: Int) {
 
 /** One of the hero cat pictures shipped in assets/hero (the locked silhouette until all three apps are installed). */
 @Composable
-private fun HeroCat(name: String, description: String) {
+private fun HeroCat(name: String, description: String, burst: Boolean = false, step: Int = 0) {
     val context = LocalContext.current
     // a different mask look each time the screen is shown
     val look = remember { (0 until 5).random() }
     val file = if (name == "locked") "hero/hero_locked.png" else if (name.startsWith("plain:")) "cats/${name.removePrefix("plain:")}.png" else "hero/hero_${name}_$look.png"
     val bmp = remember(file) { runCatching { context.assets.open(file).use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull() }
     if (bmp != null) {
-        Image(bmp.asImageBitmap(), contentDescription = description, modifier = Modifier.size(64.dp))
+        // power-up: the supercat pops in with a ring of light the first time each 10-day step shows (not with remove-animations on)
+        val prefs = remember { context.getSharedPreferences("zamoled", android.content.Context.MODE_PRIVATE) }
+        val calm = remember { android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
+        val play = remember { burst && !calm && prefs.getInt("burst_step", -1) != step }
+        val pop = remember { androidx.compose.animation.core.Animatable(if (play) 0.2f else 1f) }
+        val ring = remember { androidx.compose.animation.core.Animatable(if (play) 0f else 1f) }
+        LaunchedEffect(play) {
+            if (play) {
+                prefs.edit().putInt("burst_step", step).apply()
+                launch { pop.animateTo(1f, androidx.compose.animation.core.spring(0.45f, 220f)) }
+                ring.animateTo(1f, androidx.compose.animation.core.tween(1100))
+            }
+        }
+        Image(
+            bmp.asImageBitmap(), contentDescription = description,
+            modifier = Modifier
+                .size(64.dp)
+                .drawBehind {
+                    if (ring.value < 1f) {
+                        drawCircle(Violet.copy(alpha = 1f - ring.value), radius = size.minDimension / 2 + ring.value * 40.dp.toPx(), style = androidx.compose.ui.graphics.drawscope.Stroke(4.dp.toPx()))
+                        drawCircle(androidx.compose.ui.graphics.Color(0xFF3DF5D0).copy(alpha = 1f - ring.value), radius = size.minDimension / 2 + ring.value * 20.dp.toPx(), style = androidx.compose.ui.graphics.drawscope.Stroke(3.dp.toPx()))
+                    }
+                }
+                .graphicsLayer { scaleX = pop.value; scaleY = pop.value; rotationZ = (1f - pop.value) * -12f },
+        )
     }
 }

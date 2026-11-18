@@ -7,8 +7,8 @@ android {
         applicationId = "app.mapsandcats"
         minSdk = 24
         targetSdk = 34
-        versionCode = 14
-        versionName = "2.5.0"
+        versionCode = 15
+        versionName = "2.6.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

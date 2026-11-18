@@ -209,6 +209,10 @@ final class Store {
     /** Makes the widgets and cards follow the switch and the installed apps. Call before drawing. */
     static void applyHero(Context c) { app.skypix.core.Glyphs.hero = heroActive(c) && heroPhase(c) == app.skypix.core.HeroCat.Phase.HERO; }
 
+    /** The 10-day step whose supercat power-up animation already played (-1 = none yet). */
+    static int burstStep(Context c) { return sp(c).getInt("burst_step", -1); }
+    static void setBurstStep(Context c, int v) { sp(c).edit().putInt("burst_step", v).apply(); }
+
     /** The supercat's phase for this streak (docs/HERO-CAT-RULES.md). */
     static app.skypix.core.HeroCat.Phase heroPhase(Context c) {
         app.skypix.core.Streak.State s = streakState(sp(c));

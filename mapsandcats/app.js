@@ -3,7 +3,7 @@
 (() => {
 'use strict';
 
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.6.0';
 /* The log catcher: lines go to the shell's diagnostic log (shared only when you tap Share in About). No places, no searches. */
 const diag = (tag, msg) => { try { const t = window.AndroidTrio; if (t && t.diagLog) t.diagLog(tag, String(msg)); } catch {} };
 window.addEventListener('error', e => diag('js-error', (e.message || '') + ' @' + (e.filename || '').split('/').pop() + ':' + e.lineno));
@@ -390,6 +390,9 @@ function renderClubHero(sib) {
     : open ? 'Supercat feeling ' + mood : phase === 'SAD' ? 'The supercat comes back at a 10 day streak. Keep visiting!' : 'Looking confident. The supercat arrives at a 10 day streak.';
   box.innerHTML = streakRing(st.count) + `<img class="hero-cat" src="${src}" alt="${open ? 'The supercat feeling ' + mood : 'A cat'}" width="64" height="64">` + `<span class="hero-note">${note}</span>`;
   renderParade(open, mood);
+  /* power-up: the supercat pops in with a ring of light the first time each 10-day step is reached */
+  const step = Math.floor(st.count / 10);
+  if (open && S.burstStep !== step) { S.burstStep = step; save(); box.classList.remove('power'); void box.offsetWidth; box.classList.add('power'); }
   const row = $('#heroRow'); if (row) { row.hidden = !allThreeInstalled(); $('#heroToggle').checked = S.heroOn !== false; }
 }
 /* A little walking parade of hero cats: the weather's mood leads, the rest come from the calm set (angry and sad belong to bad weather only). */

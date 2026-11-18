@@ -1,7 +1,7 @@
 {
-  "versionCode": 25,
-  "versionName": "2.4.0",
+  "versionCode": 26,
+  "versionName": "2.5.0",
   "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
-  "sha256": "0b7ae55ec9f27f51b1d3dd8c1e97dc749fe0b400e314095209c911b624c393ea",
-  "notes": "The supercat arrives at a 10 day streak and grows happier each day (still reacting to your weather). The shield saves a broken streak up to 7 days; after that the plain Noto cat is sad for two days and confident from the third."
+  "sha256": "c7b3f884046b49aad93ecef8d9e598aa9ec4e6d349b5634cfae43047432007af",
+  "notes": "A new status bar icon (a cat under the sun) and the supercat power-up animation: it springs in with rings of light the first time each 10-day streak step shows."
 }
