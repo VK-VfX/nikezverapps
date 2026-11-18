@@ -280,6 +280,10 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
         Spacer(Modifier.height(12.dp))
         SiblingApp("Maps and Cats", "Maps, navigation and cats to catch", Trio.MAPS, latest["mapsandcats"],
             "https://github.com/VK-VfX/nikezverapps/releases")
+        Spacer(Modifier.height(22.dp))
+        SectionHead("06", "Progress")
+        Spacer(Modifier.height(10.dp))
+        ProgressBlock()
         Spacer(Modifier.height(40.dp))
     }
 }

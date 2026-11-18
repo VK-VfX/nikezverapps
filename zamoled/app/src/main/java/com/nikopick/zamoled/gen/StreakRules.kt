@@ -62,6 +62,12 @@ fun streakAdopt(s: StreakState, today: Long, sibCount: Int, sibBest: Int, sibLas
     return s.copy(count = count, best = best, mask = if (count != s.count) s.mask or 1uL else s.mask)
 }
 
+/** Never lowers: keeps the newer streak block and takes the larger best. */
+fun mergeStreak(local: StreakState, remote: StreakState): StreakState {
+    val keep = if (local.last >= remote.last) local else remote
+    return keep.copy(best = maxOf(local.best, remote.best, keep.count))
+}
+
 /** An old history with only the 64-day mask: its streak is the run of set bits from bit 0. */
 fun streakFromLegacy(mask: ULong): StreakState {
     var run = 0
