@@ -1,0 +1,83 @@
+{
+ "cases": [
+  {
+   "app": "purrcast",
+   "prefix": "PRC1",
+   "payloadHex": "0e14b99f010000000000003fff010106d5",
+   "code": "PRC1-1RAB-K7R1-0000-0000-00ZZ-Y081-0VAG"
+  },
+  {
+   "app": "zamoled",
+   "prefix": "ZAM1",
+   "payloadHex": "0303b99f01000000000000000704e112",
+   "code": "ZAM1-0C1V-K7R1-0000-0000-0000-E171-28"
+  },
+  {
+   "app": "mapsandcats",
+   "prefix": "MAC1",
+   "payloadHex": "0509b99f01000000000000001f01b009254b22",
+   "code": "MAC1-0M4V-K7R1-0000-0000-0001-Y0DG-14JM-P8G"
+  }
+ ],
+ "messy": [
+  {
+   "name": "lower case, spaces",
+   "text": "prc1 1rab k7r1 0000 0000 00zz y081 0vag",
+   "prefix": "PRC1",
+   "expectKind": "OK",
+   "expectPayloadHex": "0e14b99f010000000000003fff0101"
+  },
+  {
+   "name": "O for 0, l for 1",
+   "text": "PRCl-lRAB-K7Rl-OOOO-OOOO-OOZZ-YO8l-OVAG",
+   "prefix": "PRC1",
+   "expectKind": "OK",
+   "expectPayloadHex": "0e14b99f010000000000003fff0101"
+  },
+  {
+   "name": "another app's code",
+   "text": "MAC1-0M4V-K7R1-0000-0000-0001-Y0DG-14JM-P8G",
+   "prefix": "PRC1",
+   "expectKind": "WRONG_APP",
+   "expectOther": "MAC1"
+  },
+  {
+   "name": "one wrong character",
+   "text": "PRC1-1RAZ-K7R1-0000-0000-00ZZ-Y081-0VAG",
+   "prefix": "PRC1",
+   "expectKind": "TYPO"
+  },
+  {
+   "name": "empty",
+   "text": "",
+   "prefix": "PRC1",
+   "expectKind": "NOT_FOUND"
+  },
+  {
+   "name": "no code",
+   "text": "hello",
+   "prefix": "PRC1",
+   "expectKind": "NOT_FOUND"
+  },
+  {
+   "name": "a note with several codes",
+   "text": "My codes:\nzam1 0c1v-k7r1-0000-0000-0000-e171-28\nthanks\nPRC1-1RAB-K7R1-0000-0000-00ZZ-Y081-0VAG",
+   "prefix": "PRC1",
+   "expectKind": "OK",
+   "expectPayloadHex": "0e14b99f010000000000003fff0101"
+  },
+  {
+   "name": "trailing words after a code",
+   "text": "ZAM1-0C1V-K7R1-0000-0000-0000-E171-28\nthanks a lot",
+   "prefix": "ZAM1",
+   "expectKind": "OK",
+   "expectPayloadHex": "0303b99f01000000000000000704"
+  },
+  {
+   "name": "missing characters",
+   "text": "PRC1-1RAB-K7R1-0000-0000-00ZZ-Y08",
+   "prefix": "PRC1",
+   "expectKind": "TYPO"
+  }
+ ]
+}
