@@ -41,3 +41,6 @@ data moves only when you tap something, or as tiny read-only counts.
 
 ## Log catcher (all three apps)
 About, right under the Telegram row: **Log for bug reports** with Share and Clear. Each app keeps a small log on the phone only (about 48 KB, oldest half dropped when full): starts, crashes (with stack trace), why the app last stopped (Android's exit reasons), update check/download/checksum/installer status codes and messages, network failures by host and status, and in Maps and Cats page errors, map errors and location error codes. It never records places, searches, typed text or coordinates (decimals that look like coordinates and URL query strings are stripped as they are written). Nothing is sent anywhere: Share opens Android's share sheet and the person chooses where it goes.
+
+## Hero cat on the streak cards (first step)
+When Purrcast, Zamoled and Maps and Cats are all installed, the streak card (Purrcast), the Cat Club card (Zamoled) and the Cat Club block (Maps and Cats) show the masked hero cat in the mood Purrcast chose from the weather (see `HeroMood`; shared as the `mood` column of the Cat Club provider). Until then they show the locked silhouette and a line saying to install all three. The widgets, the Hero Club wallpapers and the walking parade come later. The violet ring next to it counts days to the next 10-day reward.

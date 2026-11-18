@@ -761,6 +761,30 @@ private fun ClockOverlay(lockScreen: Boolean) {
                 color = Color.White,
             )
         }
+        if (lockScreen) {
+            // two notification placeholders and the two round shortcuts, so the wallpaper is judged where it will be seen
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 18.dp, end = 18.dp, bottom = 150.dp),
+            ) {
+                repeat(2) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.14f), RoundedCornerShape(24.dp)).padding(14.dp),
+                    ) {
+                        Box(Modifier.size(30.dp).background(Color.White.copy(alpha = 0.3f), CircleShape))
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Box(Modifier.width(120.dp).height(9.dp).background(Color.White.copy(alpha = 0.55f), RoundedCornerShape(5.dp)))
+                            Box(Modifier.width(190.dp).height(8.dp).background(Color.White.copy(alpha = 0.28f), RoundedCornerShape(5.dp)))
+                        }
+                    }
+                }
+            }
+            Row(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(start = 34.dp, end = 34.dp, bottom = 70.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                repeat(2) { Box(Modifier.size(52.dp).background(Color.White.copy(alpha = 0.18f), CircleShape)) }
+            }
+        }
         if (!lockScreen) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(26.dp),

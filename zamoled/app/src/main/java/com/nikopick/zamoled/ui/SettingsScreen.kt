@@ -35,6 +35,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -234,6 +237,18 @@ fun SettingsScreen(ota: OtaState, prefs: Prefs, onBack: () -> Unit, onDaily: () 
             Column(Modifier.padding(horizontal = 18.dp, vertical = 14.dp)) {
                 Text("Cat Club", style = MaterialTheme.typography.titleMedium)
                 val streak = remember { com.nikopick.zamoled.data.StreakStore.read(context).count }
+                val heroOpen = remember { Trio.allInstalled(context) }
+                val heroMood = remember { Trio.mood(context)?.takeIf { it in HERO_MOODS } ?: "smile" }
+                Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    StreakRing(streak)
+                    HeroCat(if (heroOpen) heroMood else "locked", if (heroOpen) "The hero cat feeling $heroMood" else "A hero cat silhouette")
+                    Text(
+                        if (heroOpen) "Hero cat: $heroMood" else "Install all three apps to meet the hero cat",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 val shield = remember { com.nikopick.zamoled.data.StreakStore.shieldLine(context) }
                 val rest = listOfNotNull(
                     "$kept wallpapers kept",
@@ -351,5 +366,38 @@ private fun NoticesCard() {
                 )
             },
         )
+    }
+}
+
+private val HERO_MOODS = listOf("smile", "grin", "smirk", "confident", "angry", "shocked", "sad", "scared", "loaf")
+
+/** A violet ring toward the next 10-day reward, with the day count inside. */
+@Composable
+private fun StreakRing(count: Int) {
+    val track = MaterialTheme.colorScheme.surfaceContainerHighest
+    val frac = if (count > 0 && count % 10 == 0) 1f else (count % 10) / 10f
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(56.dp).semantics { contentDescription = "$count day streak, ${10 - count % 10} days to the next reward" },
+    ) {
+        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+            val w = 5.dp.toPx()
+            val arc = androidx.compose.ui.geometry.Size(size.width - w, size.height - w)
+            val tl = androidx.compose.ui.geometry.Offset(w / 2, w / 2)
+            val stroke = androidx.compose.ui.graphics.drawscope.Stroke(w, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+            drawArc(track, 0f, 360f, false, topLeft = tl, size = arc, style = stroke)
+            if (frac > 0f) drawArc(Violet, -90f, 360f * frac, false, topLeft = tl, size = arc, style = stroke)
+        }
+        Text("$count", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+    }
+}
+
+/** One of the hero cat pictures shipped in assets/hero (the locked silhouette until all three apps are installed). */
+@Composable
+private fun HeroCat(name: String, description: String) {
+    val context = LocalContext.current
+    val bmp = remember(name) { runCatching { context.assets.open("hero/hero_$name.png").use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull() }
+    if (bmp != null) {
+        Image(bmp.asImageBitmap(), contentDescription = description, modifier = Modifier.size(64.dp))
     }
 }

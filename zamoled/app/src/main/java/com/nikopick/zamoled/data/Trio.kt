@@ -36,6 +36,14 @@ object Trio {
         }
     }.getOrNull()
 
+    /** The hero-cat mood Purrcast chose for the current weather, or null when it is not installed (or is an older version). */
+    fun mood(context: Context, authority: String = "app.skypix.weather.catclub"): String? = runCatching {
+        context.contentResolver.query(Uri.parse("content://$authority/stats"), null, null, null, null)?.use { c ->
+            val i = c.getColumnIndex("mood")
+            if (i >= 0 && c.moveToFirst()) c.getString(i) else null
+        }
+    }.getOrNull()
+
     /** Another app's day streak (count, best, last visit day), or null when it is not installed or is an older version without these numbers. */
     fun streakOf(context: Context, authority: String): Triple<Int, Int, Long>? = runCatching {
         context.contentResolver.query(Uri.parse("content://$authority/stats"), null, null, null, null)?.use { c ->

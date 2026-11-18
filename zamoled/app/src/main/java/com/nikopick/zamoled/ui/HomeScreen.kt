@@ -92,6 +92,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -782,6 +783,11 @@ fun WallpaperCard(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val bitmap by rememberThumbnail(spec)
+    // "97% off": the share of pixels an OLED panel switches off, worked out once per wallpaper in the background
+    val off by produceState<Int?>(PixelsOff.peek(spec.key), bitmap, spec.key) {
+        val b = bitmap
+        if (value == null && b != null) value = PixelsOff.of(spec.key, b)
+    }
     val shape = LeafSm
     Card(
         onClick = onClick,
@@ -818,7 +824,7 @@ fun WallpaperCard(
                 modifier = Modifier.align(Alignment.BottomStart).padding(start = 12.dp, end = 12.dp, bottom = 11.dp),
             )
             MonoLabel(
-                "%02d".format(index + 1),
+                "%02d".format(index + 1) + (off?.let { " \u00b7 $it% off" } ?: ""),
                 color = Color.White.copy(alpha = 0.92f),
                 modifier = Modifier.align(Alignment.TopStart).padding(start = 12.dp, top = 10.dp),
             )
@@ -978,4 +984,15 @@ private fun EmptyFavorites() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/** Share of pixels that are pure black per wallpaper, cached so scrolling back is free. */
+object PixelsOff {
+    private val cache = java.util.concurrent.ConcurrentHashMap<String, Int>()
+
+    fun peek(key: String): Int? = cache[key]
+
+    suspend fun of(key: String, bmp: android.graphics.Bitmap): Int = cache[key] ?: kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+        (com.nikopick.zamoled.gen.Renderer.blackRatio(bmp) * 100).toInt().coerceIn(0, 100)
+    }.also { cache[key] = it }
 }
