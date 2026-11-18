@@ -6,7 +6,7 @@ Three Android apps in one public repo (icons and latest downloads below). They o
 
 | | App | Latest | Download |
 |---|---|---|---|
-| <img src="docs/icons/purrcast.png" width="64" alt="Purrcast icon"> | **Purrcast**: cat-themed weather app and widgets (`app.skypix.weather`) | 2.5.0 | [**Download APK**](https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk) |
+| <img src="docs/icons/purrcast.png" width="64" alt="Purrcast icon"> | **Purrcast**: cat-themed weather app and widgets (`app.skypix.weather`) | 2.5.1 | [**Download APK**](https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk) |
 | <img src="docs/icons/zamoled.png" width="64" alt="Zamoled icon"> | **Zamoled**: pitch-black AMOLED wallpapers (`com.nikopick.zamoled`) | 8.5.0 | [**Download APK**](https://github.com/VK-VfX/nikezverapps/releases/download/zamoled-v8.5.0/zamoled-release.apk) · [Windows app 1.0.0](https://github.com/VK-VfX/nikezverapps/releases/download/zamoled-windows-v1.0.0/Zamoled-Windows-x64.zip) |
 | <img src="docs/icons/mapsandcats.png" width="64" alt="Maps and Cats icon"> | **Maps and Cats**: keyless map and navigation, with Quest mode (`app.mapsandcats`) | 2.6.0 | [**Download APK**](https://github.com/VK-VfX/nikezverapps/releases/download/mapsandcats-v2.6.0/MapsAndCats-v2.6.0.apk) |
 
