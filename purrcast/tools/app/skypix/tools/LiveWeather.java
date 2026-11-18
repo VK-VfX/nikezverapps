@@ -21,11 +21,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
- * Florence, Colorado, live: the place comes from a real Nominatim answer and the weather from live National Weather Service data
+ * A live place: the place comes from a real Nominatim answer and the weather from live National Weather Service data
  * (the forecast hours and the latest observation), fed through Purrcast's own Weather model and widget renderer.
- * Usage: LiveFlorence fixturesDir outDir
+ * Usage: LiveWeather fixturesDir outDir placeFile hourlyFile observationFile|- lat lon utcOffsetHours name
  */
-public final class LiveFlorence {
+public final class LiveWeather {
     static String read(File f) throws Exception { return new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8); }
 
     static int code(String text) {
@@ -49,20 +49,20 @@ public final class LiveFlorence {
     public static void main(String[] a) throws Exception {
         File dir = new File(a[0]);
         // ---- the place, from a live Nominatim answer ----
-        JSONObject addr = new JSONObject(read(new File(dir, "nominatim-florence-co.json"))).getJSONObject("address");
+        JSONObject addr = new JSONObject(read(new File(dir, a[2]))).getJSONObject("address");
         Map<String, String> fields = new HashMap<String, String>();
         for (Iterator<String> it = addr.keys(); it.hasNext();) { String k = it.next(); fields.put(k, addr.optString(k, "")); }
         PlaceNames.Names n = PlaceNames.resolve(fields);
         Place p = new Place();
-        p.lat = 38.3920; p.lon = -105.1186; p.precise = true; p.provider = "gps";
+        p.lat = Double.parseDouble(a[5]); p.lon = Double.parseDouble(a[6]); p.precise = true; p.provider = "gps";
         p.city = n.city; p.neighborhood = n.neighborhood; p.region = addr.optString("state"); p.country = addr.optString("country");
 
         // ---- the weather, from live NWS data ----
-        JSONArray per = new JSONObject(read(new File(dir, "nws-florence-hourly.json"))).getJSONObject("properties").getJSONArray("periods");
-        int off = -7 * 3600;
+        JSONArray per = new JSONObject(read(new File(dir, a[3]))).getJSONObject("properties").getJSONArray("periods");
+        int off = Integer.parseInt(a[7]) * 3600;
         int cnt = per.length();
         Weather w = new Weather();
-        w.utcOffset = off; w.lat = p.lat; w.lon = p.lon; w.elevation = 1600;
+        w.utcOffset = off; w.lat = p.lat; w.lon = p.lon; w.elevation = 0;
         w.hTime = new long[cnt]; w.hTemp = new double[cnt]; w.hFeels = new double[cnt]; w.hHum = new double[cnt]; w.hPop = new double[cnt];
         w.hPrecip = new double[cnt]; w.hWind = new double[cnt]; w.hUv = new double[cnt]; w.hVis = new double[cnt]; w.hCode = new int[cnt]; w.hDay = new boolean[cnt];
         for (int i = 0; i < cnt; i++) {
@@ -80,14 +80,15 @@ public final class LiveFlorence {
             w.hDay[i] = o.optBoolean("isDaytime", true);
             w.hVis[i] = 24000; w.hUv[i] = w.hDay[i] ? 3 : 0;
         }
-        JSONObject ob = new JSONObject(read(new File(dir, "nws-florence-observation.json"))).getJSONObject("properties");
-        long now = OffsetDateTime.parse(ob.getString("timestamp")).toEpochSecond();
+        boolean haveObs = !a[4].equals("-");
+        JSONObject ob = haveObs ? new JSONObject(read(new File(dir, a[4]))).getJSONObject("properties") : null;
+        long now = haveObs ? OffsetDateTime.parse(ob.getString("timestamp")).toEpochSecond() : System.currentTimeMillis() / 1000;
         int hi = w.hourIndex(now);
         w.curTime = now;
-        double tc = ob.getJSONObject("temperature").getDouble("value");
-        w.temp = tc; w.feels = tc; w.humidity = ob.getJSONObject("relativeHumidity").optDouble("value", 40);
+        double tc = haveObs ? ob.getJSONObject("temperature").getDouble("value") : w.hTemp[hi];   // no weather station nearby: the forecast hour is "now"
+        w.temp = tc; w.feels = tc; w.humidity = haveObs ? ob.getJSONObject("relativeHumidity").optDouble("value", 40) : w.hHum[hi];
         w.windKmh = w.hWind[hi]; w.windDir = 270; w.gustKmh = w.hWind[hi] * 1.4; w.pressure = 1015; w.cloud = 10;
-        w.code = code(ob.optString("textDescription", "Clear")); w.isDay = w.hDay[hi]; w.precipNow = 0; w.aqi = 0;
+        w.code = haveObs ? code(ob.optString("textDescription", "Clear")) : w.hCode[hi]; w.isDay = w.hDay[hi]; w.precipNow = 0; w.aqi = 0;
         // days: the high and low of each local day, sunrise and sunset from where the day starts and ends
         int days = Math.min(7, cnt / 24);
         w.dTime = new long[days]; w.dSunrise = new long[days]; w.dSunset = new long[days]; w.dMax = new double[days]; w.dMin = new double[days];
@@ -132,6 +133,6 @@ public final class LiveFlorence {
         }
         g.dispose();
         new File(a[1]).mkdirs();
-        ImageIO.write(img, "png", new File(a[1], "florence.png"));
+        ImageIO.write(img, "png", new File(a[1], a[8] + ".png"));
     }
 }

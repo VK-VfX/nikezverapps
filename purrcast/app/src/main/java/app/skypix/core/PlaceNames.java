@@ -65,7 +65,8 @@ public final class PlaceNames {
         }
     }
 
-    private static final String[] CITY_KEYS = {"city", "town", "village", "municipality", "county", "state_district"};
+    // A county or borough is an administrative area, not a town: without a town the nearby lookup runs, and the state is shown if it finds none.
+    private static final String[] CITY_KEYS = {"city", "town", "village", "municipality"};
     private static final String[] AREA_KEYS = {"suburb", "quarter", "neighbourhood", "city_district", "borough", "district", "hamlet"};
 
     /** Picks the city and the neighbourhood from a Nominatim address (field name to value). */
