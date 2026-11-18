@@ -122,6 +122,82 @@ final class Store {
 
     static long streakLast(Context c) { return sp(c).getLong("streak_last", 0); }
 
+    // ---- progress save code and backup file (see docs/superpowers/specs/2026-11-17-progress-save-code-design.md) ----
+
+    static app.skypix.core.Progress loadProgress(Context c) {
+        app.skypix.core.Progress p = new app.skypix.core.Progress();
+        p.streak = streakState(sp(c));
+        p.rewardClaimed = sp(c).getInt("reward_claimed", 0);
+        return p;
+    }
+
+    static void applyProgress(Context c, app.skypix.core.Progress p) {
+        sp(c).edit().putLong("streak_last", p.streak.last).putLong("streak_mask", p.streak.mask).putInt("streak_count", p.streak.count)
+                .putInt("streak_best", p.streak.best).putBoolean("shield_ready", p.streak.ready).putInt("shield_charge", p.streak.charge)
+                .putInt("reward_claimed", p.rewardClaimed).apply();
+    }
+
+    static String progressCode(Context c) {
+        return app.skypix.core.SaveCode.encode(app.skypix.core.SaveCode.PRC, loadProgress(c).toPayload());
+    }
+
+    private static final String[] BACKUP_SETTINGS = {"alerts", "animate", "auto_update", "cats", "clear_dark", "hourly", "morning", "morning_hour", "qe", "qs", "quiet", "temp", "you", "hero_on"};
+
+    /** The optional full backup: the code, saved places and a few settings. No location history, nothing else. */
+    static String backupJson(Context c) throws org.json.JSONException {
+        org.json.JSONObject o = new org.json.JSONObject();
+        o.put("app", "purrcast").put("format", 1).put("saved", new java.text.SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new java.util.Date()));
+        o.put("progress", progressCode(c));
+        org.json.JSONArray places = new org.json.JSONArray();
+        for (Places.Saved s : Places.list(c)) places.put(new org.json.JSONObject().put("name", s.name).put("lat", s.place.lat).put("lon", s.place.lon));
+        o.put("places", places);
+        org.json.JSONObject set = new org.json.JSONObject();
+        java.util.Map<String, ?> all = sp(c).getAll();
+        for (String k : BACKUP_SETTINGS) if (all.containsKey(k)) set.put(k, all.get(k));
+        o.put("settings", set);
+        return o.toString(2);
+    }
+
+    /** Merges a backup file into this phone. Throws IllegalArgumentException with a friendly message. */
+    static String restoreBackupJson(Context c, String json, boolean withSettings) {
+        try {
+            org.json.JSONObject o = new org.json.JSONObject(json);
+            if (!"purrcast".equals(o.optString("app"))) throw new IllegalArgumentException("That file is not a Purrcast backup.");
+            String msg = ProgressShare.restoreFromText(c, o.optString("progress"));
+            int added = 0;
+            org.json.JSONArray arr = o.optJSONArray("places");
+            java.util.List<Places.Saved> have = Places.list(c);
+            for (int i = 0; arr != null && i < arr.length(); i++) {
+                org.json.JSONObject p = arr.getJSONObject(i);
+                double lat = p.getDouble("lat"), lon = p.getDouble("lon");
+                boolean dup = false;
+                for (Places.Saved s : have) if (Math.round(s.place.lat * 1e4) == Math.round(lat * 1e4) && Math.round(s.place.lon * 1e4) == Math.round(lon * 1e4)) dup = true;
+                if (dup) continue;
+                Place pl = new Place();
+                pl.lat = lat;
+                pl.lon = lon;
+                Places.add(c, p.optString("name"), pl);
+                added++;
+            }
+            if (withSettings) {
+                org.json.JSONObject set = o.optJSONObject("settings");
+                SharedPreferences.Editor e = sp(c).edit();
+                for (String k : BACKUP_SETTINGS) {
+                    if (set == null || !set.has(k)) continue;
+                    Object v = set.get(k);
+                    if (v instanceof Boolean) e.putBoolean(k, (Boolean) v);
+                    else if (v instanceof Integer) e.putInt(k, (Integer) v);
+                    else if (v instanceof Long) e.putLong(k, (Long) v);
+                    else if (v instanceof String) e.putString(k, (String) v);
+                }
+                e.apply();
+            }
+            return msg + (added > 0 ? " " + added + " saved place" + (added == 1 ? "" : "s") + " added." : "");
+        } catch (org.json.JSONException e) {
+            throw new IllegalArgumentException("That file could not be read.");
+        }
+    }
+
     /** The hero-cat mood for the latest weather (see HeroMood); other apps read it from the Cat Club provider. */
     static String mood(Context c) { return sp(c).getString("hero_mood", "smile"); }
     static void setMood(Context c, String m) { sp(c).edit().putString("hero_mood", m).apply(); }

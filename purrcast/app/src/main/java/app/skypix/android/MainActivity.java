@@ -323,6 +323,7 @@ public class MainActivity extends Activity {
 
         addSettings(ink, ink2);
         addPlaces();
+        addProgress();
         addUpdates();
         addWidgetPicker(ink, ink2);
         addPlacedWidgets();
@@ -454,6 +455,126 @@ public class MainActivity extends Activity {
     }
 
     // ---- settings -------------------------------------------------------------------------------------------------
+
+    // ---- progress: save a code, restore a code ----
+
+    private static final int REQ_SAVE_TXT = 41, REQ_SAVE_JSON = 42, REQ_OPEN_BACKUP = 43;
+    private String pendingBody;
+    private boolean restoreWithSettings;
+
+    private void addProgress() {
+        LinearLayout box = section("Progress", 0);
+        Ui.Btn save = new Ui.Btn(this, "Save", true);
+        save.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { showSaveSheet(); }
+        });
+        row(box, "Save my progress", "A short code for your streak. Keep it in notes, a screenshot or your calendar.", save);
+        Ui.Btn restore = new Ui.Btn(this, "Restore", false);
+        restore.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { showRestoreDialog(); }
+        });
+        row(box, "Restore progress", "Paste a code or open a backup file. Nothing ever goes down.", restore);
+    }
+
+    private void showSaveSheet() {
+        final String code = Store.progressCode(this);
+        final java.util.List<String> names = new java.util.ArrayList<String>();
+        names.add("Share to notes or chat");
+        if (Build.VERSION.SDK_INT >= 29) names.add("Save a screenshot card");
+        names.add("Add to calendar");
+        names.add("Save as a text file");
+        names.add("Full backup file (places and settings)");
+        names.add("Copy");
+        new android.app.AlertDialog.Builder(this).setTitle("Keep your streak safe")
+                .setItems(names.toArray(new String[0]), new android.content.DialogInterface.OnClickListener() {
+                    @Override public void onClick(android.content.DialogInterface d, int which) {
+                        String n = names.get(which);
+                        if (n.startsWith("Share")) ProgressShare.shareText(MainActivity.this, "Purrcast progress code:\n" + code);
+                        else if (n.startsWith("Save a screenshot")) ProgressShare.saveCard(MainActivity.this, code);
+                        else if (n.startsWith("Add to")) ProgressShare.addCalendar(MainActivity.this, code);
+                        else if (n.startsWith("Save as a text")) {
+                            pendingBody = "Purrcast progress code\n" + code + "\n";
+                            ProgressShare.pickSave(MainActivity.this, REQ_SAVE_TXT, "purrcast-progress-" + new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(new java.util.Date()) + ".txt", "text/plain");
+                        } else if (n.startsWith("Full backup")) {
+                            try {
+                                pendingBody = Store.backupJson(MainActivity.this);
+                                ProgressShare.pickSave(MainActivity.this, REQ_SAVE_JSON, "purrcast-backup-" + new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(new java.util.Date()) + ".json", "application/json");
+                            } catch (Throwable t) {
+                                ProgressShare.toast(MainActivity.this, "Couldn't make the backup file.");
+                            }
+                        } else ProgressShare.copy(MainActivity.this, code);
+                    }
+                }).setNegativeButton("Close", null).show();
+    }
+
+    private void showRestoreDialog() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        int p = Ui.dp(this, 20);
+        box.setPadding(p, Ui.dp(this, 8), p, 0);
+        final android.widget.EditText field = new android.widget.EditText(this);
+        field.setHint("PRC1-XXXX-XXXX-...");
+        field.setMinLines(3);
+        field.setGravity(Gravity.TOP);
+        field.setTypeface(android.graphics.Typeface.MONOSPACE);
+        try {
+            android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            if (cm != null && cm.hasPrimaryClip() && cm.getPrimaryClip().getItemCount() > 0) {
+                CharSequence t = cm.getPrimaryClip().getItemAt(0).coerceToText(this);
+                if (t != null && t.length() < 5000 && app.skypix.core.SaveCode.decode(t.toString(), app.skypix.core.SaveCode.PRC).kind == app.skypix.core.SaveCode.OK) field.setText(t);
+            }
+        } catch (Throwable ignored) {
+        }
+        box.addView(field, new LinearLayout.LayoutParams(-1, -2));
+        final android.widget.CheckBox settings = new android.widget.CheckBox(this);
+        settings.setText("Also restore my settings (backup files only)");
+        box.addView(settings, new LinearLayout.LayoutParams(-1, -2));
+        final android.app.AlertDialog dlg = new android.app.AlertDialog.Builder(this).setTitle("Restore progress").setView(box)
+                .setPositiveButton("Restore", null)
+                .setNeutralButton("Open file", null)
+                .setNegativeButton("Cancel", null).create();
+        dlg.show();
+        dlg.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                try {
+                    String msg = ProgressShare.restoreFromText(MainActivity.this, field.getText().toString());
+                    dlg.dismiss();
+                    ProgressShare.toast(MainActivity.this, msg);
+                    rebuild();
+                } catch (IllegalArgumentException e) {
+                    field.setError(e.getMessage());
+                }
+            }
+        });
+        dlg.getButton(android.app.AlertDialog.BUTTON_NEUTRAL).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                restoreWithSettings = settings.isChecked();
+                dlg.dismiss();
+                ProgressShare.pickOpen(MainActivity.this, REQ_OPEN_BACKUP);
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (result != RESULT_OK || data == null || data.getData() == null) return;
+        if (request == REQ_SAVE_TXT || request == REQ_SAVE_JSON) {
+            if (pendingBody != null) ProgressShare.writeTo(this, data.getData(), pendingBody);
+            pendingBody = null;
+        } else if (request == REQ_OPEN_BACKUP) {
+            try {
+                String text = ProgressShare.readFrom(this, data.getData());
+                String msg = text.trim().startsWith("{") ? Store.restoreBackupJson(this, text, restoreWithSettings) : ProgressShare.restoreFromText(this, text);
+                ProgressShare.toast(this, msg);
+                rebuild();
+            } catch (IllegalArgumentException e) {
+                ProgressShare.toast(this, e.getMessage());
+            } catch (Throwable t) {
+                ProgressShare.toast(this, "Couldn't open that file.");
+            }
+        }
+    }
 
     private LinearLayout section(String title, int ink) {
         content.addView(Ui.text(this, title, 15, 500, Ui.primary(this)), lp(-2, -2, 32));
