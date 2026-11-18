@@ -104,6 +104,11 @@ public final class Cards {
         return n.isDay ? CLEAR_DAY : CLEAR_NIGHT;
     }
 
+    /** The sky colour for the current weather (used for the soft tint behind the app header). */
+    public static int skyTop(Data d) {
+        return mood(d).top;
+    }
+
     private static int alpha(int argb, int a) {
         return (a << 24) | (argb & 0xFFFFFF);
     }
@@ -462,7 +467,7 @@ public final class Cards {
     private static void empty(R r) {
         float pad = 14;
         float sz = clamp(Math.min(r.h - 2 * pad, r.w * 0.3f), 24, 44);
-        float s = r.icon(Icon.PIN, pad, (r.h - sz) / 2, sz);
+        float s = r.icon(Icon.SLEEPY, pad, (r.h - sz) / 2, sz);
         float x = pad + s + 12;
         float max = r.w - x - pad;
         r.text(r.fit("Tap to set up", 15, Gfx.FONT_BOLD, max), x, r.h / 2 - 1, 15, Gfx.FONT_BOLD, Gfx.LEFT, WHITE);
@@ -1759,7 +1764,8 @@ public final class Cards {
         fx(r, mood(d), d);
         float h = hDp, w = wDp;
         int stripe = in.sev == Insights.WARNING ? 0xFFFF5A5F : in.sev == Insights.NOTICE ? 0xFFFFB020 : 0xFF4DD0E1;
-        r.rect(7, h * 0.22f, 10, h * 0.78f, 1.5f, stripe);
+        if (in.sev == Insights.WARNING) r.rect(0, 0, w, h, RAD, 0x14FF5A5F);
+        r.rect(7, h * 0.18f, 11, h * 0.82f, 2f, stripe);
         float isz = 30;
         float real = r.iconSize(isz);
         r.icon(in.icon, 18, (h - real) / 2, isz);

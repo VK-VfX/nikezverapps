@@ -415,14 +415,17 @@ final class Ui {
         private final long mask;
         private final String shield;
         private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final android.graphics.Bitmap hero;
 
         StreakCard(Context c, int streak, int best, long mask, String shield) {
             super(c);
+            // all three apps installed: the hero cat, in the mood of the weather (see core/HeroMood)
+            this.hero = Trio.allInstalled(c) ? AndroidGfx.emojiBitmap("hero_" + Store.mood(c)) : null;
             this.streak = streak;
             this.best = best;
             this.mask = mask;
             this.shield = shield == null ? "" : shield;
-            setContentDescription(streak + " day streak. Best " + best + " days.");
+            setContentDescription(streak + " day streak. Best " + best + " days. " + (10 - streak % 10) + " days to the next reward.");
         }
 
         static String cheer(int s) {
@@ -449,7 +452,27 @@ final class Ui {
             drawRim(canvas, w, u, primary(c));
             app.skypix.core.Icon cat = streak >= 14 ? app.skypix.core.Icon.SHADES : streak >= 7 ? app.skypix.core.Icon.SUN
                     : streak >= 3 ? app.skypix.core.Icon.PARTLY_DAY : app.skypix.core.Icon.CLOUD;
-            app.skypix.core.Glyphs.draw(g, cat, 16 * u, (h - 56 * u) / 2f, 56 * u, -1);
+            if (hero != null) {
+                p.setFilterBitmap(true);
+                canvas.drawBitmap(hero, null, new android.graphics.RectF(16 * u, (h - 56 * u) / 2f, 72 * u, (h + 56 * u) / 2f), p);
+            } else {
+                app.skypix.core.Glyphs.draw(g, cat, 16 * u, (h - 56 * u) / 2f, 56 * u, -1);
+            }
+            // violet ring toward the next 10-day reward
+            float rcx = w - 16 * u - 26 * u, rcy = h / 2f, rr = 21 * u;
+            p.setStyle(Paint.Style.STROKE);
+            p.setStrokeWidth(5 * u);
+            p.setStrokeCap(Paint.Cap.ROUND);
+            p.setColor(divider(c));
+            canvas.drawCircle(rcx, rcy, rr, p);
+            float frac = streak > 0 && streak % 10 == 0 ? 1f : (streak % 10) / 10f;
+            if (frac > 0) {
+                p.setColor(violet(c));
+                canvas.drawArc(rcx - rr, rcy - rr, rcx + rr, rcy + rr, -90, 360 * frac, false, p);
+            }
+            p.setStyle(Paint.Style.FILL);
+            p.setStrokeCap(Paint.Cap.BUTT);
+            g.text(String.valueOf(streak), rcx, rcy + 6 * u, 16 * u, Gfx.FONT_MEDIUM, Gfx.CENTER, onSurface(c));
             g.text(streak + (streak == 1 ? " day streak" : " day streak"), 86 * u, 38 * u, 20 * u, Gfx.FONT_MEDIUM, Gfx.LEFT, violet(c));
             g.text(cheer(streak) + (best > streak ? "  \u00b7  best " + best : ""), 86 * u, 60 * u, 13 * u, Gfx.FONT_REGULAR, Gfx.LEFT, onSurfaceVar(c));
             if (!shield.isEmpty()) g.text(shield, 86 * u, 100 * u, 12.5f * u, Gfx.FONT_MEDIUM, Gfx.LEFT, violet(c));
@@ -513,6 +536,32 @@ final class Ui {
     }
 
     /** Flat page background: Google surface in light, pure black in dark. */
+    /** A soft wash of the current sky colour at the top of the screen, fading to nothing (the black stays black below). */
+    static final class SkyTint extends View {
+        private int sky;
+        private boolean dark = true;
+        private final Paint p = new Paint();
+
+        SkyTint(Context c) {
+            super(c);
+            setWillNotDraw(false);
+        }
+
+        void set(int skyColor, boolean isDark) {
+            sky = skyColor;
+            dark = isDark;
+            invalidate();
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            if (sky == 0) return;
+            int top = ((dark ? 0x4D : 0x26) << 24) | (sky & 0xFFFFFF);
+            p.setShader(new android.graphics.LinearGradient(0, 0, 0, getHeight(), top, sky & 0xFFFFFF, android.graphics.Shader.TileMode.CLAMP));
+            canvas.drawRect(0, 0, getWidth(), getHeight(), p);
+        }
+    }
+
     static final class Backdrop extends View {
         Backdrop(Context c) {
             super(c);

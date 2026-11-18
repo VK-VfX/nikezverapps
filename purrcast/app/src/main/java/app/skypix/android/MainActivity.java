@@ -50,6 +50,7 @@ public class MainActivity extends Activity {
     private LinearLayout content;
     private TextView statusText;
     private FrameLayout rootView;
+    private Ui.SkyTint skyTint;
     private int titleTaps;
     private long lastTitleTap;
     private boolean refreshing;
@@ -69,6 +70,8 @@ public class MainActivity extends Activity {
         FrameLayout root = new FrameLayout(this);
         rootView = root;
         root.addView(new Ui.Backdrop(this), new FrameLayout.LayoutParams(-1, -1));
+        skyTint = new Ui.SkyTint(this);
+        root.addView(skyTint, new FrameLayout.LayoutParams(-1, Ui.dp(this, 300)));
         scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         scroll.setVerticalScrollBarEnabled(false);
@@ -235,6 +238,7 @@ public class MainActivity extends Activity {
         int ink = dark ? 0xFFFFFFFF : 0xFF0E1630;
         int ink2 = dark ? 0x99FFFFFF : 0x990E1630;
         final Cards.Data d = Store.data(this);
+        if (skyTint != null) skyTint.set(Cards.skyTop(d), dark);
 
         // header: big Google-style title, quiet status line, round refresh button
         LinearLayout head = new LinearLayout(this);
