@@ -6,7 +6,8 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 ## Purrcast
 
-- **2.5.0**: A new status bar icon (a cat under the sun) and the supercat power-up animation on the streak card: it springs in with rings of light the first time each 10-day step shows (not with animations off).
+- **2.5.1**: The status bar icon is now a cat resting on a cloud beside a sun.
+- **2.5.0**: The supercat power-up animation on the streak card: it springs in with rings of light the first time each 10-day step shows (not with animations off).
 - **2.4.0**: The supercat arrives at a 10 day streak and grows happier each day (still reacting to your weather). If the streak breaks the shield can save it up to 7 days; once it is spent the cat goes back to the plain Noto cat, sad for two days and confident from the third. Widgets show the supercat only from day 10.
 - **2.3.0**: A fresh look (soft violet streak ring, rounder cards, a weather-tinted header), the masked hero cat on every widget in five mask looks (a different one each refresh), a Show hero cat switch, save and restore your progress with a short code (notes, screenshot card, calendar, file), and holistic place names: a council is never the place, the title names the state (Shah Alam, Selangor), the closest town is found when the map has none. Small widgets show the whole place name.
 - **2.2.1**: The Clock widget shows the whole place name (it wraps over up to three lines instead of cutting it off).

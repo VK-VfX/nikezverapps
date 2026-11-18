@@ -7,9 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Bump both for every release; the in-app updater compares VERSION_CODE (it must always go up).
-VERSION_CODE=26
-VERSION_NAME=2.5.0
-RELEASE_NOTES="A new status bar icon (a cat under the sun) and the supercat power-up animation: it springs in with rings of light the first time each 10-day streak step shows."
+VERSION_CODE=27
+VERSION_NAME=2.5.1
+RELEASE_NOTES="A new status bar icon: a cat resting on a cloud beside a sun."
 UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist
 
 DEPS=build/deps

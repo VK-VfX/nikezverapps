@@ -1,7 +1,7 @@
 {
-  "versionCode": 26,
-  "versionName": "2.5.0",
+  "versionCode": 27,
+  "versionName": "2.5.1",
   "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
-  "sha256": "c7b3f884046b49aad93ecef8d9e598aa9ec4e6d349b5634cfae43047432007af",
-  "notes": "A new status bar icon (a cat under the sun) and the supercat power-up animation: it springs in with rings of light the first time each 10-day streak step shows."
+  "sha256": "a9576e35e16b462950351774c7af625a40cb7b1fb32bcc72af586c5df4bcce1a",
+  "notes": "A new status bar icon: a cat resting on a cloud beside a sun."
 }
