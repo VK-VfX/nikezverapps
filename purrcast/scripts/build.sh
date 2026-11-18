@@ -7,9 +7,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Bump both for every release; the in-app updater compares VERSION_CODE (it must always go up).
-VERSION_CODE=22
-VERSION_NAME=2.2.0
-RELEASE_NOTES="One shared streak: the highest across Purrcast, Zamoled and Maps and Cats. A log for bug reports in About, open-source notices, and clearer privacy and alert wording."
+VERSION_CODE=23
+VERSION_NAME=2.2.1
+RELEASE_NOTES="The Clock widget now shows the whole place name, wrapping over up to three lines."
 UPDATE_BASE=https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist
 
 DEPS=build/deps

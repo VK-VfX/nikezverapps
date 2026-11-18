@@ -1,7 +1,7 @@
 {
-  "versionCode": 22,
-  "versionName": "2.2.0",
+  "versionCode": 23,
+  "versionName": "2.2.1",
   "apkUrl": "https://raw.githubusercontent.com/VK-VfX/nikezverapps/main/purrcast/dist/skypix.apk",
-  "sha256": "ecf75bcc582ba81218850015d8f87cfa3591c687293acc4ae56c984e76671b42",
-  "notes": "One shared streak: the highest across Purrcast, Zamoled and Maps and Cats. A log for bug reports in About, open-source notices, and clearer privacy and alert wording."
+  "sha256": "79cd5a7a27c3dd319c88139b856d3ad3cee37f10ababac7c87dab87d794e63e5",
+  "notes": "The Clock widget now shows the whole place name, wrapping over up to three lines."
 }

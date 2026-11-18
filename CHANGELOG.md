@@ -6,6 +6,7 @@ Newest first. Built from the git history and Zamoled's release notes. Entries fo
 
 ## Purrcast
 
+- **2.2.1**: The Clock widget shows the whole place name (it wraps over up to three lines instead of cutting it off).
 - **2.2.0**: One shared streak (the highest across the three apps), a log for bug reports in About, open-source notices, clearer privacy and alert wording.
 - **2.1.0**: A day streak of your own plus the Streak Shield (saves up to 7 missed days when all three apps are installed). MET Malaysia alerts removed; warnings use plain wording from Open-Meteo only. Hero cat art and the weather mood are shared with the other two apps.
 - **2.0.0**: New look: snappier taps, smoother cards, a teal edge on every card, clearer text in light mode.
