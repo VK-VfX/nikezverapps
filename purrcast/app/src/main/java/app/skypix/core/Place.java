@@ -13,13 +13,20 @@ public final class Place {
     public String region = "";
     public String country = "";
 
+    /** The city as people say it: a municipal body stored by an older version ("Majlis Perbandaran ...") shows as the place it governs. */
+    private String cityName() {
+        return PlaceNames.isBody(city) ? PlaceNames.stripBody(city) : city;
+    }
+
     public String title() {
+        String city = cityName();
         String c = city.length() > 0 ? city : neighborhood.length() > 0 ? neighborhood : region;
         if (c.length() == 0) return Fmt.coord(lat, true) + " " + Fmt.coord(lon, false);
         return country.length() > 0 && !country.equals(c) ? c + ", " + country : c;
     }
 
     public String shortName() {
+        String city = cityName();
         if (city.length() > 0) return city;
         if (neighborhood.length() > 0) return neighborhood;
         if (region.length() > 0) return region;
@@ -27,6 +34,7 @@ public final class Place {
     }
 
     public String subtitle() {
+        String city = cityName();
         StringBuilder sb = new StringBuilder();
         if (neighborhood.length() > 0 && !neighborhood.equals(city)) sb.append(neighborhood);
         if (region.length() > 0 && !region.equals(city) && !region.equals(neighborhood)) {

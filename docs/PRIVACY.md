@@ -6,6 +6,7 @@ We collect nothing. There are no accounts, no analytics, no ads and no servers o
 | App | Sent | To | Why |
 |---|---|---|---|
 | Purrcast | your coordinates (and your IP address, as with any request) | Open-Meteo | forecast, air quality, place search |
+| Purrcast | your coordinates | OpenStreetMap (Nominatim; Overpass only when the map names a council instead of a place) | the name of where you are |
 | Maps and Cats | what you type in search; start and end of a route; the map area you view | Photon, Nominatim, OSRM, OpenFreeMap | search, routes, map tiles |
 | Maps and Cats | a Wikipedia search for your words (when you use "Search the web") | Wikipedia | places with an article |
 | all three | the app name and version (and nothing about you) | GitHub | update check, download |

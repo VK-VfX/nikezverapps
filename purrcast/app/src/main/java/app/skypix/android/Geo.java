@@ -1,6 +1,7 @@
 package app.skypix.android;
 
 import app.skypix.core.Place;
+import app.skypix.core.PlaceNames;
 
 import org.json.JSONObject;
 
@@ -18,8 +19,23 @@ final class Geo {
                     p.lat, p.lon, Locale.getDefault().toLanguageTag());
             JSONObject a = new JSONObject(Net.get(url)).optJSONObject("address");
             if (a == null) return false;
-            p.neighborhood = first(a, "suburb", "quarter", "neighbourhood", "city_district", "hamlet");
-            p.city = first(a, "city", "town", "village", "municipality", "county", "state_district");
+            java.util.Map<String, String> fields = new java.util.HashMap<String, String>();
+            for (java.util.Iterator<String> it = a.keys(); it.hasNext();) {
+                String k = it.next();
+                fields.put(k, a.optString(k, ""));
+            }
+            // A council is not a place: use the real town, else the place the council is named after, else the closest town or suburb.
+            PlaceNames.Names n = PlaceNames.resolve(fields);
+            if (n.fromBody) {
+                try {
+                    String q = String.format(Locale.US, "[out:json][timeout:8];node(around:3000,%.5f,%.5f)[place~\"^(suburb|town|city|village|neighbourhood|quarter)$\"];out 20;", p.lat, p.lon);
+                    PlaceNames.refine(n, p.lat, p.lon, PlaceNames.parseOverpass(Net.get("https://overpass-api.de/api/interpreter?data=" + java.net.URLEncoder.encode(q, "UTF-8"))));
+                } catch (Exception ignored) {
+                    // offline or busy: the name worked out from the council is still a place
+                }
+            }
+            p.neighborhood = n.neighborhood;
+            p.city = n.city;
             p.region = first(a, "state", "region", "province");
             p.country = a.optString("country", "");
             if (p.neighborhood.equals(p.city)) p.neighborhood = "";
@@ -27,14 +43,6 @@ final class Geo {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    private static String first(JSONObject o, String... keys) {
-        for (String k : keys) {
-            String v = o.optString(k, "");
-            if (v.length() > 0) return v;
-        }
-        return "";
     }
 
     static double distanceM(double lat1, double lon1, double lat2, double lon2) {
