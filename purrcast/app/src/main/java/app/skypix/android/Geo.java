@@ -46,6 +46,14 @@ final class Geo {
         }
     }
 
+    private static String first(JSONObject o, String... keys) {
+        for (String k : keys) {
+            String v = o.optString(k, "");
+            if (v.length() > 0) return v;
+        }
+        return "";
+    }
+
     private static String overpass(Place p, int radiusM, String kinds) throws java.io.IOException {
         String q = String.format(Locale.US, "[out:json][timeout:8];node(around:%d,%.5f,%.5f)[place~\"^(%s)$\"];out 40;", radiusM, p.lat, p.lon, kinds);
         return Net.get("https://overpass-api.de/api/interpreter?data=" + java.net.URLEncoder.encode(q, "UTF-8"));
