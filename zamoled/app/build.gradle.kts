@@ -12,8 +12,8 @@ android {
         applicationId = "com.nikopick.zamoled"
         minSdk = 29
         targetSdk = 35
-        versionCode = 43
-        versionName = "8.5.0"
+        versionCode = 44
+        versionName = "8.5.1"
     }
 
     // A permanent key (from GitHub Secrets in CI) signs every build, so each new APK installs as an
@@ -26,6 +26,9 @@ android {
                 storePassword = System.getenv("ZAMOLED_KEY_PASSWORD")
                 keyAlias = System.getenv("ZAMOLED_KEY_ALIAS") ?: "zamoled"
                 keyPassword = System.getenv("ZAMOLED_KEY_PASSWORD")
+                // v1 (JAR) as well as v2/v3: the other two apps carry it, and some scanners only read v1.
+                // Same key, so updates over 8.5.0 still install.
+                enableV1Signing = true
                 enableV2Signing = true
                 enableV3Signing = true
             }
