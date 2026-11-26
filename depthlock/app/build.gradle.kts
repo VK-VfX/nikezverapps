@@ -16,10 +16,29 @@ android {
         versionName = "1.0.0"
     }
 
+    // A permanent key (from GitHub Secrets or CI's cached key) signs every build, so each new APK installs
+    // as an update over the last one. Without it, builds fall back to the machine's debug key.
+    val keystorePath: String? = System.getenv("DEPTHLOCK_KEYSTORE_PATH")
+    signingConfigs {
+        if (keystorePath != null) {
+            create("sideload") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("DEPTHLOCK_KEY_PASSWORD")
+                keyAlias = System.getenv("DEPTHLOCK_KEY_ALIAS") ?: "depthlock"
+                keyPassword = System.getenv("DEPTHLOCK_KEY_PASSWORD")
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
+    val appSigning = signingConfigs.getByName(if (keystorePath != null) "sideload" else "debug")
+
     buildTypes {
+        debug { signingConfig = appSigning }
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = appSigning
         }
     }
 
