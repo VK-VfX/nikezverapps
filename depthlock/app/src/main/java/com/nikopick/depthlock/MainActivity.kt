@@ -57,7 +57,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -66,7 +68,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,10 +111,20 @@ private fun DepthLockApp() {
     fun autoPlace(a: DepthAssets, base: ClockSettings, msg: String) {
         val sub = a.subject
         if (sub == null) { status = msg; return }
-        val (y, cov) = AutoPlace.best(sub, base)
-        update(base.copy(y = y))
-        status = if (cov < 0.04f) "$msg Your subject does not reach the clock. Try Stretch, or a photo where the subject is bigger."
-        else "$msg Clock tucked behind your subject (${(cov * 100).toInt()}% covered). Fine-tune with Height."
+        status = "$msg Fitting the clock around your subject."
+        scope.launch {
+            val f = withContext(Dispatchers.Default) { SmartFit.fit(a.bg, sub, base) }
+            update(f.settings)
+            val how = if (f.settings.style == 1) "stacked" else "one-line"
+            status = if (f.minVisible < 0.5f) {
+                "$msg Your subject is big and hides part of the time. Try Sideways, Size or Stretch."
+            } else if (f.covered < 0.05f) {
+                "$msg The subject does not reach the clock. A photo with a bigger subject gives more depth."
+            } else {
+                "$msg Fitted a $how clock: ${(f.covered * 100).toInt()}% behind your subject, every digit still readable." +
+                    if (f.recoloured) " Colours changed so they show on this photo." else ""
+            }
+        }
     }
 
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -135,7 +149,10 @@ private fun DepthLockApp() {
         }
     }
     val pickBg = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) runOwn("Loading your background.", "Your background is in.") { Cutout.ownBackground(ctx, uri) }
+        if (uri != null) {
+            if (assets.subject == null) runOwn("Cutting out your subject.", "Done. Subject is cut out.") { Cutout.process(ctx, uri) }
+            else runOwn("Loading your background.", "Your background is in.") { Cutout.ownBackground(ctx, uri) }
+        }
     }
     val pickSubject = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) runOwn("Loading your cut-out.", "Your cut-out is in.") { Cutout.ownSubject(ctx, uri) }
@@ -178,8 +195,10 @@ private fun DepthLockApp() {
                 }
             }
             Caption("Your screen: ${dm.widthPixels} x ${dm.heightPixels}")
-            Caption(status)
-            Btn(if (assets.subject == null) "Pick a photo" else "Pick another photo", enabled = !busy) {
+            Text(status, fontFamily = Mono, fontSize = 13.sp, lineHeight = 19.sp, color = Soft, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+            Btn("Set as lock screen wallpaper", enabled = assets.bg != null && !busy) { setWallpaper(ctx) }
+            Caption("On the next screen, choose Lock screen.")
+            Btn(if (assets.subject == null) "Pick a photo" else "Pick another photo", primary = false, enabled = !busy) {
                 pick.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             }
         }
@@ -203,8 +222,8 @@ private fun DepthLockApp() {
                 Choice("Stacked", s.style == 1, FontFamily.Default) { update(s.copy(style = 1, stretch = 1f)) }
                 Choice("One line", s.style == 0, FontFamily.Default) { update(s.copy(style = 0, stretch = 1.7f)) }
             }
-            Btn("Auto-place behind my subject", primary = false, enabled = assets.subject != null) {
-                autoPlace(assets, s, "Placed.")
+            Btn("Auto-fit clock to my subject", enabled = assets.subject != null && !busy) {
+                autoPlace(assets, s, "Done.")
             }
             Label("Font")
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -237,6 +256,7 @@ private fun DepthLockApp() {
             }
             SliderRow("Size", s.size, 0.5f..1.1f, "${(s.size * 100).toInt()}%") { update(s.copy(size = it)) }
             SliderRow("Stretch (taller digits)", s.stretch, 0.8f..2.6f, "${(s.stretch * 100).toInt()}%") { update(s.copy(stretch = it)) }
+            SliderRow("Sideways", s.xOffset, -0.3f..0.3f, "${(s.xOffset * 100).toInt()}%") { update(s.copy(xOffset = it)) }
             SliderRow("Height", s.y, 0.10f..0.60f, "${(s.y * 100).toInt()}%") { update(s.copy(y = it)) }
             SliderRow("Opacity", s.alpha, 0.3f..1f, "${(s.alpha * 100).toInt()}%") { update(s.copy(alpha = it)) }
             SwitchRow("24-hour time", s.h24) { update(s.copy(h24 = it)) }
@@ -256,8 +276,6 @@ private fun DepthLockApp() {
         }
 
         Panel("Use it") {
-            Btn("Set as lock screen wallpaper", enabled = assets.subject != null) { setWallpaper(ctx) }
-            Caption("On the preview screen, choose Lock screen.")
             Btn("Screen saver while charging", primary = false) { openDreamSettings(ctx) }
             Caption("Pick DepthLock under Screen saver. Shows a dim copy on the charger.")
             Btn("Always-on screen", primary = false, enabled = assets.subject != null) {

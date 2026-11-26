@@ -12,8 +12,8 @@ android {
         applicationId = "com.nikopick.depthlock"
         minSdk = 31
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
     }
 
     // A permanent key (from GitHub Secrets or CI's cached key) signs every build, so each new APK installs

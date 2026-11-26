@@ -1,12 +1,9 @@
-## DepthLock 1.0.0
+## DepthLock 1.1.0
 
-Clock behind your subject, on the lock screen.
+The clock now builds itself around your subject.
 
-- Live wallpaper: photo, clock, then your subject on top. Layers shift as you tilt the phone.
-- Automatic subject cut-out, or bring your own background and transparent-PNG cut-out.
-- Clock styles: stacked or one line, seven two-tone palettes, fonts (Pixel Clock, Google Sans and more), weight slider, or your own font file.
-- Auto-place: the clock moves to where your subject covers it best.
-- Always-on look (wallpaper, subject only, or clock only) for the screen saver and the always-on screen.
-
-Built for Pixel 9 Pro XL. Needs Android 12 or newer with Google Play services.
-Pixel draws its own lock-screen clock and always-on display; an app cannot replace those.
+- Smart fit: DepthLock draws the real clock against your subject's outline and picks the style, size, height and side where every digit stays readable and about a quarter of the clock sits behind the subject. Runs after every cut-out, or tap "Auto-fit clock to my subject".
+- Colours switch automatically when the clock would not show on the photo behind it.
+- New Sideways slider.
+- Picking your own background with no cut-out yet now cuts the subject out for you.
+- "Set as lock screen wallpaper" is now right under the preview.

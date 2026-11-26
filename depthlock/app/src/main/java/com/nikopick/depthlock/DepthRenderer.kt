@@ -13,6 +13,8 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.pow
+import kotlin.math.roundToInt
 
 /**
  * Draws the three layers back to front: photo, clock, subject cut-out.
@@ -57,9 +59,27 @@ class DepthRenderer {
 
     /** Where the clock sits on a w x h screen, after stretch. Used to place it behind the subject. */
     fun clockRect(w: Int, h: Int, s: ClockSettings): RectF {
-        val b = block(w, s, Date(0))
+        val b = block(w, s, Date(0), sample = true)
         val cy = h * s.y
-        return RectF(w / 2f - b.halfW, cy + b.top * s.stretch, w / 2f + b.halfW, cy + b.bottom * s.stretch)
+        val cx = w / 2f + w * s.xOffset
+        return RectF(cx - b.halfW, cy + b.top * s.stretch, cx + b.halfW, cy + b.bottom * s.stretch)
+    }
+
+    fun lineCount(s: ClockSettings) = if (s.style == 1) 2 else 1
+
+    /** One line of the clock in solid white, for measuring what the subject would hide. */
+    fun drawClockLine(c: Canvas, w: Int, h: Int, s: ClockSettings, line: Int) {
+        val b = block(w, s, Date(0), sample = true)
+        timePaint.textSize = b.size
+        timePaint.color = Color.WHITE
+        timePaint.alpha = 255
+        val cx = w / 2f + w * s.xOffset
+        val cy = h * s.y
+        c.save()
+        c.scale(1f, s.stretch, cx, cy)
+        val l = b.lines[line]
+        c.drawText(l.text, cx, cy + l.baseOff, timePaint)
+        c.restore()
     }
 
     private fun layerDx(t: Float, w: Int, depth: Float) = -t * w * 0.018f * depth
@@ -75,13 +95,14 @@ class DepthRenderer {
 
     private fun fmt(pattern: String, d: Date) = SimpleDateFormat(pattern, Locale.getDefault()).format(d)
 
-    private fun block(w: Int, s: ClockSettings, now: Date): Block {
+    /** [sample] uses wide digits (08:08) so layout measuring does not depend on the time of day. */
+    private fun block(w: Int, s: ClockSettings, now: Date, sample: Boolean = false): Block {
         timePaint.typeface = Looks.typeface(s.font, s.weight)
         timePaint.textSize = 200f
         if (s.style == 1) {
             // Hours over minutes, like the Pixel stacked clocks.
-            val hh = fmt(if (s.h24) "HH" else "hh", now)
-            val mm = fmt("mm", now)
+            val hh = if (sample) "08" else fmt(if (s.h24) "HH" else "hh", now)
+            val mm = if (sample) "08" else fmt("mm", now)
             val targetW = w * s.size * 0.55f
             timePaint.textSize = 200f * targetW / timePaint.measureText("00")
             timePaint.getTextBounds("0", 0, 1, bounds)
@@ -92,7 +113,7 @@ class DepthRenderer {
             val c2 = (d + gap) / 2f
             return Block(listOf(Line(hh, c1 + mid, false), Line(mm, c2 + mid, true)), c1 - d / 2, c2 + d / 2, targetW / 2, timePaint.textSize)
         }
-        val time = fmt(if (s.h24) "HH:mm" else "h:mm", now)
+        val time = if (sample) "8:08" else fmt(if (s.h24) "HH:mm" else "h:mm", now)
         val fit = (w * s.size) / timePaint.measureText(time)
         timePaint.textSize = 200f * fit
         timePaint.getTextBounds(time, 0, time.length, bounds)
@@ -107,7 +128,7 @@ class DepthRenderer {
         val b = block(w, s, now)
         timePaint.textSize = b.size
 
-        val cx = w / 2f + dx
+        val cx = w / 2f + w * s.xOffset + dx
         val cy = h * s.y + dy
         c.save()
         c.scale(1f, s.stretch, cx, cy)
@@ -128,41 +149,123 @@ class DepthRenderer {
     }
 }
 
-/** Finds the clock height where the subject covers the most of it, so the depth effect shows on any photo. */
-object AutoPlace {
-    /** @return best height (fraction of screen) and how much of the clock the subject covers (0..1). */
-    fun best(subject: Bitmap, s: ClockSettings): Pair<Float, Float> {
-        val cols = 96
+/**
+ * Builds the clock layout around the subject. It draws the real clock glyphs at many sizes, heights and
+ * positions against the subject's silhouette, and keeps the layout where
+ *  - every line of the time stays readable (most of each line is NOT hidden), and
+ *  - enough of the clock is behind the subject to give the depth effect.
+ * It then checks the clock colours against the photo behind them.
+ */
+object SmartFit {
+    class Fit(val settings: ClockSettings, val covered: Float, val minVisible: Float, val recoloured: Boolean)
+
+    private class Cfg(val style: Int, val size: Float, val stretch: Float)
+
+    fun fit(bg: Bitmap?, subject: Bitmap, base: ClockSettings): Fit {
+        val cols = 120
         val rows = (cols * subject.height / subject.width.toFloat()).toInt().coerceAtLeast(1)
         val small = Bitmap.createScaledBitmap(subject, cols, rows, true)
         val px = IntArray(cols * rows)
         small.getPixels(px, 0, cols, 0, 0, cols, rows)
-        // Running totals, so any rectangle is counted in four lookups.
-        val sum = Array(rows + 1) { IntArray(cols + 1) }
-        for (y in 0 until rows) for (x in 0 until cols) {
-            val solid = if ((px[y * cols + x] ushr 24) > 100) 1 else 0
-            sum[y + 1][x + 1] = solid + sum[y][x + 1] + sum[y + 1][x] - sum[y][x]
-        }
-        val refW = 1000
-        val refH = (refW * subject.height / subject.width.toFloat()).toInt()
+        val solid = BooleanArray(px.size) { (px[it] ushr 24) > 110 }
+
         val renderer = DepthRenderer()
-        var bestY = s.y
-        var bestScore = -1f
-        var bestCov = 0f
-        var yy = 0.10f
-        while (yy <= 0.62f) {
-            val r = renderer.clockRect(refW, refH, s.copy(y = yy))
-            val x0 = (r.left / refW * cols).toInt().coerceIn(0, cols - 1)
-            val x1 = (r.right / refW * cols).toInt().coerceIn(x0 + 1, cols)
-            val y0 = (r.top / refH * rows).toInt().coerceIn(0, rows - 1)
-            val y1 = (r.bottom / refH * rows).toInt().coerceIn(y0 + 1, rows)
-            val area = (x1 - x0) * (y1 - y0)
-            val cov = (sum[y1][x1] - sum[y0][x1] - sum[y1][x0] + sum[y0][x0]).toFloat() / area
-            // A third of the clock hidden reads best; past that, prefer the spot nearest the usual height.
-            val score = min(cov, 0.35f) - abs(yy - 0.36f) * 0.02f
-            if (score > bestScore) { bestScore = score; bestY = yy; bestCov = cov }
-            yy += 0.01f
+        val bmp = Bitmap.createBitmap(cols, rows, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+        val buf = IntArray(cols * rows)
+
+        val cfgs = ArrayList<Cfg>()
+        for (sz in listOf(1.1f, 1.0f, 0.9f, 0.8f, 0.7f)) cfgs.add(Cfg(1, sz, 1f))
+        for (sz in listOf(1.0f, 0.9f, 0.8f)) for (st in listOf(1f, 1.4f, 1.8f, 2.2f)) cfgs.add(Cfg(0, sz, st))
+        val xs = listOf(-0.2f, -0.1f, 0f, 0.1f, 0.2f)
+        val topLimit = (rows * (if (base.date) 0.13f else 0.05f)).toInt()
+
+        var best: Fit? = null
+        var bestScore = -1e9f
+        for (cfg in cfgs) {
+            val s0 = base.copy(style = cfg.style, size = cfg.size, stretch = cfg.stretch, y = 0.5f, xOffset = 0f)
+            val glyphs = (0 until renderer.lineCount(s0)).map { line ->
+                bmp.eraseColor(0)
+                renderer.drawClockLine(canvas, cols, rows, s0, line)
+                bmp.getPixels(buf, 0, cols, 0, 0, cols, rows)
+                val cells = ArrayList<Int>()
+                for (i in buf.indices) if ((buf[i] ushr 24) > 128) cells.add(i)
+                cells.toIntArray()
+            }
+            if (glyphs.any { it.isEmpty() }) continue
+
+            for (yi in 8..64) {
+                val y = yi / 100f
+                val dy = ((y - 0.5f) * rows).roundToInt()
+                for (x in xs) {
+                    val dx = (x * cols).roundToInt()
+                    var ok = true
+                    var covered = 0
+                    var total = 0
+                    var minVis = 1f
+                    for (g in glyphs) {
+                        var c = 0
+                        for (cell in g) {
+                            val gx = cell % cols + dx
+                            val gy = cell / cols + dy
+                            if (gx < 0 || gx >= cols || gy < topLimit || gy >= rows) { ok = false; break }
+                            if (solid[gy * cols + gx]) c++
+                        }
+                        if (!ok) break
+                        covered += c
+                        total += g.size
+                        minVis = min(minVis, 1f - c / g.size.toFloat())
+                    }
+                    if (!ok || total == 0) continue
+
+                    val cov = covered / total.toFloat()
+                    // Readable: every line at least 60% visible. Below 40% the line is as good as gone.
+                    val legible = ((minVis - 0.4f) / 0.2f).coerceIn(0f, 1f)
+                    // Depth: best when about a quarter of the clock sits behind the subject.
+                    val depth = max(0f, 1f - abs(cov - 0.25f) / 0.25f)
+                    val sizeN = if (cfg.style == 1) cfg.size / 1.1f else cfg.size
+                    val score = legible * (0.7f * depth + 0.3f * sizeN) + 0.1f * minVis - 0.4f * abs(x)
+                    if (score > bestScore) {
+                        bestScore = score
+                        best = Fit(base.copy(style = cfg.style, size = cfg.size, stretch = cfg.stretch, y = y, xOffset = x), cov, minVis, false)
+                    }
+                }
+            }
         }
-        return bestY to bestCov
+        val chosen = best ?: return Fit(base, 0f, 1f, false)
+        return recolour(chosen, bg, renderer, cols, rows)
     }
+
+    /** Keeps the user's palette when it reads on the photo behind the clock, otherwise picks the one that does. */
+    private fun recolour(f: Fit, bg: Bitmap?, renderer: DepthRenderer, cols: Int, rows: Int): Fit {
+        if (bg == null) return f
+        val small = Bitmap.createScaledBitmap(bg, cols, rows, true)
+        val r = renderer.clockRect(cols, rows, f.settings)
+        val x0 = r.left.toInt().coerceIn(0, cols - 1)
+        val x1 = r.right.toInt().coerceIn(x0 + 1, cols)
+        val y0 = r.top.toInt().coerceIn(0, rows - 1)
+        val y1 = r.bottom.toInt().coerceIn(y0 + 1, rows)
+        var sum = 0f
+        var n = 0
+        for (y in y0 until y1) for (x in x0 until x1) { sum += luminance(small.getPixel(x, y)); n++ }
+        val l = sum / n
+
+        fun score(p: Looks.Palette): Float {
+            val top = contrast(luminance(p.top), l)
+            return if (f.settings.style == 1) min(top, contrast(luminance(p.bottom), l)) else top
+        }
+        if (score(Looks.palettes[f.settings.color]) >= 3f) return f
+        val idx = Looks.palettes.indices.maxByOrNull { score(Looks.palettes[it]) } ?: return f
+        return Fit(f.settings.copy(color = idx), f.covered, f.minVisible, idx != f.settings.color)
+    }
+
+    private fun luminance(c: Int): Float {
+        fun ch(v: Int): Float {
+            val f = v / 255f
+            return if (f <= 0.03928f) f / 12.92f else ((f + 0.055f) / 1.055f).pow(2.4f)
+        }
+        return 0.2126f * ch(Color.red(c)) + 0.7152f * ch(Color.green(c)) + 0.0722f * ch(Color.blue(c))
+    }
+
+    private fun contrast(a: Float, b: Float) = (max(a, b) + 0.05f) / (min(a, b) + 0.05f)
 }

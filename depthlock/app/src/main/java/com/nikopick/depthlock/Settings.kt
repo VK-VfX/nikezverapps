@@ -14,6 +14,7 @@ data class ClockSettings(
     val aodMode: Int = 0,         // always-on look: 0 wallpaper, 1 subject only, 2 clock only
     val aodDim: Float = 0.4f,
     val size: Float = 0.9f,       // 0.5..1.1 of screen width
+    val xOffset: Float = 0f,      // -0.3..0.3 sideways, fraction of screen width
     val y: Float = 0.36f,         // vertical centre of the clock, fraction of screen height
     val stretch: Float = 1f,      // 0.8..2.6 taller digits
     val color: Int = 0,
@@ -92,6 +93,7 @@ object Prefs {
             aodMode = p.getInt("aodMode", d.aodMode).coerceIn(0, 2),
             aodDim = p.getFloat("aodDim", d.aodDim).coerceIn(0.1f, 0.9f),
             size = p.getFloat("size", d.size),
+            xOffset = p.getFloat("xOffset", d.xOffset),
             y = p.getFloat("y", d.y),
             stretch = p.getFloat("stretch", d.stretch),
             color = p.getInt("color", d.color).coerceIn(0, Looks.palettes.lastIndex),
@@ -105,7 +107,7 @@ object Prefs {
 
     fun save(c: Context, s: ClockSettings) {
         sp(c).edit()
-            .putInt("style", s.style).putInt("font", s.font).putInt("weight", s.weight).putInt("aodMode", s.aodMode).putFloat("aodDim", s.aodDim).putFloat("size", s.size).putFloat("y", s.y).putFloat("stretch", s.stretch)
+            .putInt("style", s.style).putInt("font", s.font).putInt("weight", s.weight).putInt("aodMode", s.aodMode).putFloat("aodDim", s.aodDim).putFloat("size", s.size).putFloat("y", s.y).putFloat("xOffset", s.xOffset).putFloat("stretch", s.stretch)
             .putInt("color", s.color).putFloat("alpha", s.alpha)
             .putBoolean("h24", s.h24).putBoolean("date", s.date)
             .putBoolean("tilt", s.tilt).putBoolean("clockOnHome", s.clockOnHome)
